@@ -1,0 +1,15 @@
+{
+  "name": "mama-budget",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Mama lives in your browser. She reads your cart item by item and stops the waste before you pay.",
+  "scripts": {
+    "api": "node api/server.js",
+    "seed": "node api/nessie/seed.js",
+    "score": "node scoring/score.js",
+    "test": "node --test api/test/judge.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

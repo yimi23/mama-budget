@@ -1,0 +1,16 @@
+{
+  "frozen": "2026-10-03",
+  "need": [
+    "Grocery",
+    "Rent",
+    "Utilities",
+    "Phone",
+    "Education",
+    "Transportation",
+    "Pharmacy",
+    "Health",
+    "Insurance",
+    "Services"
+  ],
+  "note": "Everything else maps to Want. Frozen before any labels were collected."
+}

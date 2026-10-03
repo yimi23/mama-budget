@@ -1,0 +1,41 @@
+# Onboarding: voice and action script
+
+She talks you through it and does things while you watch. She never listens during onboarding (two way is Messages). Every action below is real; nothing is narrated that did not happen. Voice lines are cached mp3s from `/tts` keyed by grandma and text; the three dynamic lines (true line, watches, statement) are generated during "Give me a second," which is why that screen exists.
+
+Rules from the Clicky study that apply to every step: never ask the name (Nessie has it, used once), never introduce her twice, skip is one line with no question, no sound in quiet hours, mute is one tap and remembered.
+
+| # | Screen | What she says (Mama) | What she says (Nana) | What actually happens | Sound | Skip |
+|---|---|---|---|---|---|---|
+| 02 | Welcome | "I'm Mama. I sit in your cart while you shop. You add rice, I say nothing. You add AirPods, I ask what they're for. One question, before the money leaves." | "I'm Nana. I'll be in your cart. Rice, I won't say a word. AirPods, I'll ask what for. One question, before you pay." | Badge slides in from bottom right (600ms, decelerate), then the line plays. Text appears with the voice, not before. | arrive, then voice | none, this is the only screen with one button |
+| 03 | Who is checking on you | nothing (both are on screen; neither speaks first) | nothing | Tap Hear her under either: plays her preview line. Mama: "Rice is at home." Nana: "Well. Let's have a look." Tap a card to choose. | voice preview on tap | none |
+| 04 | Where the money lives | "I only read. The bank never hears from me." | "I just look. I don't touch." | Connect button calls the API, which confirms the Nessie customer exists. | none | Not now (she runs with no history; screens 05, 06, 06b are skipped; envelope defaults to $75) |
+| 05 | Give me a second | "Give me a second." then silence while the checks tick | "Hang on a sec." | `GET /month` runs. Each check row ticks as its count arrives (purchases, paychecks, transfers, bills), 400ms apart minimum so it reads as reading. Meanwhile `/tts` generates the true line and the three watch lines. Screen advances when both are done, minimum 2.5s, maximum 6s then advance anyway with text only. | tick per row (the kept sound, soft) | none, it is 3 seconds |
+| 06 | Here is what I saw | the true line: "Last 30 days: one hundred and two dollars on food delivery. Rice was twenty four. We need to talk." | "Last 30 days: one hundred and two dollars on food delivery. Rice was twenty four. Hm." | Her first spoken words about you. Face is Shocked while the line plays, then Watching. The envelope field shows `proposedEnvelope` and the first name once. Slider changes the number live. | voice | "That's fair" is the only forward button; the field itself is the adjustment |
+| 06b | Here is what I'll watch | reads the first watch only: "You spent one hundred and two dollars on food delivery, so when DoorDash is open I'll say something." | same words, her voice | Three rows from `watches()`. Change these lets you remove a row (she will not watch that one). | voice | Change these |
+| 07 | Your phone | "I text. A short one every Sunday at seven, and one when something big happens." | "I text. Sundays at seven, and when something's up." | Number field. Text me what you saw sends the first statement through `/schedule?now=1`. If Photon is down the button is disabled and reads "Texts are off right now." No fake sent state, ever. | none | Not now (texts off, settings can turn on later) |
+| 07b | Check your phone | nothing. The phone buzzing is the line. | nothing | The bubble on screen mirrors the text that was actually sent. Advance only after `/schedule` returned ok. | text received | none |
+| 08 | How loud | nothing until you pick; then one line in that volume. Gentle Auntie: "Okay." Mama: "Okay. I'll say something when it matters." Full Nigerian Mother: "Good. Now we're talking." | Church Friend: "Alright." Nana: "Alright then." Nana Before Coffee: "Finally." | Radio row. The line plays at the picked tier's volume and tone so you hear the difference you chose. | voice | none, a pick is required |
+| 09 | Go shopping | "Forty dollars kept this week. Let's make it grow. Try me on a practice cart first." | "Forty kept this week. Not bad. Try me first." | Kept number counts up from 0 to the real value over 600ms. Try me first opens the practice tab. | proud, then voice, kept tick on the count | Open a store instead (secondary) |
+| 01 | Practice cart (finale) | when AirPods land: "AirPods? What for?" If "I just want them": "One hundred and seventy nine dollars, with twenty five left this week. You're sure?" If "It's for something": "Okay. I'll remember." | "AirPods? What for?" then "That's one seventy nine with twenty five left. Sure?" or "Okay. Noted." | Rice and soap are already in the cart; AirPods are added by the page itself 1.5s after load so she reacts in front of you. A drawn line from the card to the badge appears for 2s with the label "That's me. I live here." (Clicky's draw demo, our version.) Buttons work exactly as on a real cart and write memory for real. Page ends with "Open a real store." | ask on the question; surprised on the reaction; proud if removed | Open a real store at any time |
+
+## Voice production
+
+- Every fixed line above is generated once at build time per grandma into `apps/api/fixtures/voice/<grandma>/<hash>.mp3` and shipped with the API. Zero latency in the demo.
+- The three dynamic lines (true line, first watch, Sunday statement) are generated during screen 05 for a real user and cached by text hash. In the demo they are already cached because the seed is fixed.
+- One voice per grandma, settings in `apps/api/src/providers/elevenlabs.ts`: stability high, style low, speed 0.95. Numbers are written out in words in the text sent to TTS ("one hundred and two dollars"), never digits, so she never says "one oh two."
+- Volume by tier: Gentle Auntie 0.6, Mama 0.8, Full Nigerian Mother 1.0. Same for Nana's names.
+- Mute: a speaker mark top right of every popup screen from 04 on. One tap, remembered in `settings.sounds`. Muted means text only, same timing.
+
+## Actions, and what proves they happened
+
+| Action | Proof on screen | What if it fails |
+|---|---|---|
+| Connect bank | 04 button turns to "Connected" with the account nickname | Error line under the button, Not now still works |
+| Read the month | 05 rows tick with real counts | Rows tick what arrived; missing rows stay grey; advance at 6s |
+| First text | 07b bubble is the sent text, with the time | 07 button disabled with "Texts are off right now"; 07b is skipped |
+| Memory written on the practice cart | The home panel's "last three things she said" shows the AirPods answer | Local write, cannot fail silently; if storage throws, the card still closes |
+| Kept counts up | 09 number animates from 0 | Static number |
+
+## Time cost
+
+About two hours on top of the silent version: the fixture voice generation script (20 minutes), the speaking state and mute (30), the practice cart's auto add and drawn line (40), the 05 timing (30). It is in the 11:30pm to 1:30am block. If that block runs late, cut in this order: the drawn line on the practice cart, the tier line on 08, the count up on 09. Never cut 06; her first spoken words are the point.

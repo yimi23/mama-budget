@@ -1,0 +1,402 @@
+[
+  {
+    "id": 1,
+    "item": "20 lb bag of rice",
+    "price": 24.0,
+    "context": "Monthly staple, pantry empty",
+    "merchant": "Target",
+    "bankCategory": "General Merchandise"
+  },
+  {
+    "id": 2,
+    "item": "Dish soap",
+    "price": 4.0,
+    "context": "Ran out",
+    "merchant": "Target",
+    "bankCategory": "General Merchandise"
+  },
+  {
+    "id": 3,
+    "item": "AirPods Pro",
+    "price": 179.0,
+    "context": "Has working wired earbuds",
+    "merchant": "Target",
+    "bankCategory": "General Merchandise"
+  },
+  {
+    "id": 4,
+    "item": "Rent",
+    "price": 650.0,
+    "context": "Due on the 1st",
+    "merchant": "Landlord",
+    "bankCategory": "Rent"
+  },
+  {
+    "id": 5,
+    "item": "Electric bill",
+    "price": 48.0,
+    "context": "Monthly",
+    "merchant": "Consumers Energy",
+    "bankCategory": "Utilities"
+  },
+  {
+    "id": 6,
+    "item": "Phone bill",
+    "price": 45.0,
+    "context": "Monthly plan",
+    "merchant": "T-Mobile",
+    "bankCategory": "Phone"
+  },
+  {
+    "id": 7,
+    "item": "Required textbook",
+    "price": 89.0,
+    "context": "On the syllabus, no used copy left",
+    "merchant": "Campus bookstore",
+    "bankCategory": "Education"
+  },
+  {
+    "id": 8,
+    "item": "Monthly bus pass",
+    "price": 30.0,
+    "context": "Only way to class",
+    "merchant": "Transit authority",
+    "bankCategory": "Transportation"
+  },
+  {
+    "id": 9,
+    "item": "Prescription refill",
+    "price": 12.0,
+    "context": "Monthly",
+    "merchant": "Pharmacy",
+    "bankCategory": "Pharmacy"
+  },
+  {
+    "id": 10,
+    "item": "Eggs, milk, bread",
+    "price": 14.0,
+    "context": "Weekly groceries",
+    "merchant": "Kroger",
+    "bankCategory": "Grocery"
+  },
+  {
+    "id": 11,
+    "item": "Laundry",
+    "price": 6.0,
+    "context": "Weekly",
+    "merchant": "Campus laundry",
+    "bankCategory": "Services"
+  },
+  {
+    "id": 12,
+    "item": "Winter coat",
+    "price": 70.0,
+    "context": "First Michigan winter, owns no coat",
+    "merchant": "Walmart",
+    "bankCategory": "Clothing"
+  },
+  {
+    "id": 13,
+    "item": "Laptop charger",
+    "price": 35.0,
+    "context": "Old one stopped working",
+    "merchant": "Amazon",
+    "bankCategory": "Shopping"
+  },
+  {
+    "id": 14,
+    "item": "Lab fee",
+    "price": 200.0,
+    "context": "Charged by the university",
+    "merchant": "University",
+    "bankCategory": "Education"
+  },
+  {
+    "id": 15,
+    "item": "Health insurance",
+    "price": 120.0,
+    "context": "Monthly premium",
+    "merchant": "Insurer",
+    "bankCategory": "Insurance"
+  },
+  {
+    "id": 16,
+    "item": "Palm oil, crayfish, stockfish",
+    "price": 28.0,
+    "context": "Groceries for the month",
+    "merchant": "African food store",
+    "bankCategory": "Grocery"
+  },
+  {
+    "id": 17,
+    "item": "Latte",
+    "price": 7.0,
+    "context": "Third one this week",
+    "merchant": "Starbucks",
+    "bankCategory": "Coffee"
+  },
+  {
+    "id": 18,
+    "item": "Food delivery",
+    "price": 32.0,
+    "context": "Groceries already at home",
+    "merchant": "DoorDash",
+    "bankCategory": "Restaurants"
+  },
+  {
+    "id": 19,
+    "item": "New video game",
+    "price": 70.0,
+    "context": "Day one release",
+    "merchant": "PlayStation Store",
+    "bankCategory": "Entertainment"
+  },
+  {
+    "id": 20,
+    "item": "Jordans",
+    "price": 190.0,
+    "context": "Owns four pairs of sneakers",
+    "merchant": "Foot Locker",
+    "bankCategory": "Clothing"
+  },
+  {
+    "id": 21,
+    "item": "Third hoodie this month",
+    "price": 55.0,
+    "context": "",
+    "merchant": "Online store",
+    "bankCategory": "Clothing"
+  },
+  {
+    "id": 22,
+    "item": "Uber, 0.8 miles",
+    "price": 14.0,
+    "context": "Sunny afternoon, walkable",
+    "merchant": "Uber",
+    "bankCategory": "Transportation"
+  },
+  {
+    "id": 23,
+    "item": "Concert ticket",
+    "price": 85.0,
+    "context": "Friends are going",
+    "merchant": "Ticketmaster",
+    "bankCategory": "Entertainment"
+  },
+  {
+    "id": 24,
+    "item": "Fourth streaming subscription",
+    "price": 15.0,
+    "context": "Already pays for three",
+    "merchant": "Streaming service",
+    "bankCategory": "Subscriptions"
+  },
+  {
+    "id": 25,
+    "item": "New phone case",
+    "price": 45.0,
+    "context": "Current case is fine",
+    "merchant": "Amazon",
+    "bankCategory": "Shopping"
+  },
+  {
+    "id": 26,
+    "item": "Energy drinks, 12 pack",
+    "price": 28.0,
+    "context": "",
+    "merchant": "Gas station",
+    "bankCategory": "Grocery"
+  },
+  {
+    "id": 27,
+    "item": "Bubble tea",
+    "price": 8.0,
+    "context": "Second time today",
+    "merchant": "Boba shop",
+    "bankCategory": "Restaurants"
+  },
+  {
+    "id": 28,
+    "item": "Crypto buy",
+    "price": 50.0,
+    "context": "Saw a post about it",
+    "merchant": "Coinbase",
+    "bankCategory": "Investments"
+  },
+  {
+    "id": 29,
+    "item": "LED strip lights",
+    "price": 25.0,
+    "context": "Dorm decoration",
+    "merchant": "Amazon",
+    "bankCategory": "Shopping"
+  },
+  {
+    "id": 30,
+    "item": "Nails",
+    "price": 60.0,
+    "context": "Every two weeks",
+    "merchant": "Nail salon",
+    "bankCategory": "Personal Care"
+  },
+  {
+    "id": 31,
+    "item": "Weekend trip to Chicago",
+    "price": 180.0,
+    "context": "Bus and hostel, friends going",
+    "merchant": "Greyhound",
+    "bankCategory": "Travel"
+  },
+  {
+    "id": 32,
+    "item": "Bar tab",
+    "price": 48.0,
+    "context": "Friday night",
+    "merchant": "Bar",
+    "bankCategory": "Restaurants"
+  },
+  {
+    "id": 33,
+    "item": "Fast fashion haul",
+    "price": 73.0,
+    "context": "Nine items",
+    "merchant": "Shein",
+    "bankCategory": "Clothing"
+  },
+  {
+    "id": 34,
+    "item": "Gym membership",
+    "price": 25.0,
+    "context": "Monthly, goes 3x a week",
+    "merchant": "Planet Fitness",
+    "bankCategory": "Health"
+  },
+  {
+    "id": 35,
+    "item": "New phone",
+    "price": 799.0,
+    "context": "Screen cracked, phone still works",
+    "merchant": "Apple",
+    "bankCategory": "Electronics"
+  },
+  {
+    "id": 36,
+    "item": "Chipotle",
+    "price": 13.0,
+    "context": "12 hour day on campus, no food at home",
+    "merchant": "Chipotle",
+    "bankCategory": "Restaurants"
+  },
+  {
+    "id": 37,
+    "item": "Uber, 2 miles",
+    "price": 22.0,
+    "context": "11pm, alone",
+    "merchant": "Uber",
+    "bankCategory": "Transportation"
+  },
+  {
+    "id": 38,
+    "item": "Tattoo",
+    "price": 150.0,
+    "context": "Planned for a year",
+    "merchant": "Tattoo studio",
+    "bankCategory": "Personal Care"
+  },
+  {
+    "id": 39,
+    "item": "Birthday gift for mum",
+    "price": 40.0,
+    "context": "",
+    "merchant": "Amazon",
+    "bankCategory": "Shopping"
+  },
+  {
+    "id": 40,
+    "item": "Jollof and chicken",
+    "price": 18.0,
+    "context": "Missing home, eats out once a month",
+    "merchant": "Nigerian restaurant",
+    "bankCategory": "Restaurants"
+  },
+  {
+    "id": 41,
+    "item": "Spotify",
+    "price": 11.0,
+    "context": "Monthly",
+    "merchant": "Spotify",
+    "bankCategory": "Subscriptions"
+  },
+  {
+    "id": 42,
+    "item": "Haircut",
+    "price": 25.0,
+    "context": "Every two weeks",
+    "merchant": "Barber",
+    "bankCategory": "Personal Care"
+  },
+  {
+    "id": 43,
+    "item": "New laptop",
+    "price": 900.0,
+    "context": "Old one is 6 years old and slow, CS major",
+    "merchant": "Best Buy",
+    "bankCategory": "Electronics"
+  },
+  {
+    "id": 44,
+    "item": "Second monitor",
+    "price": 150.0,
+    "context": "Works from a 13 inch laptop",
+    "merchant": "Best Buy",
+    "bankCategory": "Electronics"
+  },
+  {
+    "id": 45,
+    "item": "Flight home for December",
+    "price": 1100.0,
+    "context": "First trip home in two years",
+    "merchant": "Airline",
+    "bankCategory": "Travel"
+  },
+  {
+    "id": 46,
+    "item": "Church offering",
+    "price": 20.0,
+    "context": "Weekly",
+    "merchant": "Church",
+    "bankCategory": "Donations"
+  },
+  {
+    "id": 47,
+    "item": "Toilet paper and a $40 video game, one receipt",
+    "price": 52.0,
+    "context": "Same Walmart cart",
+    "merchant": "Walmart",
+    "bankCategory": "General Merchandise"
+  },
+  {
+    "id": 48,
+    "item": "Required textbook and LED lights, one order",
+    "price": 114.0,
+    "context": "Same Amazon order",
+    "merchant": "Amazon",
+    "bankCategory": "Shopping"
+  },
+  {
+    "id": 49,
+    "item": "Money sent home to family",
+    "price": 50.0,
+    "context": "Monthly, parents",
+    "merchant": "Remitly",
+    "bankCategory": "Transfer"
+  },
+  {
+    "id": 50,
+    "item": "Sibling school fees",
+    "price": 100.0,
+    "context": "One time",
+    "merchant": "Remitly",
+    "bankCategory": "Transfer"
+  }
+]

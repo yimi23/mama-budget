@@ -1,0 +1,206 @@
+{
+  "raters": {
+    "rater1": "mum",
+    "rater2": "aunt",
+    "rater3": "ugonna_mum"
+  },
+  "labels": {
+    "1": {
+      "rater1": "need",
+      "rater2": "need"
+    },
+    "2": {
+      "rater1": "need",
+      "rater2": "need"
+    },
+    "3": {
+      "rater1": "want",
+      "rater2": "want"
+    },
+    "4": {
+      "rater1": "need",
+      "rater2": "need"
+    },
+    "5": {
+      "rater1": "need",
+      "rater2": "need"
+    },
+    "6": {
+      "rater1": "need",
+      "rater2": "need"
+    },
+    "7": {
+      "rater1": "need",
+      "rater2": "need"
+    },
+    "8": {
+      "rater1": "need",
+      "rater2": "need"
+    },
+    "9": {
+      "rater1": "need"
+    },
+    "10": {
+      "rater1": "need",
+      "rater2": "want"
+    },
+    "11": {
+      "rater1": "need",
+      "rater2": "need"
+    },
+    "12": {
+      "rater1": "need",
+      "rater2": "need"
+    },
+    "13": {
+      "rater1": "need",
+      "rater2": "need"
+    },
+    "14": {
+      "rater1": "need",
+      "rater2": "need"
+    },
+    "15": {
+      "rater1": "need",
+      "rater2": "need"
+    },
+    "16": {
+      "rater1": "need",
+      "rater2": "need"
+    },
+    "17": {
+      "rater1": "want",
+      "rater2": "want"
+    },
+    "18": {
+      "rater1": "want",
+      "rater2": "want"
+    },
+    "19": {
+      "rater1": "want",
+      "rater2": "want"
+    },
+    "20": {
+      "rater1": "want",
+      "rater2": "want"
+    },
+    "21": {
+      "rater1": "want"
+    },
+    "22": {
+      "rater1": "want",
+      "rater2": "want"
+    },
+    "23": {
+      "rater1": "want",
+      "rater2": "want"
+    },
+    "24": {
+      "rater1": "want",
+      "rater2": "want"
+    },
+    "25": {
+      "rater1": "want",
+      "rater2": "want"
+    },
+    "26": {
+      "rater1": "want",
+      "rater2": "want"
+    },
+    "27": {
+      "rater1": "want",
+      "rater2": "want"
+    },
+    "28": {
+      "rater1": "want",
+      "rater2": "want"
+    },
+    "29": {
+      "rater1": "want",
+      "rater2": "need"
+    },
+    "30": {
+      "rater1": "depends",
+      "rater2": "want"
+    },
+    "31": {
+      "rater1": "want",
+      "rater2": "want"
+    },
+    "32": {
+      "rater1": "want",
+      "rater2": "want"
+    },
+    "33": {
+      "rater1": "depends",
+      "rater2": "want"
+    },
+    "34": {
+      "rater1": "need",
+      "rater2": "want"
+    },
+    "35": {
+      "rater1": "depends",
+      "rater2": "want"
+    },
+    "36": {
+      "rater1": "need",
+      "rater2": "need"
+    },
+    "37": {
+      "rater1": "want",
+      "rater2": "want"
+    },
+    "38": {
+      "rater1": "depends",
+      "rater2": "want"
+    },
+    "39": {
+      "rater1": "depends"
+    },
+    "40": {
+      "rater1": "want",
+      "rater2": "need"
+    },
+    "41": {
+      "rater1": "depends",
+      "rater2": "want"
+    },
+    "42": {
+      "rater1": "want",
+      "rater2": "want"
+    },
+    "43": {
+      "rater1": "need",
+      "rater2": "need"
+    },
+    "44": {
+      "rater1": "depends",
+      "rater2": "want"
+    },
+    "45": {
+      "rater1": "need",
+      "rater2": "want"
+    },
+    "46": {
+      "rater1": "depends",
+      "rater2": "want"
+    },
+    "47": {
+      "rater1": "need",
+      "rater2": "want"
+    },
+    "48": {
+      "rater1": "need",
+      "rater2": "need"
+    },
+    "49": {
+      "rater1": "depends",
+      "rater2": "want"
+    },
+    "50": {
+      "rater1": "depends",
+      "rater2": "want"
+    }
+  }
+}

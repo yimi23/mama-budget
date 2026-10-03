@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "Mama Budget",
+  "version": "0.1.0",
+  "description": "Mama lives in your browser. She reads your cart item by item and stops the waste before you pay.",
+  "permissions": ["storage"],
+  "host_permissions": ["http://localhost:8787/*"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["sites/target.js", "sites/amazon.js", "sites/store.js", "content.js"],
+      "css": ["mama.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [{ "resources": ["assets/*"], "matches": ["<all_urls>"] }],
+  "icons": { "128": "assets/icon128.png" }
+}

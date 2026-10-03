@@ -1,0 +1,22 @@
+/* Mama in the corner. Colors from the concept sheet: lace, gold, coral, gele green. */
+#mama-root { position: fixed; right: 20px; bottom: 20px; z-index: 2147483647; font-family: system-ui, sans-serif; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+#mama-badge { width: 72px; height: 72px; border-radius: 50%; border: 3px solid #E2A12A; background: #FBF7EF; padding: 0; cursor: pointer; position: relative; overflow: visible; box-shadow: 0 8px 24px rgba(20,16,22,.25); transition: transform .25s ease; }
+#mama-badge:hover { transform: scale(1.06); }
+#mama-face { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; transition: filter .3s ease; }
+#mama-meter { position: absolute; left: -12px; bottom: 6px; width: 6px; height: 60px; background: rgba(20,16,22,.12); border-radius: 3px; overflow: hidden; }
+#mama-meter i { display: block; width: 100%; height: 100%; background: #0F7B5A; transform-origin: bottom; transform: scaleY(.15); transition: transform .6s cubic-bezier(.2,.9,.3,1.2); }
+#mama-root[data-mood="watching"] #mama-meter i { background: #E2A12A; }
+#mama-root[data-mood="shocked"] #mama-meter i, #mama-root[data-mood="down"] #mama-meter i { background: #D4462C; }
+#mama-root[data-mood="shocked"] #mama-badge { animation: mama-shake .4s ease; }
+@keyframes mama-shake { 0%,100% { transform: translateX(0) } 25% { transform: translateX(-5px) rotate(-3deg) } 75% { transform: translateX(5px) rotate(3deg) } }
+#mama-card { width: 340px; background: #FBF7EF; color: #141016; border-radius: 20px; box-shadow: 0 16px 48px rgba(20,16,22,.3); display: flex; gap: 14px; padding: 16px; transform-origin: bottom right; animation: mama-pop .28s cubic-bezier(.2,.9,.3,1.2); }
+@keyframes mama-pop { from { transform: scale(.6); opacity: 0 } to { transform: scale(1); opacity: 1 } }
+#mama-card-face { width: 96px; height: 110px; object-fit: cover; border-radius: 14px; background: #DDF1E8; flex-shrink: 0; }
+#mama-root[data-mood="shocked"] #mama-card-face, #mama-root[data-mood="down"] #mama-card-face { background: #FFE2D6; }
+#mama-card-body { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+#mama-line { margin: 0; font-size: 17px; font-weight: 700; line-height: 1.25; }
+#mama-sub { margin: 0; font-size: 13px; color: #5E566B; }
+#mama-actions { display: flex; gap: 8px; margin-top: 4px; }
+#mama-actions button { flex: 1; padding: 10px 8px; border-radius: 10px; border: 0; font-weight: 600; font-size: 13px; cursor: pointer; min-height: 44px; }
+#mama-agree { background: #0F7B5A; color: #fff; }
+#mama-buy { background: #EADFCB; color: #141016; }
