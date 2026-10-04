@@ -59,6 +59,7 @@ typescript, wxt, chrome-extensions, node.js, capital-one-nessie, photon-spectrum
 - Table number
 - Both teammates added: Praise Oyimi, Ugonna Emeka-Inegbu
 - GitHub link: https://github.com/yimi23/mama-budget (repo set to public first)
+- Website: https://mamabudget.com (Netlify; DNS at Namecheap)
 - Tracks ticked: FinTech, Judged by an LLM, Useless AI, Dumbest Idea; sponsor prizes: Capital One, Photon, ElevenLabs
 - Built zip from `npm run build:ext` uploaded to a GitHub Release and linked
 - Screenshots: Ask card, Shocked card, iMessage thread, score table
