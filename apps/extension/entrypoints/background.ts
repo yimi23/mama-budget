@@ -367,8 +367,13 @@ async function fund(msg: Extract<Message, { type: 'FUND' }>) {
 
 export default defineBackground(() => {
   // First run: onboarding opens itself in a tab until it has been finished once. She never defaults a grandma.
-  browser.runtime.onInstalled.addListener(() => {
-    browser.storage.local.get('settings').then(({ settings = {} }) => {
+  // For the hackathon a reload of the extension is a clean slate, the same as Start over: her memory, the pick, the
+  // onboarding and the bank's week all go back to the seed, and nothing has a budget until the slider sets one. Then
+  // the first run tab opens. Turn RESET_ON_RELOAD off before a store release, or a Chrome update would wipe a user.
+  const RESET_ON_RELOAD = true;
+  browser.runtime.onInstalled.addListener((details) => {
+    const clean = RESET_ON_RELOAD || details.reason === 'install' ? startOver() : Promise.resolve();
+    clean.catch(() => {}).then(() => browser.storage.local.get('settings')).then(({ settings = {} }) => {
       if (!(settings as { onboarded?: boolean }).onboarded) browser.tabs.create({ url: browser.runtime.getURL('/popup.html') }).catch(() => {});
     }).catch(() => {});
   });
