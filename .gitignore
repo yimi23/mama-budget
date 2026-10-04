@@ -18,3 +18,9 @@ apps/api/.cache/
 data/nessie-cache.json.bak
 data/photon-state.json
 data/photon-seen.json
+
+# conversation state -- not the shared demo seed (data/nessie-cache.json stays tracked), but
+# everything that holds what a real person actually said to her or which numbers she has texted
+data/mama-memory.json
+data/photon-spaces.json
+data/notify-state.json

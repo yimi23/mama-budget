@@ -9,24 +9,22 @@
     "build:ext": "npm run build -w @mama/extension",
     "api": "node api/server.js",
     "seed": "node api/nessie/seed.js",
+    "reseed": "node api/nessie/reseed.js",
     "score": "node scoring/score.js",
     "test": "node --test api/test/*.test.js && npm test -w @mama/extension",
-    "typecheck": "npm run typecheck -w @mama/extension",
-    "imessage": "node apps/imessage/index.js"
+    "typecheck": "npm run typecheck -w @mama/extension"
   },
   "engines": {
     "node": ">=20"
   },
   "workspaces": [
     "apps/extension",
-    "apps/imessage",
     "packages/*"
   ],
   "devDependencies": {
     "concurrently": "^9.2.1"
   },
   "dependencies": {
-    "@photon-ai/imessage-kit": "2.1.2",
-    "better-sqlite3": "^12.5.0"
+    "spectrum-ts": "^12.10.1"
   }
 }

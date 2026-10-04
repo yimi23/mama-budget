@@ -114,4 +114,6 @@ async function main() {
   const w = week();
   console.log(`Local history: ${c.purchases.length} purchases over 30 days. This week: wants ${w.spent} of ${w.envelope}, kept ${w.kept}, mood ${w.mood}.`);
 }
-main();
+
+module.exports = { main };
+if (require.main === module) main();

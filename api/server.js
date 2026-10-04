@@ -9,23 +9,56 @@
 //   GET  /month                                                 -> the 30 day read for onboarding: true line, watches, proposed envelope
 //   GET  /month?history=30                                      -> same
 //   POST /v2/judge  { items:[{name,qty,unitPrice,store}], memory, grandma, currency } -> v2 verdict per item (ask, remember), lines, week
-//   POST /v2/buy    { name, short, price, store, requestId, tag?, memory?, grandma, currency } -> charge posted (idempotent by requestId), week, her line, text sent or not
-//   POST /inbound, GET|POST /schedule, GET /photon/health -> Messages, see photon/routes.js
+//   POST /v2/buy    { name, short, price, store, requestId, tag?, memory?, grandma, currency } -> charge posted (idempotent by requestId), week, her line
+//   POST /reset                                                 -> fresh student, fresh cache, clears watcher/messages/memory
+//   GET  /messages                                               -> the transcript of everything she has sent or received (log sender)
+//   POST /messages/incoming { from, text }                       -> test the two-way conversation without iMessage; replies go through GET /messages too
+//   GET  /bank                                                   -> demo card terminal: recent purchases, week budget, preset charge buttons
+//   POST /bank/charge { preset }                                 -> posts a preset purchase straight to Nessie (preset: airpods|groceries|latte)
+//   POST /bank/charge-last-cart                                  -> posts the most recent cart the extension reported, item by item
+//   GET  /schedule, POST /schedule { now, kind?, to?, grandma? } -> her weekly/monthly statement, see photon/schedule.js
 //   GET  /health
+//
+// After-purchase notifications are NOT sent from /buy or /v2/buy: the bank watcher (notify/watch.js)
+// polls Nessie every 3s and is the only thing that calls notify(), so a purchase posted anywhere
+// (our own routes, the /bank terminal, or straight to Nessie) produces exactly one text.
 
 const http = require('node:http');
 const { judge } = require('./judge/rules');
 const v2 = require('./judge/rules_v2');
 const nessie = require('./nessie/client');
-const { lineFor, ackLine, buyLine, buyText, smallLines, subLine } = require('./lines/writer');
+const { lineFor, ackLine, buyLine, smallLines, subLine } = require('./lines/writer');
 const { speak } = require('./voice/elevenlabs');
-const { text } = require('./photon/text');
-const photon = require('./photon/routes');
+const { notify, getMessages, clearMessages } = require('./notify');
+const chat = require('./notify/chat');
+const watch = require('./notify/watch');
+const photon = require('./photon/spectrum');
+const bankPage = require('./bank/page');
+const schedule = require('./photon/schedule');
+
+const PRESETS = {
+  airpods: { item: 'AirPods Pro', price: 179, tag: 'want', merchant: 'Apple Store' },
+  groceries: { item: 'Groceries', price: 28, tag: 'need', merchant: 'Kroger' },
+  latte: { item: 'Latte', price: 7, tag: 'want', merchant: 'Starbucks' },
+};
+
+function html(body) {
+  return { __raw: true, contentType: 'text/html; charset=utf-8', body };
+}
 
 const PORT = process.env.PORT || 8787;
 // The envelope is weekly. Every number comes from the ledger sums in nessie/client.js, never from a balance field.
 async function month() { return nessie.week(); }
 async function reading() { const m = nessie.month(); return { ...m, trueLine: nessie.trueLine(m), watches: nessie.watches(m), proposedEnvelope: nessie.proposeEnvelope(m) }; }
+
+// GET /schedule?now=1&grandma=nana or POST /schedule { now, kind?, to?, grandma? }: a query string and
+// a JSON body mean the same thing here, so both call paths share this.
+async function scheduleRoute(body, query) {
+  const q = { ...query, ...body };
+  const now = q.now === 1 || q.now === '1' || q.now === true || q.now === 'true';
+  if (!now) return schedule.overview();
+  return schedule.send(q.kind === 'monthly' ? 'monthly' : 'weekly', { to: q.to || undefined, grandma: q.grandma });
+}
 
 const routes = {
   'GET /health': async () => ({ ok: true }),
@@ -57,6 +90,9 @@ const routes = {
       return { name: it.name, short: spoken.item, price: item.price, ...v, line: lineFor(v, spoken, w, who), ack: ackLine(v, spoken, who), sub: subLine(w) };
     });
     const loud = verdicts.find((v) => v.react) || verdicts.find((v) => v.label === 'ask');
+    // What the bank watcher matches a later purchase against ("a cart the extension reported in the
+    // last 10 minutes"). This is the only place the extension's cart reaches the API at all.
+    watch.recordCart(body.items?.[0]?.store, body.items);
     return { week: w, mood: loud ? loud.mood : w.mood, verdicts, lines: smallLines(who) };
   },
 
@@ -80,16 +116,15 @@ const routes = {
     const line = tag === 'need' ? smallLines(who).agreed : buyLine(w, it, who);
     const left = Math.max(0, w.budget - w.spent);
     const sub = `$${Math.round(price)} on ${short}. $${w.spent} of $${w.budget} gone this week. $${left} left.`;
-    // Only an actual send counts as texted. Photon unset or down: the card says nothing about a text.
-    const sent = tag === 'want' ? await text(buyText(w, it, who)).catch(() => null) : null;
-    return { week: w, mood: w.mood, line, sub, texted: !!sent, tag };
+    // The bank watcher (notify/watch.js) picks this purchase up on its next tick and texts if it
+    // warrants one -- not here, so a purchase from any source only ever produces one text.
+    return { week: w, mood: w.mood, line, sub, texted: false, tag };
   },
 
   'POST /buy': async (body) => {
     await nessie.purchase(body);
     const m = await month();
     const v = judge(body, m);
-    if (v.react) text(lineFor({ ...v, mood: m.mood }, body, m)).catch(() => {});
     return { month: m, verdict: v };
   },
 
@@ -103,7 +138,51 @@ const routes = {
     return { month: await month(), mood: 'proud', line: lineFor({ label: 'need', mood: 'proud', tags: ['saved'] }, { item: 'savings' }, await month()) };
   },
 
-  ...photon.routes,
+  'POST /reset': async () => {
+    const seed = require('./nessie/seed');
+    await seed.main();
+    watch.resetState();
+    clearMessages();
+    require('./notify/memory').reset();
+    return { ok: true, week: await month() };
+  },
+
+  'GET /messages': async () => getMessages(),
+
+  'POST /messages/incoming': async (body) => {
+    const { reply, mood } = await chat.handleIncoming(String(body.text || ''), 'mama', body.from);
+    await notify(body.from, reply, mood);
+    return { ok: true, reply };
+  },
+
+  'GET /bank': async () => {
+    const cache = nessie.readCache();
+    return html(bankPage.page({ week: nessie.week(), purchases: cache.purchases || [], messages: getMessages() }));
+  },
+
+  'POST /bank/charge': async (body) => {
+    const preset = PRESETS[body.preset];
+    if (!preset) throw new Error('unknown preset');
+    await nessie.purchase(preset);
+    return { ok: true };
+  },
+
+  'POST /bank/charge-last-cart': async () => {
+    const cart = watch.latestCart();
+    if (!cart) return { ok: true, posted: 0 };
+    const w = nessie.week();
+    let posted = 0;
+    for (const it of cart.items) {
+      const price = Number(it.unitPrice || 0) * Number(it.qty || 1);
+      const v = judge({ item: it.name, price, merchant: cart.store }, w);
+      await nessie.purchase({ item: it.name, price, merchant: cart.store, tag: v.label === 'need' ? 'need' : 'want' });
+      posted++;
+    }
+    return { ok: true, posted };
+  },
+
+  'GET /schedule': (body, query) => scheduleRoute({}, query),
+  'POST /schedule': (body) => scheduleRoute(body, {}),
 };
 
 // "Fujifilm Instax Mini 99 Instant Camera Vintage Black. + Value Pack (40 Sheets)..." -> "Fujifilm Instax Mini 99 Instant Camera".
@@ -136,6 +215,10 @@ http.createServer(async (req, res) => {
   req.on('end', async () => {
     try {
       const out = await handler(raw ? JSON.parse(raw) : {}, query);
+      if (out && out.__raw) {
+        res.writeHead(200, { 'content-type': out.contentType, ...cors });
+        return res.end(out.body);
+      }
       res.writeHead(200, { 'content-type': 'application/json', ...cors });
       res.end(JSON.stringify(out));
     } catch (e) {
@@ -143,4 +226,22 @@ http.createServer(async (req, res) => {
       res.end(JSON.stringify({ error: String(e.message || e) }));
     }
   });
-}).listen(PORT, () => { console.log(`Mama is listening on http://localhost:${PORT}`); photon.startScheduler(); });
+}).listen(PORT, () => console.log(`Mama is listening on http://localhost:${PORT}`));
+
+// The bank watcher is the only source of after-purchase notifications; see notify/watch.js.
+watch.start();
+schedule.startScheduler();
+// Two-way texting over real iMessage, only once SPECTRUM_PROJECT_ID/SPECTRUM_PROJECT_SECRET (or the
+// PHOTON_ prefixed fallback) are set -- a no-op otherwise, so this is always safe to call.
+// spectrum.js sends the reply itself (same space, continuing the thread), so this just logs that leg
+// for GET /messages. handleIncoming() is the exact same function POST /messages/incoming calls.
+photon.listen(async (text, fromId) => {
+  const { reply, mood } = await chat.handleIncoming(text, 'mama', fromId);
+  if (reply) require('./notify/log').push({ to: fromId || 'them', text: reply, mood, sender: 'photon', sent: true, direction: 'out', at: Date.now() });
+  return reply;
+});
+if (photon.credentials()) {
+  photon.connected().then((ok) => console.log(ok ? '[photon] connected, listening for replies' : '[photon] credentials set but connection failed (see error above)'));
+} else {
+  console.log('[photon] no credentials in api/.env: using the log sender only');
+}

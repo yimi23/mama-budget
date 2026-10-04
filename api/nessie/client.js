@@ -54,7 +54,10 @@ async function purchase({ item, price, merchant, tag = 'want', requestId }) {
   const rec = { item, amount: whole(price), merchant, tag, date: today(), requestId };
   try {
     const mid = await merchantId(merchant || 'Store');
-    await call('POST', `/accounts/${c.accountId}/purchases`, { merchant_id: mid, medium: 'balance', purchase_date: rec.date, amount: rec.amount, status: 'completed', description: `${tag} | ${item}` });
+    // nessieId lets the bank watcher (notify/watch.js) tell "already mirrored by our own API" from
+    // "posted straight to Nessie by someone else" when it polls live purchases, without double-counting.
+    const out = await call('POST', `/accounts/${c.accountId}/purchases`, { merchant_id: mid, medium: 'balance', purchase_date: rec.date, amount: rec.amount, status: 'completed', description: `${tag} | ${item}` });
+    if (out?.objectCreated?._id) rec.nessieId = out.objectCreated._id;
   } catch { /* fall back to cache only */ }
   c.purchases.push(rec); writeCache(c);
   return rec;
@@ -66,15 +69,18 @@ async function purchase({ item, price, merchant, tag = 'want', requestId }) {
 // the destination account does both for real, tagged the same "<tag> | <item>" way as purchases so
 // the description stays meaningful if anything ever reads these live instead of the local cache.
 async function moveMoney(fromId, toId, amount, date, description) {
-  await call('POST', `/accounts/${fromId}/withdrawals`, { medium: 'balance', amount, transaction_date: date, status: 'completed', description });
+  // The withdrawal's nessieId is what the bank watcher (notify/watch.js) matches against, and what a
+  // chat-initiated transfer (notify/chat.js) pre-marks as "seen" so the watcher never notifies it twice.
+  const out = await call('POST', `/accounts/${fromId}/withdrawals`, { medium: 'balance', amount, transaction_date: date, status: 'completed', description });
   await call('POST', `/accounts/${toId}/deposits`, { medium: 'balance', amount, transaction_date: date, status: 'completed', description });
+  return out?.objectCreated?._id;
 }
 
 async function transferHome(amount, requestId) {
   const c = readCache();
   if (requestId && c.transfers.some((t) => t.requestId === requestId)) return c.transfers.find((t) => t.requestId === requestId);
   const rec = { amount: whole(amount), to: 'family', tag: 'family', item: 'Sent home', date: today(), requestId };
-  try { await moveMoney(c.accountId, c.familyAccountId, rec.amount, rec.date, 'family | Sent home'); } catch {}
+  try { rec.nessieId = await moveMoney(c.accountId, c.familyAccountId, rec.amount, rec.date, 'family | Sent home'); } catch {}
   c.transfers.push(rec); writeCache(c);
   return rec;
 }
@@ -83,7 +89,7 @@ async function moveToSavings(amount, requestId) {
   const c = readCache();
   if (requestId && c.transfers.some((t) => t.requestId === requestId)) return c.transfers.find((t) => t.requestId === requestId);
   const rec = { amount: whole(amount), to: 'savings', tag: 'saved', item: 'Moved to savings', date: today(), requestId };
-  try { await moveMoney(c.accountId, c.savingsId, rec.amount, rec.date, 'saved | Moved to savings'); } catch {}
+  try { rec.nessieId = await moveMoney(c.accountId, c.savingsId, rec.amount, rec.date, 'saved | Moved to savings'); } catch {}
   c.transfers.push(rec); writeCache(c);
   return rec;
 }

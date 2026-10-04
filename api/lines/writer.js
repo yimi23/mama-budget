@@ -177,17 +177,73 @@ Understatement is the joke. Short sentences. One regional word per line at most,
 You are given a verdict and you only voice it. You never change whether something is a need or a want. You are never cruel.`,
 };
 
-async function modelLine(verdict, it, month, who = 'mama') {
+async function callModel(system, userContent) {
   if (!process.env.ANTHROPIC_API_KEY) return null;
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-    body: JSON.stringify({ model: process.env.MODEL || 'claude-sonnet-4-5', max_tokens: 80, system: SYSTEM[who],
-      messages: [{ role: 'user', content: `Verdict: ${verdict.label}, mood ${verdict.mood}, severity ${verdict.severity}. Item: ${it.item}, $${it.price} at ${it.merchant || 'a shop'}. Context: ${it.context || 'none'}. Budget used: ${Math.round((month.ratio || 0) * 100)}%. Say your line.` }] }),
+    body: JSON.stringify({ model: process.env.MODEL || 'claude-sonnet-4-5', max_tokens: 120, system, messages: [{ role: 'user', content: userContent }] }),
   });
   if (!r.ok) return null;
   const j = await r.json();
   return j.content?.[0]?.text?.trim() || null;
 }
 
-module.exports = { lineFor, ackLine, buyLine, buyText, smallLines, subLine, weeklyStatement, monthlyStatement, watchLines, whatsLeft, modelLine, MAMA, NANA };
+async function modelLine(verdict, it, month, who = 'mama') {
+  const content = `Verdict: ${verdict.label}, mood ${verdict.mood}, severity ${verdict.severity}. Item: ${it.item}, $${it.price} at ${it.merchant || 'a shop'}. Context: ${it.context || 'none'}. Budget used: ${Math.round((month.ratio || 0) * 100)}%. Say your line.`;
+  return callModel(SYSTEM[who], content);
+}
+
+// Naira equivalent of a USD amount, the house convention: Mama adds it, Nana does not, and only
+// when the price was not already in naira. The rate is overridable from the API's .env.
+function toNaira(usd) {
+  return usd == null ? null : Math.round(usd * NGN);
+}
+
+// Her line for a bank-watcher notification. Reuses the exact same voice pools lineFor/buyLine already
+// use for the matching mood, so a new want-at-75% notification sounds exactly like the card's own
+// "watching" mood, over-budget sounds like "down", and proud reuses the proud bank -- no new wording.
+function notifyLine(level, it, who = 'mama') {
+  const bank = who === 'nana' ? NANA : MAMA;
+  const pool = level === 'warning' ? bank.watching : level === 'over' ? bank.down : level === 'proud' ? bank.proud : bank.bought;
+  return fill(pool[(it.item || '').length % pool.length], it);
+}
+
+// The full text: her line, then the numbers (amount, what's left, days to the next bill, naira),
+// then the matched cart's item names if the watcher found one. Short enough for a lock screen.
+function notifyText(level, week, it, who = 'mama', cartItemNames) {
+  const left = Math.max(0, week.budget - week.spent);
+  const bill = (week.bills || [])[0];
+  const billPart = bill ? ` ${bill.nickname || bill.payee} in ${bill.daysUntil} day${bill.daysUntil === 1 ? '' : 's'}.` : '';
+  const naira = who === 'mama' && it.currency !== 'NGN' ? toNaira(it.price) : null;
+  const nairaPart = naira != null ? ` ${naira.toLocaleString()} naira.` : '';
+  const what = it.item || it.merchant || 'this';
+  const cartPart = cartItemNames && cartItemNames.length ? `\nCart: ${cartItemNames.join(', ')}.` : '';
+  return `${notifyLine(level, it, who)}\n$${Math.round(it.price || 0)} on ${what}. $${left} left this week.${billPart}${nairaPart}${cartPart}`;
+}
+
+// A conversational reply to an arbitrary incoming text (not a purchase verdict): uses the same
+// character system prompt as modelLine, extended with conversation rules for a two-way thread, plus
+// the live bank numbers and any open promises so she can soften, celebrate or call out a broken one.
+const CHAT_RULES = `
+You are replying inside an ongoing text conversation, not announcing a single purchase.
+Use the recent conversation and the list of promises below for context.
+If the user apologizes or agrees with you, soften and close with love.
+If a promise below is marked broken, you may bring it up plainly, but still end with love.
+Needs and money sent home or to savings are never scolded.
+Two or three short sentences, texting style, no greeting like "Hi" or signature.`;
+
+function modelReply({ who = 'mama', userText, week, history, promises }) {
+  const historyLines = (history || []).slice(-6).map((h) => `${h.from === 'user' ? 'User' : 'You'}: ${h.text}`).join('\n') || '(nothing yet)';
+  const promiseLines = (promises || []).map((p) => `- "${p.text}"${p.broken ? ' (broken)' : ''}`).join('\n') || 'None.';
+  const bill = (week.bills || [])[0];
+  const bank = `This week: $${week.spent} of $${week.budget} gone, $${week.left ?? Math.max(0, week.budget - week.spent)} left, kept $${week.kept}.` +
+    (bill ? ` ${bill.nickname || bill.payee} due in ${bill.daysUntil} day(s).` : '');
+  const content = `Recent conversation:\n${historyLines}\n\nPromises:\n${promiseLines}\n\n${bank}\n\nThe user just texted: "${userText}"\nReply in character.`;
+  return callModel(SYSTEM[who] + '\n' + CHAT_RULES, content);
+}
+
+module.exports = {
+  lineFor, ackLine, buyLine, buyText, smallLines, subLine, weeklyStatement, monthlyStatement, watchLines, whatsLeft,
+  modelLine, modelReply, toNaira, notifyLine, notifyText, MAMA, NANA,
+};

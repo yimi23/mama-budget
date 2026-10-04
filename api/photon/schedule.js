@@ -1,14 +1,29 @@
 // Her statements. Sunday 7pm closes the week with four lines; the last day of the month gets a summary.
 // due() is pure. tick() sends what is due and records it in data/photon-state.json so a restart never
-// sends the same statement twice. The API runs the ticker itself (it lives on the Mac with Messages);
-// GET /schedule shows what is due and when, POST /schedule { now: true } sends the weekly one on the spot
-// for onboarding screen 07 and the demo.
+// sends the same statement twice. GET /schedule shows what is due and when, POST /schedule { now: true }
+// sends the weekly one on the spot for onboarding screen 07 and the demo.
+//
+// Sends go through notify() (api/notify/index.js), the same Photon-or-log dispatcher the bank watcher
+// and the chat replies use -- not a Mac-only kit of its own, so a statement needs nothing more than
+// what every other text in this app already needs.
 
+const fs = require('node:fs');
+const path = require('node:path');
 const nessie = require('../nessie/client');
 const { weeklyStatement, monthlyStatement } = require('../lines/writer');
-const { text, readState, writeState } = require('./text');
+const { notify } = require('../notify');
 
+const STATE = path.join(__dirname, '..', '..', 'data', 'photon-state.json');
 const HOUR = 19; // 7pm local
+
+function readState() {
+  try { return JSON.parse(fs.readFileSync(STATE, 'utf8')); } catch { return {}; }
+}
+function writeState(patch) {
+  const s = { ...readState(), ...patch };
+  fs.writeFileSync(STATE, JSON.stringify(s, null, 2));
+  return s;
+}
 
 function weekKey(now) { const s = nessie.weekStart(now); return s.toISOString().slice(0, 10); }
 function monthKey(now) { return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`; }
@@ -61,14 +76,16 @@ function monthlyText(now = new Date(), who = grandma()) {
 
 function grandma() { return readState().grandma === 'nana' ? 'nana' : 'mama'; }
 
-// Send one statement now. Statements are the one text a week she is always allowed, so they skip the caps.
+// Send one statement now. notify() decides photon vs log and logs either way (see GET /messages);
+// "texted" only means an actual send happened, same contract as every other notification in the app.
 async function send(kind, { now = new Date(), to, grandma: g } = {}) {
   if (g === 'mama' || g === 'nana') writeState({ grandma: g });
   const who = grandma();
   const body = kind === 'monthly' ? monthlyText(now, who) : weeklyText(now, who);
-  const sent = await text(body, { to, prompted: true, now });
+  const result = await notify(to, body, 'calm');
+  const sent = !!(result && result.sent);
   if (sent) writeState(kind === 'monthly' ? { monthlySentFor: monthKey(now), lastMonthlyAt: now.toISOString() } : { weeklySentFor: weekKey(now), lastWeeklyAt: now.toISOString() });
-  return { ok: !!sent, texted: !!sent, kind, text: body, to: sent ? sent.to : null };
+  return { ok: sent, texted: sent, kind, text: body, to: to || process.env.PHOTON_TO || null };
 }
 
 async function tick(now = new Date()) {
@@ -88,7 +105,7 @@ function stopScheduler() { if (timer) clearInterval(timer); timer = null; }
 
 function overview(now = new Date()) {
   const s = readState();
-  return { now: now.toISOString(), due: due(now, s), next: { weekly: nextSunday7(now).toISOString(), monthly: nextMonthEnd7(now).toISOString() }, last: { weekly: s.lastWeeklyAt || null, monthly: s.lastMonthlyAt || null }, grandma: grandma(), configured: !!process.env.PHOTON_TO };
+  return { now: now.toISOString(), due: due(now, s), next: { weekly: nextSunday7(now).toISOString(), monthly: nextMonthEnd7(now).toISOString() }, last: { weekly: s.lastWeeklyAt || null, monthly: s.lastMonthlyAt || null }, grandma: grandma() };
 }
 
 module.exports = { due, weeklyText, monthlyText, send, tick, startScheduler, stopScheduler, overview, nextSunday7, nextMonthEnd7, weekKey, monthKey };
