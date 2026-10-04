@@ -514,7 +514,7 @@ ${it.watched ? `This store is one she promised to watch: $${Math.round(it.watche
   const patient = kind === 'plan' || kind === 'funded';
   // A first sighting can wait a breath: the badge is already on screen, and a line that names the store and the
   // cart beats a pool line that could be said about any item.
-  const budget = warm ? model.WARM_TIMEOUT_MS : patient ? 4500 : kind === 'ask' ? 2600 : undefined;
+  const budget = warm ? model.WARM_TIMEOUT_MS : patient ? 4500 : kind === 'ask' ? 2400 : undefined;
   return model.say({ system: SYSTEM[who] + LINE_RULES, prompt, key: situation, mustInclude: must, maxLen: kind === 'ack' ? 160 : 260, timeoutMs: budget });
 }
 

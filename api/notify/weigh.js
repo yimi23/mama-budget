@@ -110,7 +110,7 @@ async function judgeItems(items, { who, mem, w, left, now }) {
     let necessity = null;
     if (model.ready()) {
       const c = await model.classifyItem({ name: it.item, price: it.price, store: it.store || 'a text from them' }).catch(() => null);
-      necessity = c && c.kind === 'necessity' ? true : c && c.kind === 'discretionary' ? false : null;
+      necessity = c && Number(c.confidence) >= 0.8 && c.kind === 'necessity' ? true : c && Number(c.confidence) >= 0.8 && c.kind === 'discretionary' ? false : null;
     }
     return { it, v: v2.judge(it, w, mem.items, { loudness: 'mama', now: new Date(now), necessity }) };
   }));

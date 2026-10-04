@@ -132,7 +132,7 @@ const routes = {
     const kinds = await Promise.all(items.map(async (item) => {
       if (known(item)) return undefined;
       const c = await model.classifyItem({ name: item.item, price: item.price, store, habits }).catch(() => null);
-      if (!c || c.kind === 'unsure' || Number(c.confidence) < 0.7) return undefined;
+      if (!c || c.kind === 'unsure' || Number(c.confidence) < 0.8) return undefined;
       return c.kind === 'necessity';
     }));
     const judged = items.map((item, i) => ({ item: { ...item, watched }, v: v2.judge(item, w, memory, { loudness: body.loudness, now: new Date(), watched, necessity: kinds[i] }) }));

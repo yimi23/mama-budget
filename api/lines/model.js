@@ -7,6 +7,10 @@ let Anthropic = null;
 try { Anthropic = require('@anthropic-ai/sdk'); Anthropic = Anthropic.default || Anthropic; } catch { Anthropic = null; }
 
 const MODEL = process.env.MODEL || 'claude-opus-5-5';
+// Small yes or no jobs (is this a necessity, what does this reason mean) go to a fast model: 1.2 s against 3 s, same
+// verdicts on the clear cases, and a higher confidence bar for the rest. Her words, carts, photos and the cheaper search
+// stay on the main model.
+const FAST_MODEL = process.env.MODEL_FAST || 'claude-haiku-4-5-20251001';
 const LINE_TIMEOUT_MS = Number(process.env.MODEL_LINE_TIMEOUT_MS || 1800);
 const WARM_TIMEOUT_MS = Number(process.env.MODEL_WARM_TIMEOUT_MS || 12000);
 const EXTRACT_TIMEOUT_MS = Number(process.env.MODEL_EXTRACT_TIMEOUT_MS || 8000);
@@ -108,7 +112,7 @@ async function extractItems(text, images = []) {
   }
 }
 
-const CLASSIFY_WAIT_MS = Number(process.env.MODEL_CLASSIFY_WAIT_MS || 3500);
+const CLASSIFY_WAIT_MS = Number(process.env.MODEL_CLASSIFY_WAIT_MS || 2500);
 const classCache = new Map();
 const inFlight = new Map();
 
@@ -119,11 +123,15 @@ async function classifyJSON({ system, prompt, schema, key, waitMs = CLASSIFY_WAI
   const k = cacheKey([MODEL, 'classify', system, key || prompt]);
   if (classCache.has(k)) return classCache.get(k);
   if (!inFlight.has(k)) {
+    // The fast model takes no structured output config; the schema goes in words and the JSON is parsed out of the text.
+    const shape = `Respond with only a JSON object with keys ${Object.keys(schema.properties).map((x) => `"${x}"`).join(', ')}${schema.properties.kind && schema.properties.kind.enum ? `; "kind" is one of ${schema.properties.kind.enum.map((x) => `"${x}"`).join(', ')}` : ''}; "confidence" is 0 to 1.`;
     const run = client.messages.create(
-      { model: MODEL, max_tokens: 200, system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }], output_config: { effort: 'low', format: { type: 'json_schema', schema } }, messages: [{ role: 'user', content: prompt }] },
+      { model: FAST_MODEL, max_tokens: 200, system: [{ type: 'text', text: `${system}\n${shape}`, cache_control: { type: 'ephemeral' } }], messages: [{ role: 'user', content: prompt }] },
       { timeout: 20000 },
     ).then((res) => {
-      const out = JSON.parse(res.content.filter((b) => b.type === 'text').map((b) => b.text).join(''));
+      const text = res.content.filter((b) => b.type === 'text').map((b) => b.text).join('');
+      const m = text.match(/\{[\s\S]*\}/);
+      const out = JSON.parse(m ? m[0] : text);
       classCache.set(k, out);
       return out;
     }).catch(() => null).finally(() => inFlight.delete(k));
@@ -196,4 +204,4 @@ async function cheaperOption({ name, price, currency = 'USD', store }) {
   }
 }
 
-module.exports = { say, extractItems, classifyItem, classifyReason, cheaperOption, ready, MODEL, WARM_TIMEOUT_MS };
+module.exports = { say, extractItems, classifyItem, classifyReason, cheaperOption, ready, MODEL, FAST_MODEL, WARM_TIMEOUT_MS };
