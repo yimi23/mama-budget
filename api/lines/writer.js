@@ -7,10 +7,11 @@ const MAMA = {
   calm: ['Ehen. Carry on.', 'I see you. Good.'],
   watching: ['I dey watch you o.', 'Seventy five percent. I am counting.'],
   shocked: [
-    'You went to {merchant} for rice. How did {item} enter the cart?',
     '{price} dollars. For {item}. The one you have, is it not working?',
     'Ehn ehn. Put it back. We will talk when you get home.',
   ],
+  // Screen 13. Leads whenever a protected item shares the cart: the contrast is the whole point.
+  shockedContrast: ['You came to {merchant} for {contrast}. How did {item} enter the cart?'],
   down: ['Is it me you are doing this to?', 'Okay. I have heard.'],
   proud: ['My pikin. Come and hug me.', 'You see? Good child. I knew it.'],
   ask: ['{item}? Tell me the story first.', 'Before I talk, explain {item} to me.'],
@@ -29,6 +30,7 @@ const NANA = {
     '{price} dollars. For {item}. Honey.',
     'Well. That’s a lot of money for {item}.',
   ],
+  shockedContrast: ['You came for {contrast}, hon. How did {item} get in there?'],
   down: ['Okay. I’m not going to say anything.'],
   proud: ['Oh good. I knew you would.', 'Well look at you. Good for you, hon.'],
   ask: ['Hold on a sec, hon. What’s {item} for?'],
@@ -44,11 +46,21 @@ const NGN = Number(process.env.USD_NGN || 1600); // update before demo
 
 // Product names keep their own casing ("AirPods Pro", not "airpods pro"); the line's first letter is capitalised
 // after filling, so a line that opens with the item still reads as a sentence.
+// "amazon.com" -> "Amazon", "jumia.com.ng" -> "Jumia", "Target" -> "Target". Her lines name the shop the way a person does.
+function shopName(merchant) {
+  const m = String(merchant || '').trim();
+  if (!m) return 'the shop';
+  if (!m.includes('.')) return m;
+  const label = m.split('.')[0];
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
 function fill(t, it) {
   const line = t
     .replace('{item}', (it.item || 'this').replace(/,.*$/, '').trim())
+    .replace('{contrast}', (it.contrast || 'the essentials').replace(/,.*$/, '').trim().toLowerCase())
     .replace('{price}', Math.round(it.price || 0))
-    .replace('{merchant}', it.merchant || 'the shop');
+    .replace('{merchant}', shopName(it.merchant));
   return line.charAt(0).toUpperCase() + line.slice(1);
 }
 
@@ -63,7 +75,8 @@ function lineFor(verdict, it, month, who = 'mama') {
   let key = verdict.mood;
   if (verdict.label === 'ask') key = 'ask';
   if (verdict.tags && verdict.tags.includes('family')) key = 'family';
-  const pool = bank[key] || bank.calm;
+  let pool = bank[key] || bank.calm;
+  if (key === 'shocked' && it.contrast && bank.shockedContrast) pool = bank.shockedContrast;
   const base = fill(pool[(it.item || '').length % pool.length], it);
   // Mama adds the naira, unless the store already priced it in naira.
   if (who === 'mama' && verdict.react && it.price && it.currency !== 'NGN') {
@@ -247,6 +260,7 @@ function modelReply({ who = 'mama', userText, week, history, promises }) {
 }
 
 module.exports = {
+  shopName,
   lineFor, ackLine, buyLine, buyText, smallLines, subLine, weeklyStatement, monthlyStatement, watchLines, whatsLeft,
   modelLine, modelReply, toNaira, notifyLine, notifyText, MAMA, NANA,
 };

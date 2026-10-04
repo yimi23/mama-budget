@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const { judge, remember } = require('../judge/rules_v2');
-const { lineFor, ackLine, buyLine, buyText, smallLines } = require('../lines/writer');
+const { lineFor, shopName, ackLine, buyLine, buyText, smallLines } = require('../lines/writer');
 
 const week = { budget: 75, spent: 50 }; // the demo seed: $25 left
 
@@ -79,4 +79,16 @@ test('after a charge: Gele down past the envelope, a note inside it, numbers in 
   assert.match(buyText(blown, pods), /\$179 on AirPods Pro\. \$229 of \$75 fun money gone this week\. \$0 left\./);
   assert.ok(smallLines().agreed && smallLines().proud && smallLines('nana').agreed);
   for (const l of [buyLine(blown, pods), buyLine(inside, pods), smallLines().agreed, smallLines().proud]) assert.doesNotMatch(l, /[-–—]/, 'no dashes in copy');
+});
+
+test('screen 13: with rice in the cart the shocked line names the contrast and the shop like a person would', () => {
+  const memory = remember({}, { item: 'AirPods Pro' }, 'want');
+  const v = judge({ item: 'AirPods Pro', price: 179 }, week, memory);
+  const line = lineFor(v, { item: 'AirPods Pro', price: 179, merchant: 'amazon.com', contrast: 'rice', currency: 'USD' }, week);
+  assert.match(line, /^You came to Amazon for rice\. How did AirPods Pro enter the cart\?/);
+  const plain = lineFor(v, { item: 'AirPods Pro', price: 179, merchant: 'amazon.com', currency: 'USD' }, week);
+  assert.doesNotMatch(plain, /You came to/);
+  assert.equal(shopName('jumia.com.ng'), 'Jumia');
+  assert.equal(shopName('Target'), 'Target');
+  assert.equal(shopName(''), 'the shop');
 });

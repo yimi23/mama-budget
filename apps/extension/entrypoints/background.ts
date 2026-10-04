@@ -174,7 +174,7 @@ async function speak(msg: Extract<Message, { type: 'SPEAK' }>): Promise<{ ok: bo
 
 /** The popup's Start over: she forgets every answer and asks again, as on a fresh install. */
 async function startOver() {
-  await browser.storage.local.remove(['memory', 'reacted', 'posted']);
+  await browser.storage.local.remove(['memory', 'reacted', 'posted', 'said']);
   await browser.storage.session.remove('asked');
 }
 
@@ -185,6 +185,13 @@ async function remember(key: string, answer: Answer) {
 }
 
 export default defineBackground(() => {
+  // First run: she never defaults a grandma, so the chooser opens itself until one is picked.
+  browser.runtime.onInstalled.addListener(() => {
+    browser.storage.local.get('settings').then(({ settings = {} }) => {
+      if (!(settings as { grandma?: string }).grandma) browser.tabs.create({ url: browser.runtime.getURL('/popup.html') }).catch(() => {});
+    }).catch(() => {});
+  });
+
   browser.runtime.onMessage.addListener((msg: Message, _sender, sendResponse) => {
     switch (msg.type) {
       default:
