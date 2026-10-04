@@ -16,3 +16,5 @@ apps/api/.cache/
 .DS_Store
 *.log
 data/nessie-cache.json.bak
+data/photon-state.json
+data/photon-seen.json

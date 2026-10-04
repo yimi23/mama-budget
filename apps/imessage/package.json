@@ -1,0 +1,13 @@
+{
+  "name": "@mama/imessage",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The pipe between Messages on this Mac and the Mama Budget API. Dumb on purpose: the API is the brain.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

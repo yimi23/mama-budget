@@ -10,6 +10,7 @@
 //   GET  /month?history=30                                      -> same
 //   POST /v2/judge  { items:[{name,qty,unitPrice,store}], memory, grandma, currency } -> v2 verdict per item (ask, remember), lines, week
 //   POST /v2/buy    { name, short, price, store, requestId, tag?, memory?, grandma, currency } -> charge posted (idempotent by requestId), week, her line, text sent or not
+//   POST /inbound, GET|POST /schedule, GET /photon/health -> Messages, see photon/routes.js
 //   GET  /health
 
 const http = require('node:http');
@@ -19,6 +20,7 @@ const nessie = require('./nessie/client');
 const { lineFor, ackLine, buyLine, buyText, smallLines, subLine } = require('./lines/writer');
 const { speak } = require('./voice/elevenlabs');
 const { text } = require('./photon/text');
+const photon = require('./photon/routes');
 
 const PORT = process.env.PORT || 8787;
 // The envelope is weekly. Every number comes from the ledger sums in nessie/client.js, never from a balance field.
@@ -100,6 +102,8 @@ const routes = {
     await nessie.deposit(body.amount);
     return { month: await month(), mood: 'proud', line: lineFor({ label: 'need', mood: 'proud', tags: ['saved'] }, { item: 'savings' }, await month()) };
   },
+
+  ...photon.routes,
 };
 
 // "Fujifilm Instax Mini 99 Instant Camera Vintage Black. + Value Pack (40 Sheets)..." -> "Fujifilm Instax Mini 99 Instant Camera".
@@ -122,14 +126,16 @@ http.createServer(async (req, res) => {
   const trusted = /^chrome-extension:\/\/[a-z]{32}$/.test(origin) || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
   const cors = { 'Access-Control-Allow-Origin': trusted ? origin : 'null', 'Vary': 'Origin', 'Access-Control-Allow-Headers': 'content-type', 'Access-Control-Allow-Methods': 'GET,POST,OPTIONS' };
   if (req.method === 'OPTIONS') { res.writeHead(204, cors); return res.end(); }
-  const key = `${req.method} ${req.url.split('?')[0]}`;
+  const [pathname, search] = req.url.split('?');
+  const key = `${req.method} ${pathname}`;
+  const query = Object.fromEntries(new URLSearchParams(search || ''));
   const handler = routes[key];
   if (!handler) { res.writeHead(404, cors); return res.end('{"error":"no such route"}'); }
   let raw = '';
   req.on('data', (c) => (raw += c));
   req.on('end', async () => {
     try {
-      const out = await handler(raw ? JSON.parse(raw) : {});
+      const out = await handler(raw ? JSON.parse(raw) : {}, query);
       res.writeHead(200, { 'content-type': 'application/json', ...cors });
       res.end(JSON.stringify(out));
     } catch (e) {
@@ -137,4 +143,4 @@ http.createServer(async (req, res) => {
       res.end(JSON.stringify({ error: String(e.message || e) }));
     }
   });
-}).listen(PORT, () => console.log(`Mama is listening on http://localhost:${PORT}`));
+}).listen(PORT, () => { console.log(`Mama is listening on http://localhost:${PORT}`); photon.startScheduler(); });
