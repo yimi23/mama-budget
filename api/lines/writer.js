@@ -54,7 +54,7 @@ const MAMA = {
     'Okay. I have heard. {over} dollars past the week.',
     'It is well. {over} dollars over, on {item}. Monday is a new week.',
     '{over} dollars past the week, on {item}. What is my own? I have said my own.',
-    'Noted, o. {over} dollars over. Rice is at home, remember.',
+    'Noted. {over} dollars over the week, on {item}. We move.',
     'The week is finished. {over} dollars over, on {item}. Eiyaah. We move.',
     'Omo. {over} dollars past the week. I am not angry. I am watching.',
   ],
@@ -167,7 +167,7 @@ const NANA = {
 
 const ABUELA = {
   // English for the numbers, one Spanish emblem at most, a blessing or an endearment to close. Sources in the research
-  // notes: CONDUSEF's sayings for savers, the "hay comida en la casa" family, Poplack's emblematic switching.
+  // notes: CONDUSEF's sayings for savers, Poplack's emblematic switching.
   calm: ['Órale. Carry on, mija.', 'Fine. Nothing from me.', 'Okay. Ándale, go on.', 'That one is fine, mi cielo.', 'Nothing to say. Good.', 'Mm hm. Keep going.'],
   watching: [
     '{left} dollars left for the week. Con calma, mija.',
@@ -179,7 +179,7 @@ const ABUELA = {
   ],
   shocked: [
     'Híjole. {price} for {item}, with {left} dollars left this week. Mija, no.',
-    '{price} for {item}? There are {left} dollars left in the week. Hay comida en la casa.',
+    '{price} for {item}? There are {left} dollars left in the week. Think it over, mija.',
     '{item}, {price}. The week has {left} dollars in it. Cuida el centavo, mi cielo.',
     'Ay no. {price} on {item} when {left} dollars is what is left. I love you, but no.',
     '{price}? For {item}? With {left} dollars left. El dinero no crece en los árboles, mija.',
@@ -195,9 +195,9 @@ const ABUELA = {
   ],
   down: [
     '{over} dollars over the week, on {item}. Ni modo. Monday is new.',
-    'That is the week, mija. {over} dollars over, on {item}. Eat at home this week.',
+    'That is the week, mija. {over} dollars over, on {item}. Monday is new.',
     '{over} dollars past the week. Ni modo. Que Dios te cuide.',
-    'The week is gone, {over} dollars over. I am not angry, mi cielo. Frijoles are at home.',
+    'The week is gone, {over} dollars over. I am not angry, mi cielo. We fix it next week.',
     'Over by {over} dollars, on {item}. Okay. We talk Sunday.',
   ],
   proud: [
@@ -242,7 +242,7 @@ const WONG = {
     '{item} alone is {price}. The week is {budget} dollars. Sik faan first, then we talk.',
     'Aiya. {price} for {item}. The week is {budget} dollars. Put it back for me.',
   ],
-  down: ['{over} dollars over. The week is finished. Eat at home.', 'Over by {over} dollars, on {item}. We talk on Sunday.', 'That is the week. {over} dollars over. I am not angry, I am counting.', '{over} dollars past the week, on {item}. Mm. Monday.'],
+  down: ['{over} dollars over. The week is finished. Monday.', 'Over by {over} dollars, on {item}. We talk on Sunday.', 'That is the week. {over} dollars over. I am not angry, I am counting.', '{over} dollars past the week, on {item}. Mm. Monday.'],
   proud: ['Good. Kept it.', 'Mm. That one I like.', 'You put it back. Hou lek.', 'Kept, not spent. That is how. Gwaai.', 'Good. One less thing to dust.', 'Zik siu sing do. Little adds up. Good.'],
   rare: ['I am telling the mahjong table about this. Kept.', 'Your grandfather would have nodded. I am nodding.'],
   ask: ['{item}? What is it for?', '{item}. Tell me what for.', '{item}, {price}. What for?', 'Hold on. {item}. What is it for?', '{item}, {price}, {merchant}. What for?', '{merchant}. {item}. Tell me what for.'],
@@ -261,10 +261,10 @@ const WONG = {
 
 // The small phrases that are not pool lines: one per grandma, so nobody speaks in Mama's words by accident.
 const PHRASES = {
-  mama: { whatsLeftTail: 'Rice is at home.', watchSoft: 'I will say something', watchHere: (m, a) => `${m}. I said I would say something. $${a} here last month.`, holdYou: 'Okay. I will hold you to that.', apology: 'Okay. I hear you. I still love you o.', silence: 'Two weeks and I have not heard from you. I will stop texting. Say anything and I am here.', trueLineClose: 'We need to talk.', nothingHere: (x) => `Nothing at ${x} that I can see.`, nothingDue: 'Nothing due that I can see.' },
+  mama: { whatsLeftTail: 'Carry on.', watchSoft: 'I will say something', watchHere: (m, a) => `${m}. I said I would say something. $${a} here last month.`, holdYou: 'Okay. I will hold you to that.', apology: 'Okay. I hear you. I still love you o.', silence: 'Two weeks and I have not heard from you. I will stop texting. Say anything and I am here.', trueLineClose: 'We need to talk.', nothingHere: (x) => `Nothing at ${x} that I can see.`, nothingDue: 'Nothing due that I can see.' },
   nana: { whatsLeftTail: 'Easy does it, hon.', watchSoft: 'I’ll say something', watchHere: (m, a) => `${m}, hon. I said I’d mention it. $${a} here last month.`, holdYou: "Okay, hon. I'll hold you to that.", apology: 'Okay, hon. I hear you. I love you anyway.', silence: 'Two weeks and not a word, hon. I will stop texting. Say anything and I am right here.', trueLineClose: 'Hm.', nothingHere: (x) => `Nothing at ${x} that I can see, hon.`, nothingDue: 'Nothing due that I can see, hon.' },
-  abuela: { whatsLeftTail: 'Hay comida en la casa, mija.', watchSoft: 'I will say something', watchHere: (m, a) => `${m} again, mija. I said I would say something. $${a} here last month.`, holdYou: 'Okay, mi cielo. I will hold you to that.', apology: 'Okay, mija. I hear you. Dios te bendiga.', silence: 'Two weeks and nothing, mija. I will stop texting. Say anything and I am here.', trueLineClose: 'Híjole.', nothingHere: (x) => `Nothing at ${x} that I can see, mija.`, nothingDue: 'Nothing due that I can see, mija.' },
-  wong: { whatsLeftTail: 'Eat at home.', watchSoft: 'I will say something', watchHere: (m, a) => `${m} again. I counted: $${a} here last month.`, holdYou: 'Okay. I will hold you to that.', apology: 'Okay. I heard. Have you eaten?', silence: 'Two weeks, not a word. I will stop texting. Say anything and I am here.', trueLineClose: 'Mm.', nothingHere: (x) => `Nothing at ${x} that I can see.`, nothingDue: 'Nothing due that I can see.' },
+  abuela: { whatsLeftTail: 'Con calma, mija.', watchSoft: 'I will say something', watchHere: (m, a) => `${m} again, mija. I said I would say something. $${a} here last month.`, holdYou: 'Okay, mi cielo. I will hold you to that.', apology: 'Okay, mija. I hear you. Dios te bendiga.', silence: 'Two weeks and nothing, mija. I will stop texting. Say anything and I am here.', trueLineClose: 'Híjole.', nothingHere: (x) => `Nothing at ${x} that I can see, mija.`, nothingDue: 'Nothing due that I can see, mija.' },
+  wong: { whatsLeftTail: 'Slowly.', watchSoft: 'I will say something', watchHere: (m, a) => `${m} again. I counted: $${a} here last month.`, holdYou: 'Okay. I will hold you to that.', apology: 'Okay. I heard. Have you eaten?', silence: 'Two weeks, not a word. I will stop texting. Say anything and I am here.', trueLineClose: 'Mm.', nothingHere: (x) => `Nothing at ${x} that I can see.`, nothingDue: 'Nothing due that I can see.' },
 };
 const phrase = (who, key, ...args) => { const v = (PHRASES[who] || PHRASES.mama)[key]; return typeof v === 'function' ? v(...args) : v; };
 
