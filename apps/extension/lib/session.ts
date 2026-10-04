@@ -247,11 +247,33 @@ async function react(g: Grandma, week: Week, v: Verdict, also: Verdict[] = []) {
   for (const o of also) handled.reacted.add(o.key);
   await Promise.all([v, ...also].map((x) => send({ type: 'MARK', kind: 'reacted', key: x.key })));
   showWeek(g, week, v.mood);
+  panel?.close();
+  remember(v.line);
+  void send({ type: 'SPEAK', text: v.line, grandma: g }); // her voice: here and on Gele down only; the card never waits
   badge!.shake();
-  await card!.ask({
+  const choice = await card!.ask({
     grandma: g, mood: v.mood, tone: 'alarm', line: v.line, sub: v.sub,
-    primary: g === 'nana' ? 'You’re right, Nana' : 'You’re right, Mama', secondary: 'Buy anyway',
+    primary: g === 'nana' ? 'You\u2019re right, Nana' : 'You\u2019re right, Mama', secondary: 'Buy anyway',
   });
+  if (choice === 'primary') {
+    // She never touches the store's buttons. You put it back; when it leaves the cart she is proud (onRead).
+    putBack.set(v.name, v.price);
+    remember(lines.agreed);
+    bubble!.say(lines.agreed);
+    showWeek(g, week);
+    return;
+  }
+  if (choice !== 'secondary') return;
+  // Buy anyway: the charge lands in the bank now. The meter moves, she says her line, the text goes if it can.
+  const reply = await send<({ ok: true } & BuyReply) | { ok: false }>({
+    type: 'BUY', store: storeKey(location.href), currency: lastRead?.currency ?? 'USD',
+    item: { name: v.name, short: v.short, price: v.price },
+  });
+  if (!reply?.ok) return hideAll();
+  showWeek(g, reply.week);
+  remember(reply.line);
+  if (reply.week.ratio >= 1) void send({ type: 'SPEAK', text: reply.line, grandma: g }); // Gele down
+  bubble!.say(reply.line, reply.texted ? `${reply.sub} Texted.` : reply.sub);
 }
 
 async function readOnce() {
