@@ -261,10 +261,10 @@ const WONG = {
 
 // The small phrases that are not pool lines: one per grandma, so nobody speaks in Mama's words by accident.
 const PHRASES = {
-  mama: { whatsLeftTail: (d) => `That is $${d} a day. Rice is at home.`, watchSoft: 'I will say something', watchHere: (m, a) => `${m}. I said I would say something. $${a} here last month.`, holdYou: 'Okay. I will hold you to that.', apology: 'Okay. I hear you. I still love you o.', silence: 'Two weeks and I have not heard from you. I will stop texting. Say anything and I am here.', trueLineClose: 'We need to talk.', nothingHere: (x) => `Nothing at ${x} that I can see.`, nothingDue: 'Nothing due that I can see.' },
-  nana: { whatsLeftTail: (d) => `That’s about $${d} a day, hon.`, watchSoft: 'I’ll say something', watchHere: (m, a) => `${m}, hon. I said I’d mention it. $${a} here last month.`, holdYou: "Okay, hon. I'll hold you to that.", apology: 'Okay, hon. I hear you. I love you anyway.', silence: 'Two weeks and not a word, hon. I will stop texting. Say anything and I am right here.', trueLineClose: 'Hm.', nothingHere: (x) => `Nothing at ${x} that I can see, hon.`, nothingDue: 'Nothing due that I can see, hon.' },
-  abuela: { whatsLeftTail: (d) => `That is $${d} a day, mija. Hay comida en la casa.`, watchSoft: 'I will say something', watchHere: (m, a) => `${m} again, mija. I said I would say something. $${a} here last month.`, holdYou: 'Okay, mi cielo. I will hold you to that.', apology: 'Okay, mija. I hear you. Dios te bendiga.', silence: 'Two weeks and nothing, mija. I will stop texting. Say anything and I am here.', trueLineClose: 'Híjole.', nothingHere: (x) => `Nothing at ${x} that I can see, mija.`, nothingDue: 'Nothing due that I can see, mija.' },
-  wong: { whatsLeftTail: (d) => `$${d} a day. Eat at home.`, watchSoft: 'I will say something', watchHere: (m, a) => `${m} again. I counted: $${a} here last month.`, holdYou: 'Okay. I will hold you to that.', apology: 'Okay. I heard. Have you eaten?', silence: 'Two weeks, not a word. I will stop texting. Say anything and I am here.', trueLineClose: 'Mm.', nothingHere: (x) => `Nothing at ${x} that I can see.`, nothingDue: 'Nothing due that I can see.' },
+  mama: { whatsLeftTail: 'Rice is at home.', watchSoft: 'I will say something', watchHere: (m, a) => `${m}. I said I would say something. $${a} here last month.`, holdYou: 'Okay. I will hold you to that.', apology: 'Okay. I hear you. I still love you o.', silence: 'Two weeks and I have not heard from you. I will stop texting. Say anything and I am here.', trueLineClose: 'We need to talk.', nothingHere: (x) => `Nothing at ${x} that I can see.`, nothingDue: 'Nothing due that I can see.' },
+  nana: { whatsLeftTail: 'Easy does it, hon.', watchSoft: 'I’ll say something', watchHere: (m, a) => `${m}, hon. I said I’d mention it. $${a} here last month.`, holdYou: "Okay, hon. I'll hold you to that.", apology: 'Okay, hon. I hear you. I love you anyway.', silence: 'Two weeks and not a word, hon. I will stop texting. Say anything and I am right here.', trueLineClose: 'Hm.', nothingHere: (x) => `Nothing at ${x} that I can see, hon.`, nothingDue: 'Nothing due that I can see, hon.' },
+  abuela: { whatsLeftTail: 'Hay comida en la casa, mija.', watchSoft: 'I will say something', watchHere: (m, a) => `${m} again, mija. I said I would say something. $${a} here last month.`, holdYou: 'Okay, mi cielo. I will hold you to that.', apology: 'Okay, mija. I hear you. Dios te bendiga.', silence: 'Two weeks and nothing, mija. I will stop texting. Say anything and I am here.', trueLineClose: 'Híjole.', nothingHere: (x) => `Nothing at ${x} that I can see, mija.`, nothingDue: 'Nothing due that I can see, mija.' },
+  wong: { whatsLeftTail: 'Eat at home.', watchSoft: 'I will say something', watchHere: (m, a) => `${m} again. I counted: $${a} here last month.`, holdYou: 'Okay. I will hold you to that.', apology: 'Okay. I heard. Have you eaten?', silence: 'Two weeks, not a word. I will stop texting. Say anything and I am here.', trueLineClose: 'Mm.', nothingHere: (x) => `Nothing at ${x} that I can see.`, nothingDue: 'Nothing due that I can see.' },
 };
 const phrase = (who, key, ...args) => { const v = (PHRASES[who] || PHRASES.mama)[key]; return typeof v === 'function' ? v(...args) : v; };
 
@@ -457,9 +457,8 @@ function monthlyStatement({ month, needsTotal, sentHome, lastMonthSpent, who = '
 function whatsLeft(month, who = 'mama') {
   const left = Math.max(0, month.budget - month.spent);
   const days = month.daysLeft != null ? month.daysLeft : daysLeftInWeek();
-  const perDay = days ? Math.floor(left / days) : left;
-  const tail = phrase(who, 'whatsLeftTail', perDay);
-  return `$${left}. ${days} day${days === 1 ? '' : 's'}. ${tail}`;
+  const tail = phrase(who, 'whatsLeftTail');
+  return `$${left} left this week. ${days} day${days === 1 ? '' : 's'} to go. ${tail}`;
 }
 
 function daysLeftInWeek(now = new Date()) {
@@ -563,17 +562,18 @@ function notifyLine(level, it, who = 'mama', week = {}) {
 function notifyText(level, week, it, who = 'mama', cartItemNames) {
   const left = Math.max(0, week.budget - week.spent);
   const bill = (week.bills || [])[0];
-  const billPart = bill ? ` ${bill.nickname || bill.payee} in ${bill.daysUntil} day${bill.daysUntil === 1 ? '' : 's'}.` : '';
-  // The figure back home follows the person's setting (see backHome), not the grandma.
-  const nairaPart = backHome(it.price, it);
+  // The bill only when it is close; the figure from home only when the week is blown; the cart only when there was
+  // more than this one thing in it. Everything else is her line and one plain sentence.
+  const billPart = bill && bill.daysUntil <= 3 ? ` ${bill.nickname || bill.payee} in ${bill.daysUntil} day${bill.daysUntil === 1 ? '' : 's'}.` : '';
+  const nairaPart = level === 'over' ? backHome(it.price, it) : '';
   const what = it.item || it.merchant || 'this';
-  const cartPart = cartItemNames && cartItemNames.length ? `\nCart: ${cartItemNames.join(', ')}.` : '';
+  const others = cartItemNames ? cartItemNames.filter((n) => n && n !== what).length : 0;
+  const cartPart = others > 0 ? ` With ${others} other thing${others === 1 ? '' : 's'} in the cart.` : '';
   // A transfer is not a thing you bought: "$50 sent home." not "$50 on Sent home."
   const moved = level === 'proud' && /^(sent home|moved to savings)$/i.test(what);
-  const where = it.merchant && !moved ? ` at ${shopName(it.merchant)}` : '';
-  const amountPart = moved ? `$${Math.round(it.price || 0)} ${what.toLowerCase()}.` : `$${Math.round(it.price || 0)} on ${what}${where}.`;
-  const weekPart = `$${Math.round(week.spent || 0)} of $${Math.round(week.budget || 0)} this week, $${left} left.${week.kept ? ` Kept $${Math.round(week.kept)}.` : ''}`;
-  return `${notifyLine(level, it, who, week)}\n${amountPart} ${weekPart}${billPart}${moved ? '' : nairaPart}${cartPart}`;
+  const amountPart = moved ? `$${Math.round(it.price || 0)} ${what.toLowerCase()}.` : `$${Math.round(it.price || 0)} on ${what}.`;
+  const weekPart = moved && week.kept ? `Kept $${Math.round(week.kept)} this week.` : level === 'over' ? `$${Math.round(week.spent - week.budget)} over the week.` : `$${left} left this week.`;
+  return `${notifyLine(level, it, who, week)}\n${amountPart} ${weekPart}${billPart}${nairaPart}${cartPart}`;
 }
 
 // A conversational reply to an arbitrary incoming text (not a purchase verdict): uses the same

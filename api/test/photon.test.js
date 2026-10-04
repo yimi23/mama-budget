@@ -123,7 +123,7 @@ test('the weekly text is four lines: numbers, kept, bill or biggest, one line of
 test('statement and text helpers in the writer still name every amount', () => {
   const s = weeklyStatement({ week: { budget: 75, spent: 50, kept: 40, daysLeft: 0, bills: [] }, biggest: { item: 'Latte', amount: 6 }, who: 'nana', trend: -1 });
   assert.match(s, /\$50 of \$75/); assert.match(s, /\$40/); assert.match(s, /Latte, \$6/); assert.match(s, /Better than last week/);
-  assert.match(whatsLeft({ budget: 75, spent: 50, daysLeft: 2 }, 'mama'), /^\$25\. 2 days\. That is \$12 a day/);
+  assert.match(whatsLeft({ budget: 75, spent: 50, daysLeft: 2 }, 'mama'), /^\$25 left this week\. 2 days to go\./);
 });
 
 // Which ledger events earn a text, and which texts may never be swallowed.
@@ -161,14 +161,16 @@ test('Gele down and proud skip the daily cap, never quiet hours or the gap', () 
 test('a transfer text reads as a transfer, not a purchase, and skips the naira', () => {
   const week = { budget: 75, spent: 50, bills: [] };
   const home = notifyText('proud', week, { item: 'Sent home', price: 50 }, 'mama');
-  assert.match(home, /\n\$50 sent home\. \$50 of \$75 this week, \$25 left\./);
+  assert.match(home, /\n\$50 sent home\. (Kept \$\d+|\$25 left) this week\./);
   assert.doesNotMatch(home, /naira|on Sent home/);
   // The figure back home follows the person's setting, which the extension sends with every judgement.
   require('../lines/writer').setHome('NGN');
   const bought = notifyText('note', week, { item: 'Latte', price: 6 }, 'mama');
+  const over = notifyText('over', { budget: 75, spent: 229, bills: [] }, { item: 'AirPods Pro', price: 179 }, 'mama');
   require('../lines/writer').setHome(null);
-  assert.match(bought, /\$6 on Latte\. \$50 of \$75 this week, \$25 left\./);
-  assert.match(bought, /naira/);
+  assert.match(bought, /\$6 on Latte\. \$25 left this week\./);
+  assert.doesNotMatch(bought, /naira/, 'inside the week: no figure from home, the text stays short');
+  assert.match(over, /naira/, 'past the week: the figure from home');
   assert.doesNotMatch(notifyText('note', week, { item: 'Latte', price: 6 }, 'mama'), /naira/, 'no home currency set: no figure');
 });
 
