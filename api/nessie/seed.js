@@ -80,6 +80,8 @@ async function main() {
   c.purchases = HISTORY.map(h => ({ item: h.item, amount: h.amount, merchant: h.merchant, tag: MERCHANTS[h.merchant].tag, date: iso(h.day) }));
   c.deposits = DEPOSITS.map(d => ({ amount: d.amount, item: d.item, date: iso(d.day) }));
   c.transfers = TRANSFERS.map(t => ({ amount: t.amount, to: t.to, item: t.item, tag: t.to === 'family' ? 'family' : 'saved', date: iso(t.day) }));
+  // A fresh student has put nothing back and funded nothing; a reseed must drop the last run's records too.
+  c.putBack = []; c.funding = [];
   c.bills = [{ payee: BILL.payee, nickname: BILL.nickname, amount: BILL.amount, due: isoFromNow(BILL.dueInDays), recurringDay: BILL.recurringDay }];
 
   try {
