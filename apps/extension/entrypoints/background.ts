@@ -171,6 +171,12 @@ export function volumeFor(loudness: unknown): number {
   return loudness === 'gentle' ? 0.6 : loudness === 'full' ? 1 : 0.8;
 }
 
+/** Her voices are not equally loud as rendered: Nana's is quiet and dry, Wong's soft. A gain per grandma evens them out. */
+const GAIN: Record<string, number> = { mama: 1, nana: 1.3, abuela: 1.05, wong: 1.15 };
+export function gainFor(grandma: unknown): number {
+  return GAIN[String(grandma)] ?? 1;
+}
+
 const OFFSCREEN_URL = 'offscreen.html';
 
 async function offscreenReady(): Promise<boolean> {
@@ -214,7 +220,7 @@ async function speak(msg: Extract<Message, { type: 'SPEAK' }>): Promise<{ ok: bo
     }
     const dataUrl = toDataUrl(await res.arrayBuffer());
     if (!(await offscreenReady())) return silent;
-    const reply = (await browser.runtime.sendMessage({ type: 'PLAY', dataUrl, volume: volumeFor(st.loudness) })) as { ok?: boolean; duration?: number | null } | undefined;
+    const reply = (await browser.runtime.sendMessage({ type: 'PLAY', dataUrl, volume: volumeFor(st.loudness), gain: gainFor(msg.grandma) })) as { ok?: boolean; duration?: number | null } | undefined;
     return { ok: !!reply?.ok, duration: reply?.duration ?? null };
   } catch {
     return silent;

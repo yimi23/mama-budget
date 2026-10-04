@@ -41,7 +41,7 @@ function playCue(cue: Cue, volume: number): number {
   }
 }
 
-browser.runtime.onMessage.addListener((msg: { type?: string; dataUrl?: string; volume?: number; cue?: Cue }, _sender, sendResponse) => {
+browser.runtime.onMessage.addListener((msg: { type?: string; dataUrl?: string; volume?: number; gain?: number; cue?: Cue }, _sender, sendResponse) => {
   if (msg?.type === 'PLAY_CUE' && msg.cue) {
     try { sendResponse({ ok: true, duration: playCue(msg.cue, msg.volume ?? 0.8) }); } catch { sendResponse({ ok: false }); }
     return false;
@@ -49,7 +49,23 @@ browser.runtime.onMessage.addListener((msg: { type?: string; dataUrl?: string; v
   if (msg?.type !== 'PLAY' || !msg.dataUrl) return false;
   current?.pause();
   const audio = new Audio(msg.dataUrl);
-  audio.volume = Math.max(0, Math.min(1, msg.volume ?? 0.8));
+  const volume = Math.max(0, Math.min(1, msg.volume ?? 0.8));
+  const gain = Math.max(0.5, Math.min(2, msg.gain ?? 1));
+  // An element's volume stops at 1. A grandma whose voice renders quiet goes through a gain node instead.
+  if (gain > 1) {
+    try {
+      ctx ??= new AudioContext();
+      const src = ctx.createMediaElementSource(audio);
+      const g = ctx.createGain();
+      g.gain.value = volume * gain;
+      src.connect(g).connect(ctx.destination);
+      audio.volume = 1;
+    } catch {
+      audio.volume = volume;
+    }
+  } else {
+    audio.volume = volume * gain;
+  }
   current = audio;
   // The reply carries the clip length so a screen can show "Speaking" for exactly as long as she speaks.
   audio.play().then(
