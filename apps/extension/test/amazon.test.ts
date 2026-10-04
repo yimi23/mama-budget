@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { JSDOM } from 'jsdom';
-import { runAdapter } from '../lib/readers/adapter.ts';
+import { locateRow, runAdapter } from '../lib/readers/adapter.ts';
 import { amazon } from '../lib/readers/sites/amazon.ts';
 import { parsePrice } from '@mama/shared/currency';
 
@@ -56,4 +56,13 @@ test('follows the cart as it changes', () => {
 
 test('a page without the cart reads as null', () => {
   assert.equal(runAdapter(amazon, new JSDOM('<p>not a cart</p>').window.document), null);
+});
+
+test('the row mark finds the exact row for an item, re queried', () => {
+  const doc = load();
+  const first = runAdapter(amazon, doc)!.items[0]!;
+  const row = locateRow(amazon, doc, first.name);
+  assert.ok(row, 'found');
+  assert.ok(row!.matches(amazon.row), 'it is a cart row');
+  assert.equal(locateRow(amazon, doc, 'Not in this cart'), null);
 });

@@ -7,10 +7,11 @@ import { mountBadge, type Badge, type Grandma } from './ui/badge';
 import { mountCard, type Card } from './ui/card';
 import { mountBubble, type Bubble } from './ui/bubble';
 import { mountPanel, type Panel } from './ui/panel';
+import { mountMark, type Mark } from './ui/mark';
 import { ackSub, askManyLine, crossedIntoWatching, nextCard, spoken, wantLabel, type Handled } from './flow';
 import { storeKey } from '@mama/shared/store-key';
 import { toUSD } from '@mama/shared/currency';
-import { readCart, readKey } from './readers';
+import { locateRow, readCart, readKey } from './readers';
 import { addsUp } from './readers/settle';
 
 const DEBOUNCE_MS = 400;
@@ -37,6 +38,7 @@ let badge: Badge | undefined;
 let card: Card | undefined;
 let bubble: Bubble | undefined;
 let panel: Panel | undefined;
+let mark: Mark | undefined;
 let lastWeek: Week | undefined;
 /** The last three things she said, newest first. Also kept in storage.local for the popup. */
 let said: string[] = [];
@@ -100,6 +102,7 @@ function showWeek(g: Grandma, week: Week, mood: Mood = week.mood) {
     card = mountCard(badge.root);
     bubble = mountBubble(badge.root);
     panel = mountPanel(badge.root);
+    mark = mountMark(badge.root);
     badge.onClick(() => {
       if (card!.open || !lastWeek) return; // a question on screen comes first
       panel!.toggle({ week: lastWeek, said });
@@ -114,6 +117,7 @@ function showWeek(g: Grandma, week: Week, mood: Mood = week.mood) {
 }
 
 function hideAll() {
+  mark?.hide();
   card?.close();
   bubble?.hide();
   panel?.close();
@@ -221,11 +225,13 @@ async function ask(g: Grandma, week: Week, v: Verdict) {
   showWeek(g, week, 'watching');
   panel?.close();
   remember(v.line);
+  mark?.show(() => locateRow(document, location.href, v.name), 'ask');
   const choice = await card!.ask({
     grandma: g, mood: 'watching', tone: 'ask', line: v.line,
     sub: 'I ask once and remember your answer.',
     primary: 'It’s for something', secondary: wantLabel(v.short),
   });
+  mark?.hide();
   if (choice === 'primary') await send({ type: 'ANSWER', key: v.key, answer: 'need' });
   else if (choice === 'secondary') await send({ type: 'ANSWER', key: v.key, answer: 'want' });
   if (choice !== 'dismiss') justAnswered = v.key;
@@ -241,11 +247,13 @@ async function askMany(g: Grandma, week: Week, vs: Verdict[]) {
   const line = askManyLine(lines.askMany, vs.length);
   remember(line);
   let answered = 0;
+  mark?.show(() => locateRow(document, location.href, vs[0]!.name), 'ask');
   await card!.askMany({
     grandma: g, line,
     rows: vs.map((v) => ({ key: v.key, short: v.short, price: v.price, wantLabel: wantLabel(v.short) })),
     onAnswer: (key, answer) => { answered++; void send({ type: 'ANSWER', key, answer }); },
   });
+  mark?.hide();
   // The next judgement acknowledges one answer; with several, the reaction (if any) or the fresh badge is the answer.
   if (answered === 1) justAnswered = vs.find((v) => handled.asked.has(v.key))?.key ?? null;
   showWeek(g, week);
@@ -265,10 +273,12 @@ async function react(g: Grandma, week: Week, v: Verdict, also: Verdict[] = []) {
   remember(v.line);
   void send({ type: 'SPEAK', text: spoken(v.line), grandma: g, mood: v.mood === 'down' ? 'down' : 'shocked' }); // her voice: here and on Gele down only; the card never waits
   badge!.shake();
+  mark?.show(() => locateRow(document, location.href, v.name), 'alarm');
   const choice = await card!.ask({
     grandma: g, mood: v.mood, tone: 'alarm', line: v.line, sub: v.sub,
     primary: g === 'nana' ? 'You\u2019re right, Nana' : 'You\u2019re right, Mama', secondary: 'Buy anyway',
   });
+  mark?.hide();
   if (choice === 'primary') {
     // She never touches the store's buttons. You put it back; when it leaves the cart she is proud (onRead).
     putBack.set(v.name, v.price);

@@ -34,6 +34,7 @@ test('the session sends what the card promises', () => {
   assert.ok(session.includes('lines.agreed'), "You're right is acknowledged");
   assert.ok(session.includes('crossedIntoWatching('), 'the watching bubble at 75%');
   assert.ok(session.includes("card!.askMany("), 'several items get one card');
+  assert.ok(session.includes("mark?.show("), 'the cart row is marked while a card is up');
 });
 
 test('every send in the extension uses a type the contract knows', () => {
