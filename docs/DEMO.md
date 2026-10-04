@@ -11,7 +11,7 @@ Everything below was verified against the code at `2f239da` on Saturday night. T
 5. **Chrome profile.** Honey and every other shopping extension OFF. Load unpacked from `apps/extension/build/chrome-mv3` (or reload it). The ring and meter icon appears in the toolbar.
 6. **Onboarding once.** Click her icon: Welcome, pick Mama, Connect bank, she reads the month (food delivery $102, rice $24), proposed $75, three watches, phone (skip if Photon is off), loudness, Go shopping, practice cart. This saves grandma, loudness and envelope. Do it on the demo machine before judging, then **Start over** from the popup's home screen right before each judge so the asks are fresh.
 7. **Amazon.** Logged in, 1-Click OFF, default card removed. Cart holds rice (protected), dish soap (protected), AirPods Pro or the Instax (over $15, new). Nothing else checked.
-8. **Sound.** Mac volume up. It is daytime, so quiet hours (11pm to 7am) do not apply.
+8. **Sound.** Mac volume up. Quiet hours are off for the hackathon (opt in via settings.quietHours), so she speaks at any hour.
 9. **Second laptop.** Same steps 1 to 7. Hotspot tested.
 
 ## The demo, about 90 seconds

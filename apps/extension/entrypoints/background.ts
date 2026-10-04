@@ -157,8 +157,8 @@ const silent = { ok: false, duration: null };
 /** Fetches her line as mp3 from /tts and plays it in the offscreen document. Silent on any failure, and in quiet hours. */
 async function speak(msg: Extract<Message, { type: 'SPEAK' }>): Promise<{ ok: boolean; duration: number | null }> {
   const { settings = {} } = await browser.storage.local.get('settings');
-  const st = settings as { sounds?: boolean; loudness?: string; quietHours?: boolean }; // quietHours false = testing override
-  if (st.sounds === false || (st.quietHours !== false && quietHours())) return silent;
+  const st = settings as { sounds?: boolean; loudness?: string; quietHours?: boolean }; // quiet hours are opt in for the hackathon (Praise, Oct 4): she speaks at any hour unless settings.quietHours is true
+  if (st.sounds === false || (st.quietHours === true && quietHours())) return silent;
   if (!(await apiUp())) return silent;
   try {
     const res = await fetch(`${API}/tts`, {
@@ -187,8 +187,8 @@ async function warm(msg: Extract<Message, { type: 'WARM' }>): Promise<{ ok: true
 /** One of the six cue sounds, from the offscreen document. Honours the sounds toggle and quiet hours. */
 async function cue(msg: Extract<Message, { type: 'CUE' }>): Promise<{ ok: boolean }> {
   const { settings = {} } = await browser.storage.local.get('settings');
-  const st = settings as { sounds?: boolean; loudness?: string; quietHours?: boolean }; // quietHours false = testing override
-  if (st.sounds === false || (st.quietHours !== false && quietHours())) return { ok: false };
+  const st = settings as { sounds?: boolean; loudness?: string; quietHours?: boolean }; // quiet hours are opt in for the hackathon (Praise, Oct 4): she speaks at any hour unless settings.quietHours is true
+  if (st.sounds === false || (st.quietHours === true && quietHours())) return { ok: false };
   if (!(await offscreenReady())) return { ok: false };
   try {
     const reply = (await browser.runtime.sendMessage({ type: 'PLAY_CUE', cue: msg.cue, volume: volumeFor(st.loudness) })) as { ok?: boolean } | undefined;
