@@ -55,6 +55,26 @@ test('confirmation pages', () => {
   assert.equal(isConfirmationPage(page({ url: 'https://example.com/cart', text: 'Subtotal $20 Checkout' })), false);
 });
 
+test('a /gp/buy/thankyou/ URL confirms with a thank you alone', async () => {
+  const { looksLikeConfirmationUrl } = await import('../lib/detect.ts');
+  const url = 'https://www.amazon.com/gp/buy/thankyou/handlers/display.html?purchaseId=106-1234567-7654321';
+  assert.ok(looksLikeConfirmationUrl(url));
+  assert.ok(isConfirmationPage(page({ url, text: 'Order placed, thank you! Confirmation will be sent to your email.' })));
+  assert.equal(isConfirmationPage(page({ url, text: 'Loading' })), false, 'the URL alone is never enough');
+});
+
+test('the text alone confirms when it carries an order number, whatever the URL says', () => {
+  const placed = 'Thank you, your order has been placed. Order number: W12345678';
+  assert.ok(isConfirmationPage(page({ url: 'https://www.target.com/checkout', text: placed })));
+  assert.ok(isConfirmationPage(page({ url: 'https://shop.example.com/c/9f2a?step=done', text: 'Order placed Order # 112-4455667-8899000' })));
+  assert.equal(isConfirmationPage(page({ url: 'https://www.target.com/checkout', text: 'Your order has been placed.' })), false, 'no order number, no URL word');
+  assert.equal(isConfirmationPage(page({ url: 'https://www.target.com/checkout', text: 'Order number: W12345678 Place your order' })), false, 'an order number without a placed order');
+  // Past orders say the same words. They were charged when they happened.
+  for (const url of ['https://www.amazon.com/gp/css/order-history', 'https://www.amazon.com/your-orders/orders', 'https://shop.example.com/account/orders/1001']) {
+    assert.equal(isConfirmationPage(page({ url, text: 'ORDER PLACED October 1, 2026 ORDER # 112-4455667-8899000' })), false, url);
+  }
+});
+
 test('"Total" with an amount counts, a bare total does not', () => {
   assert.ok(isCartPage(page({ url: 'https://www.zara.com/us/en/shop/cart', text: 'Select all items TOTAL $ 994.60 * Tax not included CONTINUE (9)' })));
   assert.equal(isCartPage(page({ url: 'https://example.com/blog/cart-before-horse', text: 'In total we wrote three posts' })), false);

@@ -5,7 +5,9 @@ const CART_PATH = /(^|[\/_.-])(cart|checkout|bag|basket|order)s?([\/_.?#-]|$)/i;
 // Where money leaves without a cart. Whole path segments only: /pricing and /billing count, retail-pricing.html does not.
 const PAY_PATH = /(^|\/)(billing|subscribe|subscription|pricing|plans?|upgrade|payment|pay|checkouts?)(\/|$)/i;
 const CONFIRM_PATH = /(thank[-_]?you|order[-_]?confirmation|order[-_]?placed|confirmation)/i;
-const ADD_WORDS = /\b(add to (cart|bag|basket|trolley)|buy now|add to order|start (my |your )?(free )?trial|upgrade( now| to [a-z ]+)?|pay now|pay \$?\d|place (your )?order|confirm (purchase|payment|order)|continue to payment|get (plus|pro|premium)|ajouter au panier|in den warenkorb|añadir a la cesta|agregar al carrito)\b/i;
+// Past orders, not a new one: Amazon's Your Orders, a Shopify account page, any order details page.
+const HISTORY_PATH = /(order[-_]?history|your[-_]?orders|order[-_]?details|(^|\/)account(\/|$))/i;
+const ADD_WORDS =/\b(add to (cart|bag|basket|trolley)|buy now|add to order|start (my |your )?(free )?trial|upgrade( now| to [a-z ]+)?|pay now|pay \$?\d|place (your )?order|confirm (purchase|payment|order)|continue to payment|get (plus|pro|premium)|ajouter au panier|in den warenkorb|añadir a la cesta|agregar al carrito)\b/i;
 const SUBTOTAL_WORDS = /\b(subtotal|sub-total|order total|estimated total|cart total|basket total)\b|\btotal\s*:?\s*(US\$|CA\$|[$£€₦])\s?\d/i;
 const CHECKOUT_WORDS = /\b(check ?out|proceed to (checkout|payment)|place (your )?order|pay now|subscribe now|start (free )?trial|confirm (purchase|payment)|continue to payment)\b/i;
 // A price that repeats: "$20/month", "$200 per year", "$8.99 a month". Subscriptions have no cart, only this.
@@ -53,13 +55,17 @@ export function isCartPage(p: PageSignals): boolean {
   return cartSignalCount(p) >= 2;
 }
 
-/** Pure: is this an order confirmation page. URL plus a thank you, or an order number near a thank you. */
+/**
+ * Pure: is this an order confirmation page. URL plus a thank you, or an order number near a thank you. The URL is a
+ * soft signal: the text alone is enough when it carries an order number, except on order history and account pages,
+ * which say "Order placed" and "Order #" about orders that are already charged.
+ */
 export function isConfirmationPage(p: PageSignals): boolean {
   let path = '';
   try { path = new URL(p.url).pathname + new URL(p.url).search; } catch { /* keep empty */ }
   const thanks = /thank you|thanks for your order|order (is )?(confirmed|placed)/i.test(p.text);
   if (CONFIRM_PATH.test(path) && thanks) return true;
-  return thanks && ORDER_NUMBER.test(p.text);
+  return thanks && ORDER_NUMBER.test(p.text) && !HISTORY_PATH.test(path);
 }
 
 /** Pure, cheap: does the URL alone look like an order confirmation. The full check reads the page text. */

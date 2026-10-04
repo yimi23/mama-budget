@@ -1,6 +1,6 @@
 // Runs on every page but does nothing until the gate fires: an add to cart click, or a cart page by two signals.
 
-import { clickLabel, isAddToCartLabel, isConfirmationPage, liveCartSignalCount, looksLikeConfirmationUrl, orderIdFrom, readSignals } from '../lib/detect';
+import { clickLabel, isAddToCartLabel, isConfirmationPage, liveCartSignalCount, orderIdFrom, readSignals } from '../lib/detect';
 import { storeKey } from '@mama/shared/store-key';
 
 // Carts built by script after load (Target) show one signal at idle and the rest a moment later.
@@ -52,11 +52,12 @@ export default defineContentScript({
       ctx.onInvalidated(() => watcher?.disconnect());
     };
 
-    // A real order landed. The URL is the cheap test; the page text confirms. The worker charges that store's last
-    // cart. Checked again shortly after, because confirmation pages often render their thank you late.
+    // A real order landed. The URL is a soft signal; the page text decides (a thank you with an order number is enough
+    // on its own). The worker charges that store's last cart. Checked again shortly after, because confirmation pages
+    // often render their thank you late.
     const confirmed = new Set<string>();
     const checkConfirmation = (attempt = 0) => {
-      if (!looksLikeConfirmationUrl(location.href) || attempt > 4) return;
+      if (attempt > 4) return;
       const signals = readSignals(document, location.href);
       if (!isConfirmationPage(signals)) return void ctx.setTimeout(() => checkConfirmation(attempt + 1), 1500);
       const orderId = orderIdFrom(signals.text, location.href);
