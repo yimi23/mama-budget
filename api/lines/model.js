@@ -22,10 +22,21 @@ const lineCache = new Map(); // key -> line, so a repeated demo is instant and c
 function cacheKey(parts) { return crypto.createHash('sha1').update(JSON.stringify(parts)).digest('hex'); }
 
 /** One line in her voice. Returns null when the model is off, slow, or the line breaks a house rule. */
+const lineInFlight = new Map();
+
 async function say({ system, prompt, key, mustInclude = [], maxLen = 220, timeoutMs = LINE_TIMEOUT_MS }) {
   if (!ready()) return null;
   const k = cacheKey([MODEL, system, typeof key === 'string' ? key : prompt]);
   if (key && lineCache.has(k)) return lineCache.get(k);
+  // One request per situation. A line written ahead (warm) and the real call for the same card share it, so the card
+  // gets the line the moment it lands instead of starting a second request and timing out on its own.
+  if (key && lineInFlight.has(k)) return Promise.race([lineInFlight.get(k), new Promise((r) => setTimeout(() => r(null), timeoutMs))]);
+  const run = sayOnce({ system, prompt, k, key, mustInclude, maxLen, timeoutMs });
+  if (key) { lineInFlight.set(k, run); run.finally(() => lineInFlight.delete(k)); }
+  return run;
+}
+
+async function sayOnce({ system, prompt, k, key, mustInclude, maxLen, timeoutMs }) {
   try {
     // The brief is the same for every line she speaks, so it is cached at the API: after the first call, the system
     // block costs a fraction and the request starts faster. Below the cache minimum the flag is simply ignored.

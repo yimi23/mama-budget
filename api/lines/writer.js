@@ -300,8 +300,10 @@ function shopName(merchant) {
   const m = String(merchant || '').trim();
   if (!m) return 'the shop';
   if (!m.includes('.')) return m;
-  const label = m.split('.')[0];
-  return label.charAt(0).toUpperCase() + label.slice(1);
+  const parts = m.toLowerCase().replace(/^https?:\/\//, '').split('/')[0].split('.').filter((x) => x && x !== 'www' && x !== 'shop' && x !== 'store' && x !== 'm');
+  const label = parts[0] || m.split('.')[0];
+  // "williams-sonoma" reads as Williams Sonoma; a brand of one word keeps its own casing when it is known.
+  return label.split(/[-_]+/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
 // week gives the plan numbers: {left} before this purchase, {budget}, and {over} once the week is past it.

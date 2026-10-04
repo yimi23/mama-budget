@@ -121,6 +121,14 @@ const routes = {
     // plus store plus habits). Confident answers decide; unsure or slow answers fall back to the rules' own list.
     const habits = (nessie.month().topWants || []).slice(0, 3).map((t) => `$${t.amount} at ${t.merchant}`).join(', ');
     const known = (item) => memory[v2.keyOf(item)] != null;
+    const monthNow = nessie.month();
+    const spokenOf = (item) => ({ ...item, item: item.period ? `${shortName(item.item)} at $${Math.round(item.price)} a ${item.period}` : shortName(item.item) });
+    // Her ask line starts now, in parallel with classification: an unknown item past the lowest ask line is an ask more
+    // often than not, and lines are cached by situation, so the real call a few seconds on finds it written or in flight.
+    for (const item of items) {
+      if (known(item) || item.price < v2.ASK_LINE) continue;
+      void contextLine({ kind: 'ask', who, verdict: { label: 'ask', react: false, mood: 'watching', tags: watched ? ['ask', 'watched'] : ['ask'] }, it: spokenOf(item), week: w, month: monthNow, memory, reasons: saidReasons, store, warm: true }).catch(() => null);
+    }
     const kinds = await Promise.all(items.map(async (item) => {
       if (known(item)) return undefined;
       const c = await model.classifyItem({ name: item.item, price: item.price, store, habits }).catch(() => null);
@@ -130,12 +138,11 @@ const routes = {
     const judged = items.map((item, i) => ({ item: { ...item, watched }, v: v2.judge(item, w, memory, { loudness: body.loudness, now: new Date(), watched, necessity: kinds[i] }) }));
     // Cards only (an ask or a reaction) get a line written from context, three at most per call, in parallel, each
     // falling back to the fixed pool on timeout. Low confidence reads (the text reader) ask rather than scold.
-    const monthNow = nessie.month();
     let budgetLeft = 3;
     const verdicts = await Promise.all(judged.map(async ({ item, v }) => {
       if (body.confidence != null && Number(body.confidence) < 0.7 && v.react) { v = { ...v, react: false, label: 'ask', mood: 'watching', reason: 'Read from page text, so she asks rather than scolds.', tags: [...v.tags, 'lowconfidence'] }; }
       // "ChatGPT Plus, 20 dollars a month": the period is part of the name she says, and the first charge is what the week judges.
-      const spoken = { ...item, item: item.period ? `${shortName(item.item)} at $${Math.round(item.price)} a ${item.period}` : shortName(item.item) };
+      const spoken = spokenOf(item);
       let line = lineFor(v, spoken, w, who);
       let ack = ackLine(v, spoken, who);
       if (ack) {
