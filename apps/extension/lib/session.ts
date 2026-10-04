@@ -76,7 +76,14 @@ async function talk(read: CartRead | null) {
   try {
     const g = await grandma();
     let reply = await judge(read);
-    if (!reply?.ok) return hideAll();
+    if (!reply?.ok) {
+      console.info('[mama] API not answering, staying hidden');
+      return hideAll();
+    }
+    console.info(
+      `[mama] judged, $${Math.round(reply.week.left)} left this week\n` +
+        reply.verdicts.map((v) => `  ${v.label}${v.react ? ' (react)' : ''}  ${v.short}  ${v.reason}`).join('\n'),
+    );
     showWeek(g, reply.week);
     for (let next = nextCard(reply.verdicts, handled); next; next = reply.ok ? nextCard(reply.verdicts, handled) : null) {
       if (next.kind === 'react') await react(g, reply.week, next.verdict);
