@@ -238,6 +238,10 @@ async function setEnvelope(msg: Extract<Message, { type: 'SET_ENVELOPE' }>) {
 async function startOver() {
   // A fresh install: no grandma, no onboarding progress, no memory, no marks. Onboarding starts at Welcome.
   await Promise.all([browser.storage.local.clear(), browser.storage.session.clear()]);
+  // And a fresh week in the bank (the seed: $75, $50 spent), so the next judge never inherits the last one's
+  // Buy anyway. About three seconds; the popup is already on Welcome, and onboarding takes longer than that to
+  // reach the bank screen. If the API is down the extension is reset anyway.
+  if (await apiUp()) void call('/reset', { method: 'POST' });
 }
 
 /** Her memory of your answers. Durable, keyed by the rules' own item key, shared across every store. */

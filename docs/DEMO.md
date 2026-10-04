@@ -6,10 +6,10 @@ Everything below was verified against the code at `2f239da` on Saturday night. T
 
 1. **Code.** `git pull --rebase`, then `npm install`, then `npm test` (expect 42 api + 54 extension green) and `npm run build:ext`.
 2. **Keys.** `api/.env` holds `NESSIE_KEY`, `ELEVEN_API_KEY`, `ELEVEN_VOICE_ID` (Mama), `ELEVEN_VOICE_ID_NANA`. For texts, Ugonna adds the Photon credentials and `PHOTON_TO` = the judge's iPhone. Without them she shows "Texts are off right now" and never fakes a send.
-3. **Ledger.** Tests pollute it. Reset: `git checkout -- data/nessie-cache.json`, then `npm run api`. Confirm with `curl localhost:8787/week`: budget 75, spent 50, left 25, kept 40, mood calm. If anyone charged the live Nessie account, run `npm run reseed` instead (fresh student) and restart the API.
+3. **Ledger.** Tests pollute it. **Start over** in the popup resets it along with everything else (it calls `POST /reset`, about 3 seconds). Confirm with `curl localhost:8787/week`: budget 75, spent 50, left 25, kept 40, mood calm. Without the popup: `npm run reseed`, then restart the API.
 4. **API running.** `npm run api` in its own terminal, left open. `curl localhost:8787/health` answers `{"ok":true}`.
 5. **Chrome profile.** Honey and every other shopping extension OFF. Load unpacked from `apps/extension/build/chrome-mv3` (or reload it). The ring and meter icon appears in the toolbar.
-6. **Onboarding once.** Click her icon: Welcome, pick Mama, Connect bank, she reads the month (food delivery $102, rice $24), proposed $75, three watches, phone (skip if Photon is off), loudness, Go shopping, practice cart. This saves grandma, loudness and envelope. Do it on the demo machine before judging, then **Start over** from the popup's home screen right before each judge so the asks are fresh.
+6. **Onboarding once.** Click her icon: Welcome, pick Mama, Connect bank, she reads the month (food delivery $102, rice $24), proposed $75, three watches, phone (skip if Photon is off), loudness, Go shopping, practice cart. This saves grandma, loudness and envelope. **Before each judge: her icon, Start over.** One tap resets her memory, the onboarding and the bank week, and lands on Welcome. The judge then does the twenty second setup themselves.
 7. **Amazon.** Logged in, 1-Click OFF, default card removed. Cart holds rice (protected), dish soap (protected), AirPods Pro or the Instax (over $15, new). Nothing else checked.
 8. **Sound.** Mac volume up. Quiet hours are off for the hackathon (opt in via settings.quietHours), so she speaks at any hour.
 9. **Second laptop.** Same steps 1 to 7. Hotspot tested.
@@ -39,4 +39,4 @@ A simulated bank. One weekly envelope. Two hand written stores plus Shopify; on 
 - **Card but no voice.** Mac volume, then `api/.env` has both ElevenLabs values, then the API log. Text carries the demo; keep going.
 - **Amazon misbehaves.** Switch to the Target tab. Same extension, same Mama. Do not explain.
 - **Nessie down.** The local cache answers everything. Say "simulated bank" as planned.
-- **She asked about this already.** Popup home, Start over. Asks and reactions reset; the ledger does not (see step 3).
+- **She asked about this already, or the week is already blown.** Popup home, Start over. Everything resets, bank included.
