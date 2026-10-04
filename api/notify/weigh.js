@@ -19,6 +19,14 @@ const YES = /^(yes|yeah|yep|ya|yh|correct|right|that'?s it|exactly|y|ok|okay|sur
 const NO = /^(no|nope|nah|wrong|not that|n)\b/i;
 const PENDING_MS = 30 * 60 * 1000;
 const CONFIRM_BELOW = 0.8;
+const CHEAPER_FROM = 25;
+
+/** { text, url } when the same product is cheaper somewhere she fetched, else null. */
+async function cheaper(it, who) {
+  const c = await model.cheaperOption({ name: it.item, price: it.price, store: it.store }).catch(() => null);
+  if (!c || !c.found || !(c.price < it.price - 1) || !c.url) return null;
+  return { text: textLine('cheaper', { who, item: it.item, price: c.price, store: c.store, left: it.price - c.price }), url: c.url };
+}
 
 /** Could this text be about a purchase? Cheap, so chat.js can ask before any model call. */
 function looksLikePurchase(text) {
@@ -133,7 +141,11 @@ async function judgeItems(items, { who, mem, w, left, now }) {
     lines.push(textLine('needs', { who }));
   }
   if (!react && fits.length && !ask) tapback = 'like';
-  return { reply: lines.join('\n'), mood, react: tapback, intent: 'weigh', verdicts: judged.map((j) => ({ item: j.it.item, price: j.it.price, label: j.v.label, react: j.v.react })) };
+  // The dearest want she is talking about may be cheaper elsewhere. Found after the verdict goes out, never before,
+  // and only a price she fetched. Said as cash back in the week, which is the framing that moves people.
+  const dear = (react || ask || fits[0] || {}).it;
+  const followUp = dear && dear.price >= CHEAPER_FROM && model.ready() ? () => cheaper(dear, who) : null;
+  return { reply: lines.join('\n'), mood, react: tapback, intent: 'weigh', followUp, verdicts: judged.map((j) => ({ item: j.it.item, price: j.it.price, label: j.v.label, react: j.v.react })) };
 }
 
 /** The answer to "what is it for?": an occasion plans it, a need is remembered, a want is weighed now. */

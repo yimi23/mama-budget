@@ -20,7 +20,7 @@ International and first generation students who send money home. Their budget ha
 6. **You type a reason instead.** "Graduation" makes it planned, never scolded. If it costs more than the week has, she offers the gap from savings and moves it through the bank when you say yes.
 7. **Buy anyway** posts the purchase to Nessie, the meter climbs, the badge speaks once. **You're right** puts it back; Kept ticks up and she says so.
 8. **Name a store.** She is on Target, Walmart, Allbirds, Zara, DoorDash and the subscription page of whatever you were about to sign up for. On a Shopify product page she answers the Add to cart click itself, before the item is in any cart. On a merchant she watches, she arrives with the week in hand before the cart opens.
-9. **Your phone.** When the week blows and texts are on, she texts the phone through Photon, in character, with the same numbers.
+9. **Your phone.** When the week blows and texts are on, she texts the phone through Photon, in character, with the same numbers. And the thread runs the other way: text her "should I buy the Sony XM5 for $348" or send her a screenshot of the product page, and she weighs it with the same judge and the same memory as the cart. A need gets a thumbs up and no words. A first sighting gets one question. A want over $25 gets a second bubble if the same product is cheaper somewhere she actually fetched, said as cash back in the week, with the link. Gele down arrives as a voice note in her voice.
 
 ## Judged by an LLM: the four criteria
 
@@ -37,7 +37,7 @@ The intervention happens at the only moment that changes behaviour: between the 
 - **A stateless service worker.** All state in `chrome.storage` (memory keyed by normalised name so a want admitted on Amazon is remembered on Target, reasons, what was reacted to this week, what was posted). Audio from an offscreen document, `browser.tts` as fallback. The API fails twice in a row and the badge hides; a store page never shows an error.
 - **Pre-written speech.** While the ask card is on screen she already writes both possible reactions and warms the voice, so the moment you answer she speaks.
 - **The claim is a test, not a sentence.** `api/test/invariance.test.js` swaps the model for one that returns garbage and asserts all 50 frozen verdicts are byte for byte unchanged; then, for every case in every memory state, week, loudness and watched flag (over 10,000 situations), that whether she reacts is identical for every value the model could return, that a garbage answer behaves exactly like no answer, that family money is always protected, and that the model can only ever make her quieter.
-- **123 tests**, 54 on the API (judge v1 and v2, invariance, reasons, Photon gate) and 69 on the extension (detector, each reader against saved real carts and product pages, flow, badge, week math, onboarding, and a source reading guard that fails if a shipped feature is not wired into the session).
+- **133 tests**, 64 on the API (judge v1 and v2, invariance, reasons, the text reader, Photon gate and echoes) and 69 on the extension (detector, each reader against saved real carts and product pages, flow, badge, week math, onboarding, and a source reading guard that fails if a shipped feature is not wired into the session).
 
 ### Usability
 
@@ -104,7 +104,7 @@ What the score taught us, kept in the open: the first mother labelled both trans
 
 **Capital One Nessie** is the bank, not a mock. The seed creates the customer's accounts (`POST /customers/:id/accounts`) and reads the customer back for the name (`GET /customers/:id`). Spending is `POST /accounts/:id/purchases`. Money moving is withdrawal and deposit pairs (`/withdrawals`, `/deposits`): transfers home, a plan funded from savings, a put back. Recurring things are `POST /accounts/:id/bills`. The week, the month, Kept, the savings balance and the watched merchants are all computed from what Nessie holds. A local cache mirrors it so the demo never stalls on the network, and `POST /reset` reseeds both.
 
-**Photon** is her phone. When the week blows and texts are on, she texts the number in `PHOTON_TO` through iMessage, through the Photon cloud (Spectrum) or the local Mac kit. Daily cap, minimum gap, allow list and a dry run mode are in `.env.example`; `GET /messages` shows what she would have sent. Off by default: the UI says "Texts are off right now" and never shows a sent state that did not happen.
+**Photon** is her phone, both ways. When the week blows and texts are on, she texts through iMessage via Photon's Spectrum (her own number, no Mac), with the local Mac kit as the fallback. Texts to her are a fifth reader: words or a screenshot become items, judged by the same rules and remembered under the same keys as the cart; she confirms a photo she is unsure of before judging it, types while she reads, answers in one bubble, replies in thread, uses a tapback instead of words when a want fits, and sends a cheaper listing as a rich link only when the price came from a page the search returned. A restart never replays old texts and her own words are never read back as orders. Daily cap, minimum gap, allow list and a dry run mode are in `.env.example`; `GET /messages` shows what she would have sent. Off by default: the UI says "Texts are off right now" and never shows a sent state that did not happen.
 
 **ElevenLabs** is her voice. `eleven_multilingual_v2`, Mama as "Mama (Amarachi)", Nana as "Mother (US Midwest)", with stability and style moved by mood so shocked and proud do not sound the same. Audio is cached by voice, mood and text; a `204` means text only.
 
@@ -133,7 +133,7 @@ cp .env.example api/.env     # fill NESSIE_KEY, ANTHROPIC_API_KEY, ELEVEN_API_KE
 npm run seed                  # a month of history for the demo student
 npm run api                   # http://localhost:8787, GET /health should answer
 
-npm test                      # 123 tests
+npm test                      # 133 tests
 npm run score                 # the 50 case score
 npm run build:ext             # apps/extension/build/chrome-mv3
 ```
@@ -156,7 +156,7 @@ api/              Node, plain http, no framework
   lines/          writer.js (line bank), model.js (the one file that calls Claude)
   nessie/         client.js, seed.js
   voice/ photon/ notify/
-  test/           54 tests
+  test/           64 tests
 packages/shared/  typed messages and shapes
 scoring/          npm run score
 data/             cases, labels, protocol, baseline

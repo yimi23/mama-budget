@@ -78,7 +78,7 @@ async function handleIncoming(text, who = 'mama', from, messageId, { images = []
   if (weighed) {
     memory.addHistory(mem, who, weighed.reply || `(${weighed.react || 'nod'})`);
     memory.write(mem);
-    return { reply: weighed.reply, mood: weighed.mood, intent: weighed.intent, react: weighed.react, verdicts: weighed.verdicts };
+    return { reply: weighed.reply, mood: weighed.mood, intent: weighed.intent, react: weighed.react, verdicts: weighed.verdicts, followUp: weighed.followUp };
   }
 
   const week = nessie.week();

@@ -92,13 +92,37 @@ const DEBOUNCE_MS = Number(process.env.PHOTON_DEBOUNCE_MS || 5000);
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const turns = new Map(); // space.id -> { timer, texts, images, last, fromId }
 
+// On a Mac, sips makes a 1200px JPEG out of a 4 MB phone screenshot in well under a second. Anywhere else, or on any
+// error, the original goes as is.
+function shrink(buf, mediaType) {
+  if (process.platform !== 'darwin' || buf.length < 300 * 1024) return null;
+  const fs = require('node:fs');
+  const os = require('node:os');
+  const path = require('node:path');
+  const { execFileSync } = require('node:child_process');
+  const ext = mediaType === 'image/png' ? 'png' : mediaType === 'image/webp' ? 'webp' : mediaType === 'image/gif' ? 'gif' : 'jpg';
+  const src = path.join(os.tmpdir(), `mama-${process.pid}-${Date.now()}.${ext}`);
+  const out = src.replace(/\.[a-z]+$/, '.small.jpg');
+  try {
+    fs.writeFileSync(src, buf);
+    execFileSync('sips', ['-Z', '1200', '-s', 'format', 'jpeg', '-s', 'formatOptions', '75', src, '--out', out], { stdio: 'ignore', timeout: 5000 });
+    return { data: fs.readFileSync(out).toString('base64'), mediaType: 'image/jpeg' };
+  } catch {
+    return null;
+  } finally {
+    for (const f of [src, out]) try { fs.unlinkSync(f); } catch { /* gone */ }
+  }
+}
+
 async function imageOf(content) {
   if (content?.type !== 'attachment' || !/^image\//i.test(content.mimeType || '')) return null;
   try {
     const buf = await content.read();
     if (!buf || buf.length > MAX_IMAGE_BYTES) return null;
     const mediaType = /jpe?g/i.test(content.mimeType) ? 'image/jpeg' : /png/i.test(content.mimeType) ? 'image/png' : /webp/i.test(content.mimeType) ? 'image/webp' : /gif/i.test(content.mimeType) ? 'image/gif' : null;
-    return mediaType ? { data: Buffer.from(buf).toString('base64'), mediaType } : null;
+    if (!mediaType) return null;
+    const small = shrink(Buffer.from(buf), mediaType);
+    return small || { data: Buffer.from(buf).toString('base64'), mediaType };
   } catch (e) {
     console.log('[photon] could not read attachment:', e.message);
     return null;
@@ -110,7 +134,7 @@ function listen(onIncoming) {
     if (!ctx) return;
     let builders = {};
     try { builders = require('spectrum-ts'); } catch { /* plain text only */ }
-    const { typing, reaction, reply: inThread, Emoji } = builders;
+    const { typing, reaction, reply: inThread, richlink, voice: voiceMsg, Emoji } = builders;
     const EMOJI = { like: Emoji?.like || '👍', love: Emoji?.love || '❤️', laugh: Emoji?.laugh || '😂' };
 
     const flush = async (space) => {
@@ -128,6 +152,21 @@ function listen(onIncoming) {
       if (res.reply) {
         const content = t.images.length && inThread ? inThread(res.reply, t.last) : res.reply;
         await space.send(content).catch((e) => console.log('[photon] reply send failed:', e.message));
+      }
+      if (res.voiceLine && voiceMsg) {
+        const v = await res.voiceLine().catch(() => null);
+        if (v && v.buffer) await space.send(voiceMsg(v.buffer, { mimeType: v.mimeType, name: v.mimeType === 'audio/mp4' ? 'mama.m4a' : 'mama.mp3' })).catch((e) => console.log('[photon] voice note failed:', e.message));
+      }
+      // The cheaper option, when there is one: its own bubble after the verdict, then the link so iMessage unfurls it.
+      if (res.followUp) {
+        if (typing) space.send(typing('start')).catch(() => {});
+        const f = await res.followUp().catch(() => null);
+        if (typing) space.send(typing('stop')).catch(() => {});
+        if (f) {
+          await space.send(f.text).catch(() => {});
+          await space.send(richlink ? richlink(f.url) : f.url).catch(() => space.send(f.url).catch(() => {}));
+          require('../notify/log').push({ to: t.fromId || 'them', text: `${f.text}\n${f.url}`, mood: res.mood, sender: 'photon', sent: true, direction: 'out', at: Date.now() });
+        }
       }
     };
 

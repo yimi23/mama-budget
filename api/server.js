@@ -312,9 +312,11 @@ const routes = {
 
   'POST /messages/incoming': async (body) => {
     const images = Array.isArray(body.images) ? body.images.filter((i) => i && i.data && /^image\//.test(i.mediaType || '')).slice(0, 3) : [];
-    const { reply, mood, intent, react, verdicts } = await chat.handleIncoming(String(body.text || ''), 'mama', body.from, body.id, { images });
+    const { reply, mood, intent, react, verdicts, followUp } = await chat.handleIncoming(String(body.text || ''), 'mama', body.from, body.id, { images });
     const out = reply ? await notify(body.from, reply, mood, { prompted: true }) : null;
-    return { ok: true, reply, intent, react, verdicts, texted: !!(out && out.sent) };
+    const follow = followUp ? await followUp().catch(() => null) : null;
+    if (follow) await notify(body.from, `${follow.text}\n${follow.url}`, mood, { prompted: true });
+    return { ok: true, reply, intent, react, verdicts, follow, texted: !!(out && out.sent) };
   },
 
   'GET /photon/health': async () => ({ sender: require('./notify').senderName(), spectrum: !!photon.credentials(), imessage: await kit.status() }),
@@ -399,18 +401,50 @@ schedule.startScheduler();
 // PHOTON_ prefixed fallback) are set -- a no-op otherwise, so this is always safe to call.
 // spectrum.js sends the reply itself (same space, continuing the thread), so this just logs that leg
 // for GET /messages. handleIncoming() is the exact same function POST /messages/incoming calls.
+/** Her line as audio for a voice message: { buffer, mimeType } or null. m4a when afconvert is here (a Mac), mp3 otherwise. */
+async function voiceNote(line, who, mood) {
+  try {
+    const url = await speak(line.replace(/\s+/g, ' ').trim(), who, mood);
+    if (!url) return null;
+    const mp3 = Buffer.from(url.split(',')[1], 'base64');
+    if (process.platform !== 'darwin') return { buffer: mp3, mimeType: 'audio/mpeg' };
+    const fs = require('node:fs');
+    const os = require('node:os');
+    const path = require('node:path');
+    const { execFileSync } = require('node:child_process');
+    const src = path.join(os.tmpdir(), `mama-voice-${Date.now()}.mp3`);
+    const out = src.replace(/\.mp3$/, '.m4a');
+    try {
+      fs.writeFileSync(src, mp3);
+      execFileSync('afconvert', ['-f', 'm4af', '-d', 'aac', src, out], { stdio: 'ignore', timeout: 8000 });
+      return { buffer: fs.readFileSync(out), mimeType: 'audio/mp4' };
+    } catch {
+      return { buffer: mp3, mimeType: 'audio/mpeg' };
+    } finally {
+      for (const f of [src, out]) try { fs.unlinkSync(f); } catch { /* gone */ }
+    }
+  } catch {
+    return null;
+  }
+}
+
 photon.listen(async (text, fromId, messageId, { images = [] } = {}) => {
-  const { reply, mood, react } = await chat.handleIncoming(text, 'mama', fromId, messageId, { images });
+  const { reply, mood, react, followUp } = await chat.handleIncoming(text, 'mama', fromId, messageId, { images });
   if (reply || react) require('./notify/log').push({ to: fromId || 'them', text: reply || `(${react})`, mood, sender: 'photon', sent: true, direction: 'out', at: Date.now() });
-  return { reply, react };
+  // Gele down arrives in her voice too: the same line as a voice note, after the text (text first, always, for
+  // whoever cannot or will not listen).
+  const voiceLine = mood === 'shocked' && reply ? () => voiceNote(reply, 'mama', mood) : null;
+  return { reply, react, followUp, mood, voiceLine };
 });
 // The Mac kit listens the same way when it is the live sender: texts to this Mac's Messages, the same
 // handleIncoming(), and the reply goes back through notify() (prompted: replies skip the gate), so it is
 // sent and logged exactly like every other text.
 if (!photon.credentials() && kit.available()) {
   kit.listen(async (text, from, messageId) => {
-    const { reply, mood } = await chat.handleIncoming(text, 'mama', from, messageId);
+    const { reply, mood, followUp } = await chat.handleIncoming(text, 'mama', from, messageId);
     if (reply) await notify(from, reply, mood, { prompted: true });
+    const follow = followUp ? await followUp().catch(() => null) : null;
+    if (follow) await notify(from, `${follow.text}\n${follow.url}`, mood, { prompted: true });
   });
 }
 if (photon.credentials()) {

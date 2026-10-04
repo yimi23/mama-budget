@@ -147,4 +147,39 @@ async function classifyReason({ reason, name, price }) {
   return classifyJSON({ system: REASON_SYSTEM, prompt, schema: REASON_SCHEMA, key: `${name}|${reason}` });
 }
 
-module.exports = { say, extractItems, classifyItem, classifyReason, ready, MODEL, WARM_TIMEOUT_MS };
+const CHEAPER_SYSTEM = `You check whether the exact same product is sold for less right now, using web search. Report a price only if you saw it
+on a page you fetched in this search, for the same product (same model, same variant, new, not refurbished), from a retailer that
+ships in the United States. Prefer major retailers. If you cannot find the same product cheaper with a URL to its listing, answer
+found=false. Never estimate or recall a price from memory. Return JSON only.`;
+const CHEAPER_SCHEMA = { type: 'object', additionalProperties: false, required: ['found', 'store', 'price', 'url', 'product'],
+  properties: { found: { type: 'boolean' }, store: { type: ['string', 'null'] }, price: { type: ['number', 'null'] }, url: { type: ['string', 'null'] }, product: { type: ['string', 'null'] } } };
+const CHEAPER_TIMEOUT_MS = Number(process.env.MODEL_CHEAPER_TIMEOUT_MS || 20000);
+
+/** The same product for less, from a page fetched now. { found, store, price, url, product } or null. Never a guess. */
+async function cheaperOption({ name, price, currency = 'USD', store }) {
+  if (!ready()) return null;
+  const prompt = `Product: "${name}". Seen at ${store || 'a store'} for ${currency} ${price}. Is the same product sold for less elsewhere today?`;
+  try {
+    const res = await client.messages.create(
+      {
+        model: MODEL, max_tokens: 1500, system: CHEAPER_SYSTEM,
+        tools: [{ type: 'web_search_20260209', name: 'web_search', max_uses: 2 }],
+        output_config: { effort: 'low', format: { type: 'json_schema', schema: CHEAPER_SCHEMA } },
+        messages: [{ role: 'user', content: prompt }],
+      },
+      { timeout: CHEAPER_TIMEOUT_MS },
+    );
+    const text = res.content.filter((b) => b.type === 'text').map((b) => b.text).join('');
+    const m = text.match(/\{[\s\S]*\}/);
+    const out = JSON.parse(m ? m[0] : text);
+    // The URL must be one the search actually returned: a quoted price with no fetched page behind it is a guess.
+    const fetched = new Set();
+    for (const b of res.content) if (b.type === 'web_search_tool_result' && Array.isArray(b.content)) for (const r of b.content) if (r.url) fetched.add(r.url);
+    if (!out.found || !(out.price > 0) || !out.url || !fetched.has(out.url)) return { found: false };
+    return out;
+  } catch {
+    return null;
+  }
+}
+
+module.exports = { say, extractItems, classifyItem, classifyReason, cheaperOption, ready, MODEL, WARM_TIMEOUT_MS };

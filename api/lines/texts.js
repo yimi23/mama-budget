@@ -19,6 +19,7 @@ const MAMA = {
   isThisIt: ['${item}, ${price}${store}. That is the one?'],
   wrongOne: ['Okay. Tell me the item and the price.'],
   cannotSee: ['I cannot see a price in that. Tell me what it is and how much.'],
+  cheaper: ['${shop} has the same ${item} for ${price} today. That is ${left} back in the week.'],
 };
 
 const NANA = {
@@ -38,6 +39,7 @@ const NANA = {
   isThisIt: ['${item}, ${price}${store}. Is that the one?'],
   wrongOne: ['Okay, hon. Tell me the item and the price.'],
   cannotSee: ['I cannot make out a price there, hon. What is it and how much?'],
+  cheaper: ['${shop} has the same ${item} for ${price} today, hon. That is ${left} back in the week.'],
 };
 
 function textLine(key, { amount, left, who = 'mama', item, price, occasion, store } = {}) {
@@ -47,7 +49,7 @@ function textLine(key, { amount, left, who = 'mama', item, price, occasion, stor
   return t.replace('${amount}', `$${Math.round(amount || 0)}`).replace(/\$\{left\}/g, `$${Math.round(left || 0)}`)
     .replace('${item}', String(item || 'That').trim()).replace('${price}', `$${Math.round(price || 0)}`)
     .replace('${occasion}', String(occasion || 'the occasion').trim().replace(/[.!?]+$/, ''))
-    .replace('${store}', store ? ` at ${store}` : '');
+    .replace('${store}', store ? ` at ${store}` : '').replace('${shop}', String(store || 'Another store').trim());
 }
 
 module.exports = { textLine, MAMA, NANA };
