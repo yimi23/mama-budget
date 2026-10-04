@@ -19,7 +19,7 @@ International and first generation students who send money home. Their budget ha
 5. **You answer.** "I just want them" admits a want; she reacts to the week, not to you. If it fits, a nod. If it blows the week, Gele down: "Ehn ehn. $249, with $25 left this week. You are sure?" Spoken and written. The row in your cart gets her mark.
 6. **You type a reason instead.** "Graduation" makes it planned, never scolded. If it costs more than the week has, she offers the gap from savings and moves it through the bank when you say yes.
 7. **Buy anyway** posts the purchase to Nessie, the meter climbs, the badge speaks once. **You're right** puts it back; Kept ticks up and she says so.
-8. **Name a store.** She is on Target, Walmart, Allbirds, Zara, DoorDash and the subscription page of whatever you were about to sign up for. On a merchant she watches, she arrives with the week in hand before the cart opens.
+8. **Name a store.** She is on Target, Walmart, Allbirds, Zara, DoorDash and the subscription page of whatever you were about to sign up for. On a Shopify product page she answers the Add to cart click itself, before the item is in any cart. On a merchant she watches, she arrives with the week in hand before the cart opens.
 9. **Your phone.** When the week blows and texts are on, she texts the phone through Photon, in character, with the same numbers.
 
 ## Judged by an LLM: the four criteria
@@ -31,13 +31,13 @@ The intervention happens at the only moment that changes behaviour: between the 
 ### Technical Complexity
 
 - **Reach without permission creep.** One content script on `<all_urls>`, gated by a pure detector that runs under 5ms with no imports and no DOM writes. It needs two structural signals (a cart or checkout path, a subtotal node, a pay button, a card field or hosted checkout iframe) before loading anything. Prose alone never opens her. Gmail order emails, Zara's script tags and a "subscribe to newsletter" button were all live false positives that are now unit tests.
-- **Four readers, one shape.** Platform JSON first (Shopify `/cart.js`, WooCommerce Store API, BigCommerce storefront, a same origin fetch), then hand written adapters through one `runAdapter(spec)` (Amazon checked rows only, Target, Walmart), then the cart region's visible text to the model with a JSON schema. Prices are reconciled against the subtotal so unit and line prices never get confused. The judge never knows which reader fired.
+- **Four readers, one shape.** Platform JSON first (Shopify `/cart.js`, WooCommerce Store API, BigCommerce storefront, a same origin fetch), then hand written adapters through one `runAdapter(spec)` (Amazon checked rows only, Target, Walmart), then the product page's own JSON-LD (so the add to cart click is answered before the item is in any cart, and never on a cart path, where that data is recommendations), then the cart region's visible text to the model with a JSON schema. Prices are reconciled against the subtotal so unit and line prices never get confused. The judge never knows which reader fired.
 - **Rules keep the promises, the model knows the world.** `rules_v2` is a pure function: family money protected, first sighting asked, planned never scolded, thresholds scaled by loudness, a $5 line on watched merchants. The model classifies whether an unknown item is a necessity from the item and the store, reads what a typed reason means, extracts items from cart text and writes her lines from the whole situation. It is raced on a timeout and completes into a cache, so a slow answer costs nothing and the next judgement is instant. Word lists are the fallback only when the model is off.
 - **A real ledger.** Every purchase, put back, transfer home and plan funded from savings is a Nessie write with an idempotent `requestId`, so a card answered twice or an order page reloaded charges once. The week is computed from the ledger, not from a counter.
 - **A stateless service worker.** All state in `chrome.storage` (memory keyed by normalised name so a want admitted on Amazon is remembered on Target, reasons, what was reacted to this week, what was posted). Audio from an offscreen document, `browser.tts` as fallback. The API fails twice in a row and the badge hides; a store page never shows an error.
 - **Pre-written speech.** While the ask card is on screen she already writes both possible reactions and warms the voice, so the moment you answer she speaks.
 - **The claim is a test, not a sentence.** `api/test/invariance.test.js` swaps the model for one that returns garbage and asserts all 50 frozen verdicts are byte for byte unchanged; then, for every case in every memory state, week, loudness and watched flag (over 10,000 situations), that whether she reacts is identical for every value the model could return, that a garbage answer behaves exactly like no answer, that family money is always protected, and that the model can only ever make her quieter.
-- **115 tests**, 54 on the API (judge v1 and v2, invariance, reasons, Photon gate) and 61 on the extension (detector, each reader against saved real carts, flow, badge, week math, onboarding, and a source reading guard that fails if a shipped feature is not wired into the session).
+- **123 tests**, 54 on the API (judge v1 and v2, invariance, reasons, Photon gate) and 69 on the extension (detector, each reader against saved real carts and product pages, flow, badge, week math, onboarding, and a source reading guard that fails if a shipped feature is not wired into the session).
 
 ### Usability
 
@@ -133,7 +133,7 @@ cp .env.example api/.env     # fill NESSIE_KEY, ANTHROPIC_API_KEY, ELEVEN_API_KE
 npm run seed                  # a month of history for the demo student
 npm run api                   # http://localhost:8787, GET /health should answer
 
-npm test                      # 115 tests
+npm test                      # 123 tests
 npm run score                 # the 50 case score
 npm run build:ext             # apps/extension/build/chrome-mv3
 ```
@@ -150,7 +150,7 @@ Useful during a judging session: **Start over** in the popup resets her memory a
 apps/extension/   WXT, Manifest V3, TypeScript
   entrypoints/    content.ts (gate), background.ts (worker), offscreen, popup (onboarding), practice (cart)
   lib/            detect.ts, session.ts, flow.ts, readers/, ui/, onboarding.ts
-  test/           61 tests, fixtures are saved real carts
+  test/           69 tests, fixtures are saved real carts
 api/              Node, plain http, no framework
   judge/          rules.js (v1, frozen), rules_v2.js (ships), reasons.js
   lines/          writer.js (line bank), model.js (the one file that calls Claude)
@@ -166,7 +166,7 @@ design/           brand marks and the numbered screens the UI was lifted from
 
 ## What is not done, said plainly
 
-- Three stores have hand written adapters. Every other store goes through the model reader, which is slower (a second or two) and asks instead of judging when its confidence is low.
+- Three stores have hand written adapters. Every other store's cart goes through the model reader, which is slower (a second or two) and asks instead of judging when its confidence is low. Product pages are read from their JSON-LD, which Shopify stores, Walmart and most big retailers publish and Amazon does not.
 - The phone path needs `PHOTON_TO` and either a Mac signed into Messages or Spectrum credentials. Without them she never texts, and says so.
 - The ledger moves on Buy anyway and on an order confirmation page she can recognise. A store with an unusual confirmation page is only charged from the card.
 - The score has two raters. The third is pending, and 15 of 50 cases are splits the mothers did not agree on.

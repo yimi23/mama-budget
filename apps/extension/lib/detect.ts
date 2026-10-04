@@ -99,6 +99,16 @@ function visibleText(doc: Document, root: Element, cap: number): string {
   return out.slice(0, cap);
 }
 
+/** True on a cart, checkout or pay path. Reader 3 reads product data only off these, where JSON-LD means the item. */
+export function isMoneyPath(url: string): boolean {
+  try {
+    const path = new URL(url).pathname;
+    return CART_PATH.test(path) || PAY_PATH.test(path);
+  } catch {
+    return false;
+  }
+}
+
 /**
  * The gate's fast path on a live page. Same signals as cartSignalCount(readSignals()), cheapest first:
  * URL and title, then two selector lookups, and the text walk only when it could still reach two signals.

@@ -17,6 +17,13 @@ test('every message type in the contract has a handler in the worker', () => {
   for (const t of types) assert.ok(worker.includes(`case '${t}':`), `worker handles ${t}`);
 });
 
+test('the readers run in the order the plan says, and reader 3 is in the chain', () => {
+  const index = read('../lib/readers/index.ts');
+  const order = ['readPlatform(', 'runAdapter(spec', 'readJsonLd(', 'cartRegionText('].map((s) => index.indexOf(s));
+  assert.ok(order.every((i) => i >= 0), 'every reader is called');
+  assert.deepEqual(order, [...order].sort((a, b) => a - b), 'platform, adapters, JSON-LD, text');
+});
+
 test('the session sends what the card promises', () => {
   const sends = {
     "type: 'JUDGE'": 'judges the cart',

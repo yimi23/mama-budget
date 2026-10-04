@@ -1,10 +1,11 @@
 // Readers in order, first one with items wins.
 // 1 platform JSON, 2 site adapters, 3 JSON-LD on product pages, 4 cart text to /extract.
-// Layers 3 and 4 land next; until then a page no reader knows reads as null.
+// A page no reader knows reads as null, and she stays away.
 
 import type { CartRead } from '@mama/shared/types';
 import { storeKey } from '@mama/shared/store-key';
 import { readPlatform } from './platform';
+import { readJsonLd } from './jsonld';
 import { locateRow as locateIn, runAdapter, type AdapterSpec } from './adapter';
 import { amazon } from './sites/amazon';
 import { target } from './sites/target';
@@ -30,6 +31,10 @@ export async function readCart(doc: Document, url: string, extract?: Extractor):
     const read = runAdapter(spec, doc);
     if (read && read.items.length) return read;
   }
+  // Reader 3: the product this page is about, off cart and pay paths. The add to cart click lands here first, so she
+  // can ask before the item is in any cart.
+  const product = readJsonLd(doc, url);
+  if (product) return product;
   // Reader 4: cart text to the model, when nobody wrote code for this store.
   if (extract) {
     const text = cartRegionText(doc);
