@@ -135,9 +135,11 @@ export function toE164(raw: string): string | null {
   return d.length === 10 ? `+1${d}` : null;
 }
 
-/** "₦120,000" for Mama's envelope line. Nana gets no conversion. */
-export function naira(usd: number, perUsd = 1600): string {
-  return `₦${Math.round(usd * perUsd).toLocaleString('en-US')}`;
+/** The envelope in the person's home currency ("₦120,000"), or null when there is no home currency to show. */
+const HOME_RATE: Record<string, [number, string]> = { NGN: [1600, '₦'], GHS: [15.5, 'GH₵'], KES: [129, 'KSh '], INR: [84, '₹'], PHP: [57, '₱'], MXN: [18, 'MX$'] };
+export function inHome(usd: number, home: Home): string | null {
+  const r = HOME_RATE[home];
+  return r ? `${r[1]}${Math.round(usd * r[0]).toLocaleString('en-US')}` : null;
 }
 
 /** How long she will be speaking, when the player did not say: about 2.4 words a second plus a breath. */
@@ -160,9 +162,14 @@ export const HOMES: readonly { code: Home; name: string }[] = [
   { code: 'NGN', name: 'Naira' }, { code: 'GHS', name: 'Cedi' }, { code: 'KES', name: 'Shilling' },
   { code: 'INR', name: 'Rupee' }, { code: 'PHP', name: 'Peso (PHP)' }, { code: 'MXN', name: 'Peso (MXN)' }, { code: 'none', name: 'None' },
 ];
-/** Until chosen: naira with Mama, none with Nana. The grandma never decides it after that. */
-export function homeFor(s: Settings): Home {
-  return s.home ?? (s.grandma === 'nana' ? 'none' : 'NGN');
+/** Region decides the default (the browser's locale: en-NG is naira, en-US is none). The grandma never does. */
+const REGION_HOME: Record<string, Home> = { NG: 'NGN', GH: 'GHS', KE: 'KES', IN: 'INR', PH: 'PHP', MX: 'MXN' };
+export function regionHome(locale: string): Home {
+  const region = (locale.split(/[-_]/)[1] || '').toUpperCase();
+  return REGION_HOME[region] ?? 'none';
+}
+export function homeFor(s: Settings, locale: string = typeof navigator !== 'undefined' ? navigator.language : 'en-US'): Home {
+  return s.home ?? regionHome(locale);
 }
 
 export interface Settings {

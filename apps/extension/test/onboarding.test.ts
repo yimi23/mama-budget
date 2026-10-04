@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { DOTS, TIERS, countUp, dotIndex, formatPhone, naira, next, skip, speechSeconds, toE164, words } from '../lib/onboarding.ts';
+import { DOTS, TIERS, countUp, dotIndex, formatPhone, homeFor, inHome, next, regionHome, skip, speechSeconds, toE164, words } from '../lib/onboarding.ts';
 
 test('the happy path visits every screen in the planned order', () => {
   const p = { bank: true, texted: true };
@@ -53,7 +53,18 @@ test('phone formatting and E.164', () => {
 
 test('words, naira and timing helpers', () => {
   assert.equal(words(40), 'forty'); assert.equal(words(102), 'one hundred and two');
-  assert.equal(naira(75), '₦120,000');
   assert.equal(speechSeconds('Rice is at home.'), 2.2);
   assert.equal(countUp(40, 600, 0), 0); assert.equal(countUp(40, 600, 600), 40); assert.ok(countUp(40, 600, 300) > 20);
+});
+
+test('money back home follows the region, never the grandma', () => {
+  assert.equal(regionHome('en-NG'), 'NGN');
+  assert.equal(regionHome('en-GH'), 'GHS');
+  assert.equal(regionHome('en-US'), 'none');
+  assert.equal(regionHome('en'), 'none');
+  assert.equal(homeFor({ grandma: 'mama' }, 'en-US'), 'none', 'Mama in the US gets no figure');
+  assert.equal(homeFor({ grandma: 'nana' }, 'en-NG'), 'NGN', 'Nana in Nigeria gets naira');
+  assert.equal(homeFor({ home: 'KES' }, 'en-NG'), 'KES', 'a choice beats the region');
+  assert.equal(inHome(75, 'NGN'), '₦120,000');
+  assert.equal(inHome(75, 'none'), null);
 });

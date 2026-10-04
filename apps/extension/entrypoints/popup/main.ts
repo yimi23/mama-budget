@@ -6,7 +6,7 @@
 import type { Message, Reply } from '@mama/shared/messages';
 import type { Cue, Month, Week } from '@mama/shared/types';
 import type { Grandma } from '../../lib/ui/badge';
-import { COPY, DOTS, HOMES, MOTHERS_LINE, TIERS, countUp, homeFor, dotIndex, formatPhone, naira, next, skip, speechSeconds, toE164, words, type Home, type Loudness, type Progress, type Settings, type Step } from '../../lib/onboarding';
+import { COPY, DOTS, HOMES, MOTHERS_LINE, TIERS, countUp, homeFor, dotIndex, formatPhone, inHome, next, skip, speechSeconds, toE164, words, type Home, type Loudness, type Progress, type Settings, type Step } from '../../lib/onboarding';
 
 const $ = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel)!;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -201,7 +201,8 @@ const envelopeSub = $('#envelope-sub');
 function paintEnvelope() {
   const v = Number(range.value);
   envelopeValue.textContent = `$${v}`;
-  envelopeSub.textContent = `A week of what you spend, plus room to breathe. Slide it if she is wrong.${grandma() === 'mama' ? ` About ${naira(v)}.` : ''}`;
+  const atHome = inHome(v, homeFor(settings));
+  envelopeSub.textContent = `A week of what you spend, plus room to breathe. Slide it if I am wrong.${atHome ? ` About ${atHome}.` : ''}`;
 }
 range.addEventListener('input', paintEnvelope);
 SHOW.saw = async () => {

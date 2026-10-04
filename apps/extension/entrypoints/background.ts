@@ -4,6 +4,7 @@ import type { HandledLists, Message } from '@mama/shared/messages';
 import type { Answer, BuyReply, CartItem, CartRead, CurrencyCode, JudgeReply, Month, Week } from '@mama/shared/types';
 import { API, apiUp, call } from '../lib/api';
 import { weekKey } from '@mama/shared/week';
+import { regionHome } from '../lib/onboarding';
 import { quietHours } from '../lib/quiet';
 
 const LAST_CART_TTL_MS = 30 * 60 * 1000;
@@ -85,12 +86,12 @@ async function grandmaSetting(): Promise<string> {
   return (settings as { grandma?: string }).grandma ?? 'mama';
 }
 
-/** The person's currency back home for her loud lines. Chosen on the popup home screen; until then, naira with Mama, none with Nana. */
+/** The person's currency back home for her loud lines. Chosen on the popup home screen; until then the region decides (browser locale), never the grandma. */
 async function homeSetting(): Promise<string | null> {
   const { settings = {} } = await browser.storage.local.get('settings');
-  const st = settings as { grandma?: string; home?: string };
-  if (st.home) return st.home === 'none' ? null : st.home;
-  return st.grandma === 'nana' ? null : 'NGN';
+  const st = settings as { home?: string };
+  const home = st.home ?? regionHome(browser.i18n.getUILanguage());
+  return home === 'none' ? null : home;
 }
 
 async function buyItem(msg: Extract<Message, { type: 'BUY' }>) {
