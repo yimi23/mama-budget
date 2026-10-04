@@ -149,13 +149,15 @@ const routes = {
     const text = String(body.text || '').trim();
     if (!text) throw new Error('text is required');
     const who = body.grandma === 'nana' ? 'nana' : 'mama';
+    const mood = ['shocked', 'down'].includes(body.mood) ? body.mood : 'calm';
+    const who = body.grandma === 'nana' ? 'nana' : 'mama';
     const voice = (who === 'nana' ? process.env.ELEVEN_VOICE_ID_NANA : null) || process.env.ELEVEN_VOICE_ID || 'default';
     const dir = path.join(__dirname, '.cache', 'tts');
-    const file = path.join(dir, `${crypto.createHash('sha1').update(`${voice}\n${text}`).digest('hex')}.mp3`);
+    const file = path.join(dir, `${crypto.createHash('sha1').update(`${voice}\n${who}\n${mood}\n${text}`).digest('hex')}.mp3`);
     let mp3 = null;
     if (fs.existsSync(file)) mp3 = fs.readFileSync(file);
     else {
-      const url = await speak(text, who).catch(() => null);
+            const url = await speak(text, who, mood).catch(() => null);
       if (url) {
         mp3 = Buffer.from(url.slice(url.indexOf(',') + 1), 'base64');
         fs.mkdirSync(dir, { recursive: true });

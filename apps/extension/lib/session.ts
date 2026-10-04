@@ -263,7 +263,7 @@ async function react(g: Grandma, week: Week, v: Verdict, also: Verdict[] = []) {
   showWeek(g, week, v.mood);
   panel?.close();
   remember(v.line);
-  void send({ type: 'SPEAK', text: spoken(v.line), grandma: g }); // her voice: here and on Gele down only; the card never waits
+  void send({ type: 'SPEAK', text: spoken(v.line), grandma: g, mood: v.mood === 'down' ? 'down' : 'shocked' }); // her voice: here and on Gele down only; the card never waits
   badge!.shake();
   const choice = await card!.ask({
     grandma: g, mood: v.mood, tone: 'alarm', line: v.line, sub: v.sub,
@@ -286,7 +286,7 @@ async function react(g: Grandma, week: Week, v: Verdict, also: Verdict[] = []) {
   if (!reply?.ok) return hideAll();
   showWeek(g, reply.week);
   remember(reply.line);
-  if (reply.week.ratio >= 1) void send({ type: 'SPEAK', text: spoken(reply.line), grandma: g }); // Gele down
+  if (reply.week.ratio >= 1) void send({ type: 'SPEAK', text: spoken(reply.line), grandma: g, mood: 'down' }); // Gele down
   bubble!.say(reply.line, reply.texted ? `${reply.sub} Texted.` : reply.sub);
 }
 

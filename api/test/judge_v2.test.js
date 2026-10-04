@@ -96,8 +96,8 @@ test('every loud line names the plan: the price, the item, and the week', () => 
     assert.doesNotMatch(line, /rice|came to/i, 'the pantry is not the point');
   }
   const small = judge({ item: 'Desk lamp', price: 40 }, week, remember({}, { item: 'Desk lamp' }, 'want'));
-  assert.match(lineFor(small, { item: 'Desk lamp', price: 40 }, week), /^40 dollars, with 25 dollars left this week/, 'beats what is left');
-  assert.match(lineFor(v, it, week), /^We said 75 dollars for the week\. AirPods Pro alone is 179/, 'beats the whole week');
+  assert.match(lineFor(small, { item: 'Desk lamp', price: 40 }, week), /40 dollars, with 25 dollars left this week/, 'beats what is left');
+  assert.match(lineFor(v, it, week), /We said 75 dollars for the week\. AirPods Pro alone is 179/, 'beats the whole week');
   const over = { budget: 75, spent: 229, ratio: 229 / 75 };
   assert.match(buyLine(over, it), /154/, 'past the week she names how far over');
   assert.equal(shopName('jumia.com.ng'), 'Jumia');
@@ -119,5 +119,5 @@ test('on a naira store she says the store price first, dollars after, and adds n
   assert.match(line, /₦286,400 \(179 dollars\)/);
   assert.doesNotMatch(line, /That is .* naira/);
   const usd = lineFor(v, { item: 'AirPods Pro', price: 179, storePrice: 179, currency: 'USD' }, week);
-  assert.match(usd, /alone is 179 dollars\./);
+  assert.match(usd, /alone is 179 dollars\. Put it back\./);
 });

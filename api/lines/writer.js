@@ -9,8 +9,8 @@ const MAMA = {
   // Loud lines name the plan, not the pantry: the price, the item, what is left in the week. Scold the receipt.
   // Picked by the breach, not by chance: [0] the item beats what is left, [1] the item alone beats the whole week.
   shocked: [
-    '{price}, with {left} dollars left this week. You are sure?',
-    'We said {budget} dollars for the week. {item} alone is {price}.',
+    'Ehn ehn. {price}, with {left} dollars left this week. You are sure?',
+    'We said {budget} dollars for the week. {item} alone is {price}. Put it back.',
   ],
   down: ['That is the week gone. {over} dollars over, on {item}.', 'Okay. I have heard. {over} dollars past the week.'],
   proud: ['My pikin. Come and hug me.', 'You see? Good child. I knew it.'],
@@ -27,11 +27,12 @@ const MAMA = {
 const NANA = {
   calm: ['Looks good, hon.', 'Okay.'],
   watching: ['Honey. I’m looking.', 'Three quarters gone. Just so you know.'],
+  // Dry, never reserved: when the week is blown she says it plainly, then lets the silence do the work.
   shocked: [
-    '{price} for {item}, hon. You had {left} left this week.',
-    '{price} for {item}, hon. That is more than the whole week.',
+    'Well. {price} for {item}, with {left} dollars left this week. I’ll just leave that there.',
+    '{price} for {item}, hon. That is the whole week and then some. Put it back.',
   ],
-  down: ['Okay. {over} over for the week. I’m not going to say anything.'],
+  down: ['That is {over} dollars over the week, hon. I’m not going to say anything. You already know.'],
   proud: ['Oh good. I knew you would.', 'Well look at you. Good for you, hon.'],
   ask: ['Hold on a sec, hon. What’s {item} for?'],
   ackNeed: ['Okay. Noted.'],

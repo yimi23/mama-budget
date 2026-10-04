@@ -22,7 +22,7 @@ export type Message =
   | { type: 'PUT_BACK'; name: string; price: number }
   | { type: 'START_OVER' }
   /** Her voice for one line. Fire and forget: the card never waits on audio. */
-  | { type: 'SPEAK'; text: string; grandma: 'mama' | 'nana' }
+  | { type: 'SPEAK'; text: string; grandma: 'mama' | 'nana'; mood?: 'calm' | 'shocked' | 'down' }
   /** Onboarding 05: the 30 day read, in her words. */
   | { type: 'MONTH'; grandma: 'mama' | 'nana' }
   /** Onboarding 05: fetch these lines into the API's voice cache so screen 06 speaks at once. Nothing plays. */

@@ -172,7 +172,7 @@ async function speak(msg: Extract<Message, { type: 'SPEAK' }>): Promise<{ ok: bo
   try {
     const res = await fetch(`${API}/tts`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ text: msg.text, grandma: msg.grandma }), signal: AbortSignal.timeout(8000),
+      body: JSON.stringify({ text: msg.text, grandma: msg.grandma, mood: msg.mood ?? 'calm' }), signal: AbortSignal.timeout(8000),
     });
     if (!res.ok || !(res.headers.get('content-type') ?? '').startsWith('audio/')) {
       // No ElevenLabs: the browser's own voice, so a line is never only text when sound is on.
