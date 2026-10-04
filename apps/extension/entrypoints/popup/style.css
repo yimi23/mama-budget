@@ -4,7 +4,7 @@
    color only on her. 400 by 560, min height not height. Lifted from design/screens 02 to 09. */
 :root {
   --cream: #FBF8F3; --ink: #22172A; --line: #EADFCB; --muted: #5E566B; --green: #0F7B5A; --gold: #E2A12A;
-  --mint: #DDF1E8; --orange: #F2854A; --white: #fff;
+  --mint: #DDF1E8; --orange: #F2854A; --rose: #F6D5CF; --jade: #CFE8DD; --white: #fff;
   --enter: cubic-bezier(0.05, 0.7, 0.1, 1); --exit: cubic-bezier(0.3, 0, 0.8, 0.15);
 }
 * { box-sizing: border-box; }
@@ -70,7 +70,7 @@ section[data-step="welcome"] .welcome { flex: 1; display: flex; flex-direction: 
 .pick { display: flex; gap: 16px; margin-top: 26px; }
 .grandma { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .tile { all: unset; box-sizing: border-box; width: 164px; height: 170px; border-radius: 18px; overflow: hidden; display: flex; align-items: flex-end; justify-content: center; cursor: pointer; outline: 3px solid transparent; outline-offset: 3px; transition: outline-color 150ms var(--enter); }
-.tile.mama { background: var(--mint); } .tile.nana { background: var(--orange); }
+.tile.mama { background: var(--mint); } .tile.nana { background: var(--orange); } .tile.abuela { background: var(--rose); } .tile.wong { background: var(--jade); }
 .tile img { width: 100%; height: 100%; display: block; }
 .tile[aria-checked="true"] { outline-color: var(--ink); }
 .tile:focus-visible { outline-color: var(--green); }
@@ -98,7 +98,7 @@ section[data-step="welcome"] .welcome { flex: 1; display: flex; flex-direction: 
 /* 05 */
 .reading-head { display: flex; align-items: center; gap: 16px; margin-top: 22px; }
 .avatar { width: 72px; height: 72px; border-radius: 36px; overflow: hidden; display: flex; align-items: flex-end; justify-content: center; flex-shrink: 0; }
-.avatar.mama { background: var(--mint); } .avatar.nana { background: var(--orange); }
+.avatar.mama { background: var(--mint); } .avatar.nana { background: var(--orange); } .avatar.abuela { background: var(--rose); } .avatar.wong { background: var(--jade); }
 .avatar img { width: 100%; height: 100%; display: block; }
 .avatar.square { width: 64px; height: 72px; border-radius: 12px; }
 
@@ -138,7 +138,7 @@ input[type="range"] { width: 100%; accent-color: var(--ink); margin: 0; }
 
 /* 09 */
 .scene { margin: 10px -24px 0; height: 230px; display: flex; align-items: flex-end; justify-content: center; overflow: hidden; }
-.scene.mama { background: var(--mint); } .scene.nana { background: var(--orange); }
+.scene.mama { background: var(--mint); } .scene.nana { background: var(--orange); } .scene.abuela { background: var(--rose); } .scene.wong { background: var(--jade); }
 .scene img { height: 100%; display: block; }
 .kept { display: flex; align-items: baseline; gap: 10px; margin-top: 4px; }
 .kept-num { font-family: 'Bricolage Grotesque', -apple-system, system-ui, sans-serif; font-weight: 800; font-size: 40px; line-height: 1; }

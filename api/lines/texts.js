@@ -44,7 +44,47 @@ const NANA = {
   cheaper: ['${shop} has the same ${item} for ${price} today, hon. That is ${left} back in the week.', 'Same ${item} at ${shop}, ${price} today. ${left} stays in the week.', '${price} at ${shop}, same ${item}, today. ${left} back in your pocket.'],
 };
 
-const BANK = { mama: MAMA, nana: NANA };
+const ABUELA = {
+  saved: ['${amount} moved to savings. Órale, mija.', '${amount} in savings. De poquito en poquito se llena el jarrito.', 'Good. ${amount} put away. Cuida el centavo.', '${amount} to savings. Dios te bendiga, mi cielo.'],
+  home: ['${amount} home, sent. That is family, mija. Never waste.', '${amount} to the family. Sacred. Tell them I send a blessing.', '${amount} home. Good. Que Dios los cuide.'],
+  nothing: ['How much, mija? Say it like "send 50 home".', 'Say the amount, mi cielo. Like "send 50 home".'],
+  tooMuch: ['${amount}? You have ${left} left this week, mija. Try a smaller number.', 'Híjole. ${amount}? With ${left} left in the week. Smaller.'],
+  unknown: ['I only do the money, mija. Ask what is left, or say "move 20 to savings".', 'Money only, mi cielo. What is left, or "send 50 home".'],
+  hello: ['I am here, mija. ${left} left this week.', '${left} left this week. Dime, what is it?', 'Órale. ${left} left for the week. Talk to me.', 'Mi cielo. ${left} left this week. What do you need?'],
+  thanks: ['Ándale, mija. Go and rest.', 'De nada. Dios te bendiga.', 'Okay, mi cielo. I am here.'],
+  whatFor: ['${item}, ${price}. What is it for, mija?', '${item} at ${price}. Tell me what for.', 'Hold on, mi cielo. ${item}, ${price}. What is the occasion?', '${item}, ${price}. Dime. What for?'],
+  andThat: ['And ${item}, ${price}. What is that one for?', 'Then ${item}, ${price}. That one too, mija.'],
+  fits: ['${item}, ${price}. It fits. ${left} left after.', '${price} for ${item}. Within the week, mija. ${left} after.', 'Okay. ${item} at ${price} fits. ${left} left. Órale.', '${item}, ${price}. Fine, mi cielo. ${left} left after.'],
+  needs: ['That is a need, mija. Buy it.', 'A need. Go on.', 'Buy it. Needs are not my business, mi cielo.', 'That one is a need. Ándale.'],
+  needNoted: ['Okay, mija. ${item} is a need for you. I will not ask again.', 'Noted. ${item}, a need. Done.', 'Fine, mi cielo. ${item} is yours.'],
+  planned: ['${item} for ${occasion}. Planned, so it stays off the week. ${left} left for the rest.', '${occasion}, mija. ${item} is a plan then, not a want. Off the week. ${left} for the rest.', 'Okay, ${occasion}. ${item} is planned, mi cielo. ${left} left for the everyday.'],
+  isThisIt: ['${item}, ${price}${store}. That is the one, mija?', 'I see ${item}, ${price}${store}. Is that it?'],
+  wrongOne: ['Okay, mija. Tell me the item and the price.', 'Ándale. Type the item and the price for me.'],
+  cannotSee: ['I cannot see a price in that, mija. What is it and how much?', 'My eyes cannot find the price there, mi cielo. What is it, and how much?'],
+  cheaper: ['${shop} has the same ${item} for ${price} today, mija. That is ${left} back in the week.', 'Same ${item} at ${shop}, ${price} today. ${left} stays in the week. Cuida el centavo.', '${price} at ${shop} for the same ${item}, today. ${left} back in your pocket, mi cielo.'],
+};
+
+const WONG = {
+  saved: ['${amount} to savings. Good.', '${amount} put away. Zik siu sing do.', 'Saved ${amount}. Hou lek.'],
+  home: ['${amount} home, sent. That is family. Good.', '${amount} to the family. Never waste.'],
+  nothing: ['How much? Say "send 50 home".', 'The amount. Like "send 50 home".'],
+  tooMuch: ['${amount}? ${left} left this week. Smaller.', 'Aiya. ${amount}? With ${left} left. Smaller number.'],
+  unknown: ['Money only. What is left, or "move 20 to savings".', 'I do the money. Ask what is left, or say "send 50 home".'],
+  hello: ['${left} left this week. Have you eaten?', '${left} left this week. What is it?', 'Mm. ${left} left for the week. Go on.'],
+  thanks: ['Okay. Eat something.', 'Mm. Go on, gwaai.', 'Good. Sik faan.'],
+  whatFor: ['${item}, ${price}. What is it for?', '${item} at ${price}. Tell me what for.', '${item}, ${price}. What for?'],
+  andThat: ['And ${item}, ${price}. That one, what for?', 'Then ${item}, ${price}. What for?'],
+  fits: ['${item}, ${price}. Fits. ${left} left after.', '${price} for ${item}. Small one. ${left} after.', 'Okay. ${item}, ${price}. Within the week. ${left} left.'],
+  needs: ['A need. Buy it.', 'That is a need. Go.', 'Needs are not my business. Buy it.'],
+  needNoted: ['Okay. ${item} is a need for you. I will not ask again.', 'Noted. ${item}. A need.'],
+  planned: ['${item} for ${occasion}. Planned. Off the week. ${left} left for the rest.', '${occasion}. Then ${item} is a plan, not a want. ${left} for the rest.'],
+  isThisIt: ['${item}, ${price}${store}. That one?', 'I see ${item}, ${price}${store}. Is that it?'],
+  wrongOne: ['Okay. The item and the price.', 'Tell me the item and the price.'],
+  cannotSee: ['I cannot see a price there. What is it and how much?', 'No price in that. What is it, and how much?'],
+  cheaper: ['${shop} has the same ${item} for ${price} today. That is ${left} back in the week.', 'Same ${item}, ${shop}, ${price} today. ${left} stays in the week. Peng di, cheaper somewhere else, always.'],
+};
+
+const BANK = { mama: MAMA, nana: NANA, abuela: ABUELA, wong: WONG };
 
 function textLine(key, { amount, left, who = 'mama', item, price, occasion, store } = {}) {
   const bank = BANK[who] || MAMA;
@@ -56,4 +96,4 @@ function textLine(key, { amount, left, who = 'mama', item, price, occasion, stor
     .replace('${store}', store ? ` at ${store}` : '').replace('${shop}', String(store || 'Another store').trim());
 }
 
-module.exports = { textLine, MAMA, NANA, BANK };
+module.exports = { textLine, MAMA, NANA, ABUELA, WONG, BANK };

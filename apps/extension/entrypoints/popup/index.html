@@ -40,6 +40,18 @@
             <span class="desc">Midwestern. Sweet first, dry second. Says less than she means.</span>
             <button type="button" class="hear" data-hear="nana"><span class="play"></span>Hear her</button>
           </div>
+          <div class="grandma" data-grandma="abuela">
+            <button type="button" class="tile abuela" role="radio" aria-checked="false" aria-label="Abuela"><img src="/faces/abuela/calm.svg" alt="" /></button>
+            <span class="name">Abuela</span>
+            <span class="desc">Mexican American. Quick, warm, dramatic about prices, never about you.</span>
+            <button type="button" class="hear" data-hear="abuela"><span class="play"></span>Hear her</button>
+          </div>
+          <div class="grandma" data-grandma="wong">
+            <button type="button" class="tile wong" role="radio" aria-checked="false" aria-label="Grandma Wong"><img src="/faces/wong/calm.svg" alt="" /></button>
+            <span class="name">Grandma Wong</span>
+            <span class="desc">Ran a shop for thirty years. Quiet, dry, compares everything to rice.</span>
+            <button type="button" class="hear" data-hear="wong"><span class="play"></span>Hear her</button>
+          </div>
         </div>
         <div class="spacer"></div>
         <p class="foot" id="mothers"></p>
@@ -153,7 +165,7 @@
       <section data-step="home" hidden>
         <header><h1 id="home-title">Mama is in your cart.</h1><p class="lead" id="home-status"></p></header>
         <div class="list settings">
-          <div class="row stack"><span class="row-title">Who</span><div class="seg" id="home-grandma"><button type="button" data-v="mama">Mama</button><button type="button" data-v="nana">Nana</button></div></div>
+          <div class="row stack"><span class="row-title">Who</span><div class="seg" id="home-grandma"><button type="button" data-v="mama">Mama</button><button type="button" data-v="nana">Nana</button><button type="button" data-v="abuela">Abuela</button><button type="button" data-v="wong">Wong</button></div></div>
           <div class="row stack"><span class="row-title">How loud</span><div class="seg" id="home-loud"></div></div>
           <label class="row between"><span class="row-title">Sounds</span><input type="checkbox" id="home-sounds" /></label>
           <label class="row between"><span class="row-title">Money back home</span><select id="home-currency" aria-label="Currency back home"></select></label>

@@ -3,7 +3,7 @@
 
 import type { BuyReply, CartRead, JudgeReply, Mood, PlanReply, Verdict, Week } from '@mama/shared/types';
 import type { HandledLists, Message } from '@mama/shared/messages';
-import { mountBadge, type Badge, type Grandma } from './ui/badge';
+import { GRANDMAS, GRANDMA_NAME, mountBadge, type Badge, type Grandma } from './ui/badge';
 import { mountCard, type Card } from './ui/card';
 import { mountBubble, type Bubble } from './ui/bubble';
 import { mountPanel, type Panel } from './ui/panel';
@@ -92,7 +92,7 @@ async function grandma(): Promise<Grandma | null> {
   try {
     const { settings } = await browser.storage.local.get('settings');
     const g = (settings as { grandma?: string } | undefined)?.grandma;
-    return g === 'nana' || g === 'mama' ? g : null;
+    return GRANDMAS.includes(g as Grandma) ? (g as Grandma) : null;
   } catch {
     return null;
   }
@@ -318,7 +318,7 @@ async function react(g: Grandma, week: Week, v: Verdict, also: Verdict[] = []) {
   mark?.show(() => locateRow(document, location.href, v.name), 'alarm');
   const choice = await card!.ask({
     grandma: g, mood: v.mood, tone: 'alarm', line: v.line, sub: v.sub,
-    primary: g === 'nana' ? 'You\u2019re right, Nana' : 'You\u2019re right, Mama', secondary: 'Buy anyway',
+    primary: `You\u2019re right, ${GRANDMA_NAME[g]}`, secondary: 'Buy anyway',
   });
   mark?.hide();
   if (choice === 'primary') {

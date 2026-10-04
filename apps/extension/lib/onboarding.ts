@@ -61,6 +61,16 @@ export const TIERS: Record<Grandma, readonly Tier[]> = {
     { key: 'mama', name: 'Nana', desc: 'Her voice on. Speaks up when it matters.', line: 'Alright then.' },
     { key: 'full', name: 'Nana Before Coffee', desc: 'Everything. I text your phone too.', line: 'Finally.' },
   ],
+  abuela: [
+    { key: 'gentle', name: 'Tía', desc: 'Text only. Speaks up on the big ones.', line: 'Okay, mija.' },
+    { key: 'mama', name: 'Abuela', desc: 'Her voice on. Speaks up when it matters.', line: 'Okay. I’ll say something when it matters.' },
+    { key: 'full', name: 'Abuela on a Sunday', desc: 'Everything. I text your phone too.', line: 'Órale. Now we’re talking.' },
+  ],
+  wong: [
+    { key: 'gentle', name: 'Auntie Next Door', desc: 'Text only. Speaks up on the big ones.', line: 'Okay.' },
+    { key: 'mama', name: 'Grandma Wong', desc: 'Her voice on. Speaks up when it matters.', line: 'Fine. When it matters.' },
+    { key: 'full', name: 'Grandma Wong Before Mahjong', desc: 'Everything. I text your phone too.', line: 'Good. I am counting.' },
+  ],
 };
 
 export interface Copy {
@@ -102,6 +112,30 @@ export const COPY: Record<Grandma, Copy> = {
     phone: 'Sundays at seven you get your week in a text. And one when something’s up.',
     go: (k) => `${k} kept this week. Not bad. Try me first.`,
     goText: (k) => `$${k} kept this week. Not bad.`,
+  },
+  abuela: {
+    name: 'Abuela',
+    welcomeTitle: 'I’m Abuela.',
+    welcome: 'You set the fun money for the week, mija. I hold you to it. I’m in your cart before you pay, not after. What you need, I never touch.',
+    welcomeSub: 'Two questions from you now. The rest I’ll see for myself.',
+    preview: 'Hay comida en la casa.',
+    bank: 'I only read what you spent. I never move your money.',
+    reading: 'One second, mi cielo.',
+    phone: 'Sunday at seven you get your week in one text. And one more the moment a purchase blows it.',
+    go: (k) => `${k} dollars kept this week. Órale. Try me on a practice cart first.`,
+    goText: (k) => `$${k} kept this week. Órale.`,
+  },
+  wong: {
+    name: 'Grandma Wong',
+    welcomeTitle: 'I’m Grandma Wong.',
+    welcome: 'You set the fun money for the week. I keep count. I’m in your cart before you pay, not after. What you need, I don’t touch.',
+    welcomeSub: 'Two questions from you now. The rest I’ll see for myself.',
+    preview: 'Twenty dollars for coffee. The kettle is broken?',
+    bank: 'I only read what you spent. I never move your money.',
+    reading: 'One moment.',
+    phone: 'Sunday at seven you get your week in one text. And one more when a purchase blows it.',
+    go: (k) => `${k} dollars kept this week. Good. Try me on a practice cart first.`,
+    goText: (k) => `$${k} kept this week. Good.`,
   },
 };
 

@@ -4,7 +4,9 @@
 
 import type { Mood } from '@mama/shared/types';
 
-export type Grandma = 'mama' | 'nana';
+export type Grandma = 'mama' | 'nana' | 'abuela' | 'wong';
+export const GRANDMAS: readonly Grandma[] = ['mama', 'nana', 'abuela', 'wong'];
+export const GRANDMA_NAME: Record<Grandma, string> = { mama: 'Mama', nana: 'Nana', abuela: 'Abuela', wong: 'Grandma Wong' };
 
 export interface BadgeState {
   grandma: Grandma;

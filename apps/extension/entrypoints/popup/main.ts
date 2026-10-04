@@ -265,7 +265,7 @@ const phoneSend = $<HTMLButtonElement>('#phone-send');
 const phoneStatus = $('#phone-status');
 phone.addEventListener('input', () => { const d = phone.value; phone.value = formatPhone(d); phoneSend.disabled = !toE164(phone.value) || phoneSend.dataset.off === '1'; });
 SHOW.phone = async () => {
-  $('#phone-lead').textContent = grandma() === 'nana' ? 'She texts. Sundays at seven, and when something’s up. iPhone for now.' : 'She texts. A short statement every Sunday at 7pm, and one text when something big happens. iPhone for now.';
+  $('#phone-lead').textContent = `${COPY[grandma()].phone} iPhone for now.`;
   phone.value = settings.phone ? formatPhone(settings.phone) : '';
   phoneStatus.textContent = ''; phoneStatus.className = 'status';
   phoneSend.textContent = 'Text me what you saw'; phoneSend.dataset.off = '0'; phoneSend.disabled = !toE164(phone.value);

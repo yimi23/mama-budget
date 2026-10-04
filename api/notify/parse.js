@@ -13,8 +13,8 @@ function parse(raw) {
   if (!t) return { intent: 'other' };
   if (/\b(how much|what'?s|what is|wetin|how far)\b.*\b(left|remain|have|dey)\b/.test(t) || /\b(left|remaining|balance)\b\s*\??$/.test(t) || /^(left|balance)\??$/.test(t)) return { intent: 'left' };
   // Who is talking to them. One word does it: "abuela", "nana", "mama", or "switch to nana".
-  const g = /^(?:(?:switch|change) to |be |give me |i want )?(mama|nana|abuela)\b[.!]?$/.exec(t);
-  if (g) return { intent: 'grandma', who: g[1] };
+  const g = /^(?:(?:switch|change) to |be |give me |i want )?(mama|nana|abuela|wong|grandma wong|po po)\b[.!]?$/.exec(t);
+  if (g) return { intent: 'grandma', who: /wong|po po/.test(g[1]) ? 'wong' : g[1] };
   // Questions about the ledger, before the commands: none of them carries an amount.
   if (/\b(what|wetin|which|how much)\b.*\b(buy|bought|spent|spend|spending|purchases?|get|got)\b/.test(t) && !/\bleft\b/.test(t)) {
     const on = /\b(?:on|at|from)\s+([a-z][a-z0-9' ]{1,30})\s*\??$/.exec(t);

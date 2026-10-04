@@ -2,6 +2,9 @@
 
 export type CurrencyCode = 'USD' | 'NGN' | 'GBP' | 'EUR' | 'CAD';
 
+/** The family. Mirrors apps/extension/lib/ui/badge.ts. */
+export type Grandma = 'mama' | 'nana' | 'abuela' | 'wong';
+
 export type ReaderSource = 'platform' | 'adapter' | 'jsonld' | 'text';
 
 export interface CartItem {

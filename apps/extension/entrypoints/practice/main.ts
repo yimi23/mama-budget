@@ -41,7 +41,7 @@ function drawLine() {
 
 (async () => {
   const { settings = {} } = await browser.storage.local.get('settings');
-  const g = (settings as { grandma?: 'mama' | 'nana' }).grandma;
+  const g = (settings as { grandma?: 'mama' | 'nana' | 'abuela' | 'wong' }).grandma;
   if (g) {
     $('#brand-avatar').className = `avatar ${g}`;
     ($('#brand-face') as HTMLImageElement).src = `/faces/${g}/calm.svg`;

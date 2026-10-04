@@ -162,9 +162,103 @@ const NANA = {
   statementClose: ['Good week.', 'Better than last week. I noticed.', 'We’ll get there.'],
 };
 
+const ABUELA = {
+  // English for the numbers, one Spanish emblem at most, a blessing or an endearment to close. Sources in the research
+  // notes: CONDUSEF's sayings for savers, the "hay comida en la casa" family, Poplack's emblematic switching.
+  calm: ['Órale. Carry on, mija.', 'Fine. Nothing from me.', 'Okay. Ándale, go on.', 'That one is fine, mi cielo.', 'Nothing to say. Good.', 'Mm hm. Keep going.'],
+  watching: [
+    '{left} dollars left for the week. Con calma, mija.',
+    'Three quarters gone. I am watching, that is all.',
+    'Híjole. {left} dollars left already.',
+    '{left} dollars left and the week is not over. Poco a poco.',
+    'I am not saying anything yet. {left} dollars, though.',
+    'The jar is getting low. {left} dollars.',
+  ],
+  shocked: [
+    'Híjole. {price} for {item}, with {left} dollars left this week. Mija, no.',
+    '{price} for {item}? There are {left} dollars left in the week. Hay comida en la casa.',
+    '{item}, {price}. The week has {left} dollars in it. Cuida el centavo, mi cielo.',
+    'Ay no. {price} on {item} when {left} dollars is what is left. I love you, but no.',
+    '{price}? For {item}? With {left} dollars left. El dinero no crece en los árboles, mija.',
+    '{price} for {item}, and {left} dollars left this week. Lo barato sale caro, but this is not even barato.',
+    'Mija. {price} on {item}. {left} dollars left. Más vale pájaro en mano.',
+  ],
+  shockedBig: [
+    '{price} for {item}. The whole week is {budget} dollars, mija. Put it back.',
+    'Híjole. {price} on one {item}, more than the {budget} dollar week itself. No.',
+    '{price} for {item}? The week is {budget} dollars. Does money grow on trees, mi cielo?',
+    '{item} alone is {price}. The whole week is {budget} dollars. Ay no. Put it back for me.',
+    '{price}? The week is {budget} dollars, mija. De poquito en poquito, not like this.',
+  ],
+  down: [
+    '{over} dollars over the week, on {item}. Ni modo. Monday is new.',
+    'That is the week, mija. {over} dollars over, on {item}. Eat at home this week.',
+    '{over} dollars past the week. Ni modo. Que Dios te cuide.',
+    'The week is gone, {over} dollars over. I am not angry, mi cielo. Frijoles are at home.',
+    'Over by {over} dollars, on {item}. Okay. We talk Sunday.',
+  ],
+  proud: [
+    'Órale, mija. You put it back.',
+    'That is my girl. Or my boy. You know. Kept.',
+    'Mi cielo. Kept, not spent. Dios te bendiga.',
+    'De poquito en poquito se llena el jarrito. The jar just got fuller.',
+    'Good. Cuida el centavo. You did.',
+    'Ándale. That is how we did it with less than this.',
+  ],
+  rare: ['Mija, I am telling the whole family on Sunday. Kept it.', 'Más sabe el diablo por viejo. And this old woman says: well done.'],
+  ask: ['{item}? What is it for, mija?', '{item}, {price}. Tell me what for.', 'Hold on, mi cielo. {item}. What is it for?', '{item} at {price}. What is the occasion?', 'Before anything. {item}. What for?'],
+  askWatched: ['{item}, mija? {watchedMerchant} again. {habit} dollars here last month.', '{watchedMerchant} again. {habit} dollars last month. What is {item} for?'],
+  ackNeed: ['Okay, mija. Noted.', 'A need. I will not ask again.', 'Fine. That one is yours, mi cielo.'],
+  ackFits: ['Okay. It fits. Go on.', 'Órale. Within the week.', 'That one fits, mija. Enjoy it.', 'Fine. It fits.'],
+  agreed: ['Good, mija. I am watching the cart.', 'Órale. That is my child.', 'Good. I will watch it leave.', 'Ándale. Take it out.'],
+  bought: ['Noted, mija. It is in the book.', 'Okay. Written down.', 'In the book. We continue.'],
+  plan: ['{occasion}. Okay, mija. That one is a plan, not a want. Off the meter it goes.', 'Okay. A need, then. Off the meter it goes.'],
+  planFund: ['{occasion}, mija. That is a plan, not a want. It is {price} against {left} dollars left this week. Take {fund} dollars from savings for the week, or keep the plan as it is?'],
+  funded: ['Done, mi cielo. {fund} dollars from savings. The week is {budget} dollars now.'],
+  askMany: ['{n} new things, mija. What are they for?', '{n} new things at once. One by one. What for?'],
+  family: ['That is family, mija. Never waste. Tell them I send a blessing.', 'Money home does not count. Dios te bendiga.', 'For the family. That one is sacred. Good.'],
+  statementClose: ['Good week, mija. Dios te bendiga.', 'Better than last week. I noticed, mi cielo.', 'We will do better. I am not angry. Que Dios te cuide.'],
+};
+
+const WONG = {
+  // docs/characters/GRANDMA_WONG.md plus the sourced words: short, dry, a comparison to a real thing, the pause does the work.
+  calm: ['Fine.', 'Okay. Go on.', 'Mm. Nothing from me.', 'That one is fine.', 'Carry on, gwaai.'],
+  watching: ['{left} dollars left for the week. I am counting.', 'Three quarters gone. Mm.', '{left} dollars left. Maan maan, slowly.', 'I am looking, that is all. {left} dollars.', 'The week is thin. {left} dollars. Haan di.'],
+  shocked: [
+    '{price} for {item}, with {left} dollars left this week. That is a week of groceries, sitting in a cart.',
+    '{price}. For {item}. {left} dollars left. Did the free one break?',
+    'Aiya. {price} for {item}, and {left} dollars left in the week.',
+    '{item}, {price}. The week has {left} dollars in it. That is a lot of rice. Lap lap gaai san fu.',
+    '{price} for {item}? {left} dollars left this week. Your grandfather bought our first television for less.',
+    'You said you wanted it. {price} of wanting, with {left} dollars left.',
+    'Gam gwai. {price} for {item}. {left} dollars left. Cheaper somewhere else, always.',
+  ],
+  shockedBig: [
+    '{price} for {item}. The whole week is {budget} dollars. Put it back.',
+    '{price} on one {item}, more than the {budget} dollar week. No.',
+    '{item} alone is {price}. The week is {budget} dollars. Sik faan first, then we talk.',
+    'Aiya. {price}. The week is {budget} dollars. Put it back for me.',
+  ],
+  down: ['{over} dollars over. The week is finished. Eat at home.', 'Over by {over} dollars, on {item}. We talk on Sunday.', 'That is the week. {over} dollars over. I am not angry, I am counting.', '{over} dollars past the week, on {item}. Mm. Monday.'],
+  proud: ['Good. Kept it.', 'Mm. That one I like.', 'You put it back. Hou lek.', 'Kept, not spent. That is how. Gwaai.', 'Good. One less thing to dust.', 'Zik siu sing do. Little adds up. Good.'],
+  rare: ['I am telling the mahjong table about this. Kept.', 'Your grandfather would have nodded. I am nodding.'],
+  ask: ['{item}? What is it for?', '{item}. Tell me what for.', '{item}, {price}. What for?', 'Hold on. {item}. What is it for?'],
+  askWatched: ['{watchedMerchant} again. {habit} dollars here last month. What is {item} for?', 'Back at {watchedMerchant}. I counted: {habit} dollars last month. {item}, what for?'],
+  ackNeed: ['Okay. Noted.', 'A need. I will not ask again.', 'Fine. Yours.'],
+  ackFits: ['Fine. That one fits.', 'Okay. Small one.', 'Mm. Within the week.'],
+  agreed: ['Good. I am watching the cart.', 'Mm. Good.', 'Okay. Take it out.'],
+  bought: ['Noted. In the book.', 'Written down.', 'Okay. We continue.'],
+  plan: ['{occasion}. Okay. A plan, not a want. Off the meter.', 'Okay. A need, then. Off the meter.'],
+  planFund: ['{occasion}. A plan, not a want. It is {price} against {left} dollars left this week. Take {fund} dollars from savings for the week, or keep the plan as it is?'],
+  funded: ['Done. {fund} dollars from savings. The week is {budget} dollars now.'],
+  askMany: ['{n} new things. What are they for?', '{n} things. One at a time. What for?'],
+  family: ['That is family. It does not count.', 'Money home. Good. That one is never waste.', 'For the family. Good.'],
+  statementClose: ['Good week. Have you eaten?', 'Better than last week. I counted.', 'We do better next week. I am not angry.'],
+};
+
 // The grandmas. Adding one is a brief in character.js, a bank of lines here (same keys), text lines in texts.js, and a
 // voice id in the env; everything else keys off `who`.
-const BANK = { mama: MAMA, nana: NANA };
+const BANK = { mama: MAMA, nana: NANA, abuela: ABUELA, wong: WONG };
 const bankOf = (who) => BANK[who] || MAMA;
 
 const NGN = Number(process.env.USD_NGN || 1600); // update before demo
@@ -487,5 +581,5 @@ module.exports = {
   fresh, bankOf, BANK,
   shopName, backHome, setHome,
   lineFor, ackLine, buyLine, buyText, smallLines, subLine, weeklyStatement, monthlyStatement, watchLines, whatsLeft,
-  modelLine, modelReply, contextLine, planLine, fundedLine, toNaira, notifyLine, notifyText, MAMA, NANA,
+  modelLine, modelReply, contextLine, planLine, fundedLine, toNaira, notifyLine, notifyText, MAMA, NANA, ABUELA, WONG,
 };

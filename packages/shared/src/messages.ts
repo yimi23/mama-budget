@@ -1,6 +1,6 @@
 // Every message between content script, popup and worker. Add the case here before writing the handler.
 
-import type { Answer, BuyReply, CartItem, CartRead, Cue, CurrencyCode, JudgeReply, Month, PlanReply, Week } from './types.ts';
+import type { Answer, BuyReply, CartItem, CartRead, Cue, CurrencyCode, Grandma, JudgeReply, Month, PlanReply, Week } from './types.ts';
 
 /** What she already asked about or reacted to this browser session, across every tab and reload. */
 export interface HandledLists {
@@ -28,13 +28,13 @@ export type Message =
   | { type: 'PUT_BACK'; name: string; price: number }
   | { type: 'START_OVER' }
   /** Her voice for one line. Fire and forget: the card never waits on audio. */
-  | { type: 'SPEAK'; text: string; grandma: 'mama' | 'nana'; mood?: 'calm' | 'shocked' | 'down' }
+  | { type: 'SPEAK'; text: string; grandma: Grandma; mood?: 'calm' | 'shocked' | 'down' }
   /** Onboarding 05: the 30 day read, in her words. */
-  | { type: 'MONTH'; grandma: 'mama' | 'nana' }
+  | { type: 'MONTH'; grandma: Grandma }
   /** Onboarding 05: fetch these lines into the API's voice cache so screen 06 speaks at once. Nothing plays. */
-  | { type: 'WARM'; texts: string[]; grandma: 'mama' | 'nana' }
+  | { type: 'WARM'; texts: string[]; grandma: Grandma }
   /** Onboarding 07: send the first statement now. ok only when a text actually went. */
-  | { type: 'TEXT_NOW'; grandma: 'mama' | 'nana'; to?: string }
+  | { type: 'TEXT_NOW'; grandma: Grandma; to?: string }
   /** Can she text right now, is the API up. Drives disabled states, never a fake sent state. */
   | { type: 'HEALTH' }
   /** This page's host: is it a merchant she said she would watch, and what does she say on arrival (once per session per store). */

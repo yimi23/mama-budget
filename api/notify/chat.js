@@ -76,7 +76,7 @@ function extractPromise(text) {
 }
 
 function bankOf(who) {
-  return who === 'nana' ? writer.NANA : writer.MAMA;
+  return writer.bankOf(who);
 }
 
 function fallbackReply(text, { week, who, apology, storedPromise, intent }) {
@@ -99,6 +99,7 @@ const GRANDMA_HELLO = {
   mama: 'Ehen. It is Mama now. ${left} left this week.',
   nana: 'Alright, hon. Nana here. ${left} left this week.',
   abuela: 'Ay, mija. Abuela is here. ${left} left this week.',
+  wong: 'Grandma Wong. ${left} left this week. Have you eaten?',
 };
 
 async function handleIncoming(text, who = 'mama', from, messageId, { images = [] } = {}) {

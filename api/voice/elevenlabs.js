@@ -7,6 +7,8 @@ const SETTINGS = {
   mama: { stability: 0.5, similarity_boost: 0.8, style: 0.4, speed: 1.0 },
   nana: { stability: 0.6, similarity_boost: 0.8, style: 0.3, speed: 0.97 },
   abuela: { stability: 0.5, similarity_boost: 0.8, style: 0.45, speed: 1.0 },
+  // Quiet and dry: steadier than anyone, a touch slower, the pause is hers.
+  wong: { stability: 0.65, similarity_boost: 0.8, style: 0.25, speed: 0.95 },
 };
 
 /** The voice id for a grandma: ELEVEN_VOICE_ID_<WHO>, Mama's id (ELEVEN_VOICE_ID) when hers is unset. */
