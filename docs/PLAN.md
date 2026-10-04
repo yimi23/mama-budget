@@ -27,7 +27,9 @@ Learned from the one app that made ours feel mundane. Six hooks, each with Mama'
 - The home panel hero is "Kept this week" in large tabular digits, then the meter, then the last three things she said. No charts.
 - Praise is designed as carefully as scolding. Put an item back and she says one line and the Kept number ticks up on screen. Move money to savings by text and she replies with the new Kept number. The proud sound plays on both.
 - The site leads with the why in three word headlines: "Before, not after." "Rice is fine." "Kept, not spent." The reader layers go in a technical section at the bottom, not the hero.
-- Pitch opens on the aim, not the tech: "Budget apps tell you after the money is gone. We built someone who says something before."
+- Pitch opens on the aim, not the tech, in the same order as her welcome and the store listing: the number, held to, before you pay, what she never touches. "You set one number for the week. She holds you to it, from inside your cart, before you pay, and she never touches what you need."
+- Store listing: "One number for the week. She holds you to it, from inside your cart, before you pay."
+- How she describes herself anywhere (from the Clicky study): mid sentence, place first and shown, outcomes not features, turns to you within two sentences, mechanism as a sensation, never an adjective about herself, ends on place.
 
 ## One line
 

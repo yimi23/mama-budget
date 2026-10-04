@@ -31,7 +31,7 @@ Build the cart readers from the "Reading any cart" section of docs/ARCHITECTURE.
 
 I will give you the live selectors: [paste the Amazon and Target selectors you found in DevTools here]. Save the cart HTML I give you under apps/extension/fixtures/carts/ and write a node:test per reader against it.
 
-Done when `npm test` runs the reader tests green and, with the extension loaded, the console on amazon.com/cart, target.com/cart and allbirds.com/cart prints the right items and prices.
+Done when `npm test` runs the reader tests green and, with the extension loaded, the console on amazon.com/cart, target.com/cart and gymshark.com/cart prints the right items and prices.
 ```
 
 ## 3. Detector and the spine
@@ -41,7 +41,7 @@ Build lib/detect.ts and content.ts from ARCHITECTURE.md. detect.ts runs on <all_
 
 Wire /judge in the api to packages/scoring rules v2 with memory, loudness and now passed in. Write the detector tests: ten shopping pages wake her, ten non shopping pages (Gmail, YouTube, Wikipedia, a news site, a bank) do not.
 
-Done when: on amazon.com, rice and dish soap in the cart show a calm badge and nothing else; AirPods added show the Ask card; on allbirds.com she appears with the right item from /cart.js; on gmail.com nothing loads at all (check the Performance tab).
+Done when: on amazon.com, rice and dish soap in the cart show a calm badge and nothing else; AirPods added show the Ask card; on gymshark.com she appears with the right item from /cart.js; on gmail.com nothing loads at all (check the Performance tab).
 ```
 
 ## 4. The card, the voice, the ledger
@@ -95,6 +95,10 @@ Done when I turn off the api's internet and the full Amazon demo still runs with
 ```
 
 ---
+
+## After every block
+
+Paste the review prompt from docs/REVIEW.md. It changes nothing; it checks the build against everything we decided and ranks what a judge would see first. Fix the top three fails before the next build prompt.
 
 ## Prompts you will paste when things break
 
