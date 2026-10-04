@@ -374,7 +374,16 @@ function shortName(name) {
   const head = String(name || '').replace(/^\[[^\]]*\]\s*-?\s*/, '').split(/\s+-\s*|-\s+|[,:|(\[–]|\.\s/)[0].trim();
   const words = head.split(/\s+/).slice(0, 6);
   while (words.length > 1 && FILLER.has(words[words.length - 1].toLowerCase())) words.pop();
-  return words.join(' ');
+  return unshout(words.join(' '));
+}
+
+// Zara and friends send names in capitals. A name that is all caps reads as shouting on her card and in her mouth, so
+// it is title cased; names with their own casing (AirPods, iPhone) are left exactly as the store wrote them.
+const SMALL = new Set(['and', 'or', 'of', 'the', 'a', 'an', 'in', 'with', 'for', 'to', 'on', 'at', 'by']);
+function unshout(name) {
+  const letters = name.replace(/[^A-Za-z]/g, '');
+  if (letters.length < 4 || letters !== letters.toUpperCase()) return name;
+  return name.toLowerCase().split(' ').map((w, i) => (i > 0 && SMALL.has(w) ? w : w.replace(/^(\W*)(\w)/, (m, p, c) => p + c.toUpperCase()))).join(' ');
 }
 
 function rank(mood) { return ['calm', 'proud', 'watching', 'shocked', 'down'].indexOf(mood); }
