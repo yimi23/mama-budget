@@ -174,13 +174,18 @@ function weeklyStatement({ week, biggest, who = 'mama', trend = 0 }) {
 }
 
 // Three watches for onboarding, from the top want merchants of the last 30 days. Facts first, one clause of her.
+// `here` is what she says the moment that merchant's site opens: the promise from screen 06b, kept.
 function watchLines(topWants, who = 'mama') {
   const soft = who === 'nana' ? 'I’ll say something' : 'I will say something';
+  const here = (w) => who === 'nana'
+    ? `${w.merchant}, hon. I said I’d mention it. $${w.amount} here last month.`
+    : `${w.merchant}. I said I would say something. $${w.amount} here last month.`;
   return topWants.slice(0, 3).map((w, i) => {
     const cat = (w.category || w.merchant).toLowerCase();
-    if (i === 0) return { title: cap(cat), line: `You spent $${w.amount} on it, so when ${w.merchant} is open ${soft}.` };
-    if (i === 1) return { title: cap(cat), line: `$${w.amount} on ${cat}, so the next one gets one question first.` };
-    return { title: cap(cat), line: `$${w.amount}. That one I’ll leave alone unless it grows.` };
+    const base = { title: cap(cat), merchant: w.merchant, amount: w.amount, here: here(w) };
+    if (i === 0) return { ...base, line: `You spent $${w.amount} on it, so when ${w.merchant} is open ${soft}.` };
+    if (i === 1) return { ...base, line: `$${w.amount} on ${cat}, so the next one gets one question first.` };
+    return { ...base, line: `$${w.amount}. That one I’ll leave alone unless it grows.` };
   });
 }
 function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }

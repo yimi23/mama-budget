@@ -31,6 +31,8 @@ export type Message =
   | { type: 'TEXT_NOW'; grandma: 'mama' | 'nana'; to?: string }
   /** Can she text right now, is the API up. Drives disabled states, never a fake sent state. */
   | { type: 'HEALTH' }
+  /** This page's host: is it a merchant she said she would watch, and what does she say on arrival (once per session per store). */
+  | { type: 'WATCH_HERE'; host: string }
   /** Onboarding 06: the weekly envelope she proposed, adjusted. */
   | { type: 'SET_ENVELOPE'; amount: number }
   /** One of the six cue sounds. Honours settings.sounds and quiet hours. */
@@ -51,6 +53,7 @@ export type Reply<M extends Message> =
   M extends { type: 'WARM' } ? { ok: true } :
   M extends { type: 'TEXT_NOW' } ? { ok: boolean; texted: boolean; text: string | null; reason: string | null } :
   M extends { type: 'HEALTH' } ? { api: boolean; texts: boolean; voice: boolean } :
+  M extends { type: 'WATCH_HERE' } ? { line: string | null } :
   M extends { type: 'SET_ENVELOPE' } ? { ok: true; envelope: number } | { ok: false } :
   M extends { type: 'CUE' } ? { ok: boolean } :
   M extends { type: 'ANSWER' } ? { ok: true } :

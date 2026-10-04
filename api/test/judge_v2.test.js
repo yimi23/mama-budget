@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const { judge, remember } = require('../judge/rules_v2');
-const { lineFor, shopName, backHome, ackLine, buyLine, buyText, smallLines } = require('../lines/writer');
+const { lineFor, shopName, backHome, ackLine, buyLine, buyText, smallLines, watchLines } = require('../lines/writer');
 
 const week = { budget: 75, spent: 50 }; // the demo seed: $25 left
 
@@ -120,4 +120,12 @@ test('on a naira store she says the store price first, dollars after, and adds n
   assert.doesNotMatch(line, /That is .* naira/);
   const usd = lineFor(v, { item: 'AirPods Pro', price: 179, storePrice: 179, currency: 'USD' }, week);
   assert.match(usd, /alone is 179 dollars\. Put it back\./);
+});
+
+test('a watch carries what she says when that site opens', () => {
+  const ws = watchLines([{ merchant: 'DoorDash', amount: 102, category: 'Food Delivery' }, { merchant: 'Bar', amount: 16, category: 'Bars' }]);
+  assert.equal(ws[0].merchant, 'DoorDash');
+  assert.equal(ws[0].here, 'DoorDash. I said I would say something. $102 here last month.');
+  assert.match(watchLines([{ merchant: 'Target', amount: 40, category: 'Shopping' }], 'nana')[0].here, /^Target, hon\./);
+  for (const w of ws) assert.doesNotMatch(w.here, /[—–-]/);
 });

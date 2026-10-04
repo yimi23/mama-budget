@@ -369,6 +369,19 @@ function sleep() {
   console.info('[mama] nothing in the cart for a minute, sleeping until the page changes');
 }
 
+/** A watched merchant's site opened: she appears with the week and keeps her promise, then watches the cart as usual. */
+export async function arrive(ctx: Ctx, line: string) {
+  const g = await grandma();
+  if (!g) return;
+  const reply = await send<{ ok: true; week: Week } | { ok: false }>({ type: 'GET_WEEK' });
+  if (!reply?.ok) return;
+  showWeek(g, reply.week, 'watching');
+  remember(line);
+  bubble!.say(line);
+  void send({ type: 'CUE', cue: 'arrive' });
+  start(ctx, 'cart');
+}
+
 /** Called by content.ts when the gate opens, on navigation, and on an add to cart click. Safe to call again. */
 let listening = false;
 

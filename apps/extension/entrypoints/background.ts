@@ -255,6 +255,38 @@ async function putBack(msg: Extract<Message, { type: 'PUT_BACK' }>) {
   return reply ? { ok: true as const, week: reply.week } : { ok: false as const };
 }
 
+// The watches from screen 06b, kept: when a watched merchant's site opens she says so, once per session per store.
+// Merchant names become host tokens ("DoorDash" -> "doordash"); tokens under four letters ("Bar") never match a host.
+const MONTH_TTL_MS = 10 * 60 * 1000;
+async function monthCached(grandma: string): Promise<Month | null> {
+  const { monthCache } = await browser.storage.session.get('monthCache');
+  const c = monthCache as { at: number; grandma: string; month: Month } | undefined;
+  if (c && c.grandma === grandma && Date.now() - c.at < MONTH_TTL_MS) return c.month;
+  if (!(await apiUp())) return null;
+  const month = await call<Month>(`/month?grandma=${grandma}`);
+  if (month) await browser.storage.session.set({ monthCache: { at: Date.now(), grandma, month } });
+  return month;
+}
+
+async function watchHere(msg: Extract<Message, { type: 'WATCH_HERE' }>): Promise<{ line: string | null }> {
+  const { settings = {} } = await browser.storage.local.get('settings');
+  const st = settings as { grandma?: string; ignoredWatches?: string[] };
+  if (!st.grandma) return { line: null };
+  const host = msg.host.toLowerCase();
+  const month = await monthCached(st.grandma);
+  const ignored = new Set(st.ignoredWatches ?? []);
+  const hit = (month?.lines.watches ?? []).find((w) => {
+    const token = w.merchant.toLowerCase().replace(/[^a-z0-9]/g, '');
+    return token.length >= 4 && host.includes(token) && !ignored.has(w.title);
+  });
+  if (!hit) return { line: null };
+  const { watchSaid = {} } = await browser.storage.session.get('watchSaid');
+  const said = watchSaid as Record<string, number>;
+  if (said[host]) return { line: null };
+  await browser.storage.session.set({ watchSaid: { ...said, [host]: Date.now() } });
+  return { line: hit.here };
+}
+
 /** The popup's Start over: she forgets every answer and asks again, as on a fresh install. */
 async function startOver() {
   // A fresh install: no grandma, no onboarding progress, no memory, no marks. Onboarding starts at Welcome.
@@ -327,6 +359,9 @@ export default defineBackground(() => {
         return true;
       case 'PUT_BACK':
         putBack(msg).then(sendResponse, () => sendResponse({ ok: false }));
+        return true;
+      case 'WATCH_HERE':
+        watchHere(msg).then(sendResponse, () => sendResponse({ line: null }));
         return true;
       case 'START_OVER':
         startOver().then(() => sendResponse({ ok: true }), () => sendResponse({ ok: true }));

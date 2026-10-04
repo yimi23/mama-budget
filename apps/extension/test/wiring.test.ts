@@ -35,6 +35,8 @@ test('the session sends what the card promises', () => {
   assert.ok(session.includes('crossedIntoWatching('), 'the watching bubble at 75%');
   assert.ok(session.includes("card!.askMany("), 'several items get one card');
   assert.ok(session.includes("mark?.show("), 'the cart row is marked while a card is up');
+  assert.ok(session.includes("export async function arrive("), 'the watch promise from screen 06b is kept on arrival');
+  assert.ok(read('../entrypoints/content.ts').includes("type: 'WATCH_HERE'"), 'every page asks whether it is a watched merchant');
 });
 
 test('every send in the extension uses a type the contract knows', () => {

@@ -51,7 +51,7 @@ export interface Month extends Week {
   lines: {
     /** Null when there is no month to speak of: the screen is skipped. */
     trueLine: { text: string; spoken: string } | null;
-    watches: { title: string; line: string; spoken: string }[];
+    watches: { title: string; line: string; spoken: string; merchant: string; amount: number; here: string }[];
   };
 }
 

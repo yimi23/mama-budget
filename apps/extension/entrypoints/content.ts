@@ -66,7 +66,18 @@ export default defineContentScript({
       browser.runtime.sendMessage({ type: 'CONFIRM', store: storeKey(location.href), orderId }).catch(() => {});
     };
 
+    // A merchant she promised to watch (screen 06b): she says so on arrival, before any cart. One message per page.
+    const checkWatch = () => {
+      if (!browser.runtime?.id) return;
+      browser.runtime.sendMessage({ type: 'WATCH_HERE', host: location.hostname }).then(async (r: { line?: string | null } | undefined) => {
+        if (!r?.line || !ctx.isValid) return;
+        session ??= await import('../lib/session');
+        session.arrive(ctx, r.line);
+      }).catch(() => {});
+    };
+
     const onPage = () => {
+      checkWatch();
       checkConfirmation();
       // Once awake, a navigation re arms the session (it may have gone to sleep on an empty page).
       if (open) return wake('cart');
