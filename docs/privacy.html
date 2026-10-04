@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mama Budget privacy</title>
+<style>
+  body { margin: 0; background: #FBF8F3; color: #22172A; font: 17px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 680px; margin: 0 auto; padding: 48px 20px 80px; }
+  h1 { font-size: 32px; margin: 0 0 8px; }
+  h2 { font-size: 20px; margin: 32px 0 8px; }
+  p, li { margin: 0 0 12px; }
+  .muted { color: #5E566B; }
+  code { background: #EADFCB; padding: 1px 5px; border-radius: 5px; font-size: 15px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Mama Budget privacy</h1>
+  <p class="muted">Last updated October 4, 2026. Built at MHacks 2026 by Praise Oyimi and Ugonna Emeka-Inegbu.</p>
+
+  <p>Mama Budget is a Chrome extension. A grandmother character sits in the corner of your shopping cart and holds you to the fun money you set for the week. This page says exactly what the extension reads, where it goes, and what it never touches.</p>
+
+  <h2>What the extension reads</h2>
+  <ul>
+    <li><strong>The page you are on, only when it is a cart, checkout or product page.</strong> On every other page a small check runs locally and nothing is read, stored or sent. The check looks for the structure of a cart (a subtotal, a pay button, a cart address) and loads the rest of the extension only when it finds one.</li>
+    <li><strong>Cart contents.</strong> Item names, quantities and prices, read from the store's own cart data or from the visible text of the cart area. Nothing else on the page: no account details, no addresses, no card numbers, no cookies.</li>
+    <li><strong>What you tell her.</strong> Your answers on her cards ("it is for something", "I just want it") and the one line reason you may type.</li>
+    <li><strong>Settings you choose.</strong> Which grandma, how loud, the weekly amount, the currency from home, sounds on or off, and the address of the API if you changed it.</li>
+  </ul>
+
+  <h2>Where it goes</h2>
+  <ul>
+    <li><strong>Your own API.</strong> The extension talks to an API you run (by default on your own computer at <code>localhost:8787</code>). Cart items and your answers are sent there so she can judge them against your week. The API's code is open source in the same repository.</li>
+    <li><strong>From the API, three services, each for one job.</strong> Capital One's Nessie sandbox holds the simulated ledger (a demo bank, never your real account). ElevenLabs turns her lines into speech when a voice key is set. Anthropic's Claude reads cart text she could not parse otherwise, says whether an item is an obvious necessity, reads the meaning of a typed reason, and words her lines; it receives item names, prices, the store's name and the week's numbers, never page HTML. If you use the texting feature, Photon delivers her messages to the phone number you enrolled.</li>
+    <li><strong>Nothing to us.</strong> The developers run no server that receives your data. There is no analytics, no advertising, no tracking pixel, no sale or sharing of data.</li>
+  </ul>
+
+  <h2>What stays in the browser</h2>
+  <p>Her memory of your answers, your settings and this week's state live in Chrome's extension storage on your computer. "Start over" in the popup clears all of it and resets the demo ledger.</p>
+
+  <h2>What she never does</h2>
+  <ul>
+    <li>She never blocks a purchase and never clicks a store's buttons.</li>
+    <li>She never reads a page that is not a cart, checkout or product page.</li>
+    <li>She never touches needs or money sent to family: those are protected before anything else runs.</li>
+    <li>She never moves real money. The bank is a sandbox.</li>
+  </ul>
+
+  <h2>Permissions, in plain words</h2>
+  <ul>
+    <li><code>&lt;all_urls&gt;</code> content script: carts live on every store, so she has to be able to look. The local check above is the whole cost on a page that is not a cart.</li>
+    <li><code>storage</code>: her memory and your settings.</li>
+    <li><code>offscreen</code>: playing her voice.</li>
+    <li><code>tts</code>: the browser's own voice as a fallback when there is no ElevenLabs voice.</li>
+    <li><code>http://localhost:8787/*</code>: the API on your computer.</li>
+  </ul>
+
+  <h2>Contact</h2>
+  <p>Questions and deletion requests: praiseoyimi526@gmail.com. Source: <a href="https://github.com/yimi23/mama-budget">github.com/yimi23/mama-budget</a>.</p>
+</main>
+</body>
+</html>
