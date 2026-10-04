@@ -9,7 +9,7 @@ import { readCart, readKey } from './readers';
 const DEBOUNCE_MS = 400;
 const AFTER_ADD_MS = 1200;
 
-let lastKey = '';
+let lastKey = '(start)';
 let timer: ReturnType<typeof setTimeout> | undefined;
 let reading = false;
 let started = false;
@@ -27,8 +27,12 @@ async function tick() {
     const read: CartRead | null = await readCart(document, location.href);
     const key = readKey(read);
     if (key === lastKey) return;
+    if (!read) {
+      if (lastKey !== 'none') console.info(`[mama] cart page on ${location.hostname}, no reader found items yet`);
+      lastKey = 'none';
+      return;
+    }
     lastKey = key;
-    if (!read) return;
     // Plain text so a copied console line shows the whole read.
     console.info(
       `[mama] cart via ${read.via}, subtotal ${read.subtotal ?? '?'} ${read.currency}\n` +
