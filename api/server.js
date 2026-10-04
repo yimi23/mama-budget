@@ -32,7 +32,8 @@ const crypto = require('node:crypto');
 const { judge } = require('./judge/rules');
 const v2 = require('./judge/rules_v2');
 const nessie = require('./nessie/client');
-const { lineFor, ackLine, buyLine, smallLines, subLine, setHome, contextLine, backHome } = require('./lines/writer');
+const { lineFor, ackLine, buyLine, smallLines, subLine, setHome, contextLine, backHome, planLine, fundedLine } = require('./lines/writer');
+const reasons = require('./judge/reasons');
 const model = require('./lines/model');
 const extractCache = new Map();
 const { speak } = require('./voice/elevenlabs');
@@ -104,6 +105,7 @@ const routes = {
     const w = nessie.week();
     const who = body.grandma === 'nana' ? 'nana' : 'mama';
     const memory = body.memory && typeof body.memory === 'object' ? body.memory : {};
+    const saidReasons = body.reasons && typeof body.reasons === 'object' ? body.reasons : null;
     setHome(body.home);
     const items = (body.items || []).map((it) => ({ item: String(it.name || ''), price: Number(it.unitPrice || 0) * Number(it.qty || 1), storePrice: it.storeUnitPrice != null ? Number(it.storeUnitPrice) * Number(it.qty || 1) : null, merchant: it.store || '', currency: body.currency || 'USD', home: body.home || null }));
     // The rules judge the full title (the protected word is often at the end: "...Fragrant Rice"); her line gets the short name.
@@ -125,7 +127,7 @@ const routes = {
       const isCard = v.label === 'ask' || v.react;
       if (isCard && budgetLeft-- > 0) {
         const kind = v.react ? 'react' : 'ask';
-        const written = await contextLine({ kind, who, verdict: v, it: spoken, week: w, month: monthNow, memory, store }).catch(() => null);
+        const written = await contextLine({ kind, who, verdict: v, it: spoken, week: w, month: monthNow, memory, reasons: saidReasons, store }).catch(() => null);
         if (written) line = v.react ? written + backHome(item.price, item) : written;
       }
       if (v.label === 'ask') {
@@ -221,6 +223,44 @@ const routes = {
     extractCache.has(key) || extractCache.set(key, await model.extractItems(text));
     const out = extractCache.get(key);
     return out ? { ok: true, ...out } : { ok: false };
+  },
+
+  // The reason behind an answer, on any store. An occasion makes the item a plan (rules v2: planned, never scolded);
+  // if it beats what is left and savings can cover it, she offers to fund the week from savings. Nothing moves here.
+  'POST /v2/plan': async (body) => {
+    const who = body.grandma === 'nana' ? 'nana' : 'mama';
+    const name = String(body.name || '');
+    const price = Number(body.price || 0);
+    const reason = String(body.reason || '').trim();
+    if (!name || !(price > 0) || !reason) throw new Error('name, price and reason are required');
+    setHome(body.home);
+    const w = nessie.week();
+    const occasion = reasons.isJustWant(reason) ? null : reasons.occasionOf(reason);
+    const left = Math.max(0, w.budget - w.spent);
+    const savings = nessie.savingsBalance();
+    const short = body.short || shortName(name);
+    const need = Math.ceil(price - left);
+    const proposal = occasion && price > left && savings >= need && need > 0 ? { kind: 'fund', amount: need } : null;
+    const it = { item: short, price, merchant: body.store || '', currency: body.currency || 'USD', home: body.home || null, occasion: occasion || undefined };
+    let line = occasion ? planLine(who, it, w, proposal) : null;
+    if (occasion) {
+      const written = await contextLine({ kind: 'plan', who, verdict: { label: 'need', react: false, mood: w.mood, tags: ['planned'] }, it, week: w, month: nessie.month(), memory: body.memory, reasons: body.reasons, store: body.store, reason, proposal, savings }).catch(() => null);
+      if (written) line = written;
+    }
+    return { occasion, answer: occasion ? 'planned' : null, line, proposal, savings, week: w };
+  },
+
+  // "From savings": the money moves in Nessie and this week's envelope grows by that much. Idempotent by requestId.
+  'POST /v2/fund': async (body) => {
+    const who = body.grandma === 'nana' ? 'nana' : 'mama';
+    const amount = Math.round(Number(body.amount || 0));
+    if (!(amount > 0) || !body.requestId) throw new Error('amount and requestId are required');
+    await nessie.fundFromSavings(amount, String(body.name || 'this week'), String(body.requestId));
+    const w = nessie.week();
+    let line = fundedLine(who, amount, w);
+    const written = await contextLine({ kind: 'funded', who, verdict: { label: 'need', react: false, mood: w.mood, tags: ['funded'] }, it: { item: String(body.short || body.name || 'this'), price: amount }, week: w, month: nessie.month(), memory: body.memory, store: body.store }).catch(() => null);
+    if (written) line = written;
+    return { ok: true, week: w, line, savings: nessie.savingsBalance() };
   },
 
   'POST /buy': async (body) => {

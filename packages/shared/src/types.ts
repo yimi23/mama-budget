@@ -97,3 +97,13 @@ export interface BuyReply {
   texted: boolean;
   tag: 'need' | 'want';
 }
+
+/** POST /v2/plan: what a reason means for the week. */
+export interface PlanReply {
+  occasion: string | null;
+  answer: 'planned' | null;
+  line: string | null;
+  proposal: { kind: 'fund'; amount: number } | null;
+  savings: number;
+  week: Week;
+}

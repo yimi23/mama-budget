@@ -4,7 +4,7 @@
 // No key: returns null and the card shows the line as text. Demo still works.
 
 const SETTINGS = {
-  mama: { stability: 0.5, similarity_boost: 0.8, style: 0.4, speed: 0.94 },
+  mama: { stability: 0.5, similarity_boost: 0.8, style: 0.4, speed: 1.0 },
   nana: { stability: 0.6, similarity_boost: 0.8, style: 0.3, speed: 0.97 },
 };
 
@@ -25,7 +25,7 @@ async function speak(line, who = 'mama', mood = 'calm') {
   const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}?output_format=mp3_44100_64`, {
     method: 'POST',
     headers: { 'xi-api-key': key, 'content-type': 'application/json' },
-    // Two women, two paces (Praise, Oct 4: 0.9 made Nana sound nonchalant). Mama a touch slower with more expression,
+    // Two women, two paces (Praise, Oct 4: 0.9 made Nana sound nonchalant, 0.94 made Mama sound like a put on accent). Mama at natural speed with more expression,
     // warm first, loud second. Nana near natural speed and steadier: dry, says less than she means. speed is 0.7 to 1.2.
     body: JSON.stringify({ text: line, model_id: 'eleven_multilingual_v2', voice_settings: settingsFor(who, mood) }),
   });

@@ -1,7 +1,7 @@
 // Service worker. Stateless: everything lives in chrome.storage. Every listener is top level and synchronous.
 
 import type { HandledLists, Message } from '@mama/shared/messages';
-import type { Answer, BuyReply, CartItem, CartRead, CurrencyCode, JudgeReply, Month, Week } from '@mama/shared/types';
+import type { Answer, BuyReply, CartItem, CartRead, CurrencyCode, JudgeReply, Month, PlanReply, Week } from '@mama/shared/types';
 import { API, apiUp, call } from '../lib/api';
 import { weekKey } from '@mama/shared/week';
 import { regionHome } from '../lib/onboarding';
@@ -49,11 +49,11 @@ async function sha1(text: string): Promise<string> {
 
 async function judgeCart(store: string, currency: CurrencyCode, items: CartItem[], confidence?: number) {
   if (!(await apiUp())) return { ok: false as const };
-  const { memory = {}, settings = {} } = await browser.storage.local.get(['memory', 'settings']);
+  const { memory = {}, reasons = {}, settings = {} } = await browser.storage.local.get(['memory', 'reasons', 'settings']);
   const reply = await call<JudgeReply>('/v2/judge', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ items: items.map((i) => ({ ...i, store })), memory, currency, confidence, grandma: (settings as { grandma?: string }).grandma ?? 'mama', home: await homeSetting(), loudness: (settings as { loudness?: string }).loudness }),
+    body: JSON.stringify({ items: items.map((i) => ({ ...i, store })), memory, reasons, currency, confidence, grandma: (settings as { grandma?: string }).grandma ?? 'mama', home: await homeSetting(), loudness: (settings as { loudness?: string }).loudness }),
   });
   return reply ? { ok: true as const, ...reply, handled: await handledLists() } : { ok: false as const };
 }
@@ -319,9 +319,30 @@ async function startOver() {
 }
 
 /** Her memory of your answers. Durable, keyed by the rules' own item key, shared across every store. */
-async function remember(key: string, answer: Answer) {
-  const { memory = {} } = await browser.storage.local.get('memory');
-  await browser.storage.local.set({ memory: { ...(memory as Record<string, Answer>), [key]: answer } });
+async function remember(key: string, answer: Answer | 'planned', reason?: string) {
+  const { memory = {}, reasons = {} } = await browser.storage.local.get(['memory', 'reasons']);
+  const next: Record<string, unknown> = { memory: { ...(memory as Record<string, string>), [key]: answer } };
+  if (reason) next.reasons = { ...(reasons as Record<string, string>), [key]: reason };
+  await browser.storage.local.set(next);
+}
+
+async function plan(msg: Extract<Message, { type: 'PLAN' }>) {
+  if (!(await apiUp())) return { ok: false as const };
+  const { memory = {}, reasons = {} } = await browser.storage.local.get(['memory', 'reasons']);
+  const reply = await call<PlanReply>('/v2/plan', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ ...msg.item, store: msg.store, currency: msg.currency, reason: msg.reason, memory, reasons, grandma: await grandmaSetting(), home: await homeSetting() }),
+  });
+  return reply ? { ok: true as const, ...reply } : { ok: false as const };
+}
+
+async function fund(msg: Extract<Message, { type: 'FUND' }>) {
+  if (!(await apiUp())) return { ok: false as const };
+  const reply = await call<{ ok: true; week: Week; line: string }>('/v2/fund', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ ...msg.item, store: msg.store, amount: msg.amount, grandma: await grandmaSetting(), requestId: `fund:${weekKey()}:${postedKey(msg.item.name)}` }),
+  });
+  return reply ? { ok: true as const, week: reply.week, line: reply.line } : { ok: false as const };
 }
 
 export default defineBackground(() => {
@@ -387,11 +408,17 @@ export default defineBackground(() => {
       case 'EXTRACT':
         extract(msg).then(sendResponse, () => sendResponse({ ok: false }));
         return true;
+      case 'PLAN':
+        plan(msg).then(sendResponse, () => sendResponse({ ok: false }));
+        return true;
+      case 'FUND':
+        fund(msg).then(sendResponse, () => sendResponse({ ok: false }));
+        return true;
       case 'START_OVER':
         startOver().then(() => sendResponse({ ok: true }), () => sendResponse({ ok: true }));
         return true;
       case 'ANSWER':
-        remember(msg.key, msg.answer).then(() => sendResponse({ ok: true }), () => sendResponse({ ok: true }));
+        remember(msg.key, msg.answer, msg.reason).then(() => sendResponse({ ok: true }), () => sendResponse({ ok: true }));
         return true;
     }
   });

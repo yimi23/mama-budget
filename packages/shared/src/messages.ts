@@ -1,6 +1,6 @@
 // Every message between content script, popup and worker. Add the case here before writing the handler.
 
-import type { Answer, BuyReply, CartItem, CartRead, Cue, CurrencyCode, JudgeReply, Month, Week } from './types.ts';
+import type { Answer, BuyReply, CartItem, CartRead, Cue, CurrencyCode, JudgeReply, Month, PlanReply, Week } from './types.ts';
 
 /** What she already asked about or reacted to this browser session, across every tab and reload. */
 export interface HandledLists {
@@ -14,7 +14,11 @@ export type Message =
   | { type: 'JUDGE'; store: string; currency: CurrencyCode; items: CartItem[]; confidence?: number }
   /** Reader 4: the cart region's text, to the model through the API. Cached by text hash. */
   | { type: 'EXTRACT'; store: string; text: string }
-  | { type: 'ANSWER'; key: string; answer: Answer }
+  | { type: 'ANSWER'; key: string; answer: Answer | 'planned'; reason?: string }
+  /** A reason was given with the answer: what does it mean for the plan (any store). */
+  | { type: 'PLAN'; store: string; currency: CurrencyCode; item: { name: string; short: string; price: number }; reason: string }
+  /** "From savings": fund this week by this much for this item. */
+  | { type: 'FUND'; store: string; item: { name: string; short: string }; amount: number }
   | { type: 'MARK'; kind: 'asked' | 'reacted'; key: string }
   /** Buy anyway on the card: the admitted want is charged now. */
   | { type: 'BUY'; store: string; currency: CurrencyCode; item: { name: string; short: string; price: number; storePrice?: number } }
@@ -60,5 +64,7 @@ export type Reply<M extends Message> =
   M extends { type: 'SET_ENVELOPE' } ? { ok: true; envelope: number } | { ok: false } :
   M extends { type: 'CUE' } ? { ok: boolean } :
   M extends { type: 'ANSWER' } ? { ok: true } :
+  M extends { type: 'PLAN' } ? ({ ok: true } & PlanReply) | { ok: false } :
+  M extends { type: 'FUND' } ? { ok: true; week: Week; line: string } | { ok: false } :
   M extends { type: 'PING' } ? { ok: true; at: number } :
   never;

@@ -129,3 +129,15 @@ test('a watch carries what she says when that site opens', () => {
   assert.match(watchLines([{ merchant: 'Target', amount: 40, category: 'Shopping' }], 'nana')[0].here, /^Target, hon\./);
   for (const w of ws) assert.doesNotMatch(w.here, /[—–-]/);
 });
+
+test('a reason that names an occasion makes a plan; a dressed up want does not', () => {
+  const { occasionOf, isJustWant } = require('../judge/reasons');
+  assert.equal(occasionOf('for my graduation next month'), 'graduation');
+  assert.equal(occasionOf('Job interview on Friday'), 'interview');
+  assert.equal(occasionOf('I just want it'), null);
+  assert.equal(isJustWant('because I want it'), true);
+  assert.equal(occasionOf(''), null);
+  const memory = remember({}, { item: 'Checked wool suit' }, 'planned');
+  const v = judge({ item: 'Checked wool suit', price: 476 }, week, memory);
+  assert.deepEqual([v.label, v.react], ['need', false], 'planned is never scolded');
+});

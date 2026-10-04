@@ -136,10 +136,31 @@ function summary(filter, envelope) {
 }
 
 // This week's envelope. What the badge, the card and "how much do I have left" read.
+// "Take $200 from savings for this week": savings to checking in Nessie, and the week's envelope grows by that much.
+// Not a transfer in the kept sense (nothing was saved), so it lives in its own list.
+async function fundFromSavings(amount, item, requestId) {
+  const c = readCache();
+  c.funding = c.funding || [];
+  if (requestId && c.funding.some((f) => f.requestId === requestId)) return c.funding.find((f) => f.requestId === requestId);
+  const rec = { amount: whole(amount), item, date: today(), requestId };
+  try { rec.nessieId = await moveMoney(c.savingsId, c.accountId, rec.amount, rec.date, `fund | ${item}`); } catch {}
+  c.funding.push(rec); writeCache(c);
+  return rec;
+}
+
+/** What is in savings as the ledger knows it: everything ever moved there, minus what came back out to fund a week. */
+function savingsBalance() {
+  const c = readCache();
+  const inn = (c.transfers || []).filter((t) => t.to === 'savings').reduce((s, t) => s + t.amount, 0);
+  const out = (c.funding || []).reduce((s, f) => s + f.amount, 0);
+  return Math.max(0, inn - out);
+}
+
 function week(now = new Date()) {
   const c = readCache();
-  const envelope = c.envelope || Number(process.env.FUN_BUDGET || 75);
-  return { ...summary((d) => inWeek(d, now), envelope), daysLeft: daysLeftInWeek(now), period: 'week' };
+  const funded = (c.funding || []).filter((f) => inWeek(f.date, now)).reduce((s, f) => s + f.amount, 0);
+  const envelope = (c.envelope || Number(process.env.FUN_BUDGET || 75)) + funded;
+  return { ...summary((d) => inWeek(d, now), envelope), funded, daysLeft: daysLeftInWeek(now), period: 'week' };
 }
 
 // The 30 day read for onboarding: the true line and the watches. Its envelope is the weekly one times 4.3 so ratio still means something.
@@ -183,4 +204,4 @@ function setEnvelope(amount) {
 async function spentThisWeek() { return week().spent; }
 const spentThisMonth = spentThisWeek; // old name, kept for the server
 
-module.exports = { call, purchase, transferHome, moveToSavings, deposit, week, month, trueLine, proposeEnvelope, watches, weekStart, daysLeftInWeek, spentThisWeek, spentThisMonth, readCache, writeCache, customerName, setEnvelope };
+module.exports = { call, purchase, transferHome, moveToSavings, fundFromSavings, savingsBalance, deposit, week, month, trueLine, proposeEnvelope, watches, weekStart, daysLeftInWeek, spentThisWeek, spentThisMonth, readCache, writeCache, customerName, setEnvelope };

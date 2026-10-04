@@ -14,6 +14,8 @@ export interface CardContent {
   sub: string;
   primary: string;
   secondary: string;
+  /** Show a one line text field above the buttons, with this placeholder. The typed text is read from `reason`. */
+  reasonField?: string;
 }
 
 export type CardChoice = 'primary' | 'secondary' | 'dismiss';
@@ -55,6 +57,13 @@ const CSS = `
 .line { margin: 0; font-size: 17px; font-weight: 700; line-height: 1.25; }
 .sub { margin: 0; font-size: 13px; color: #5E566B; font-variant-numeric: tabular-nums; }
 .actions { display: flex; gap: 8px; margin-top: 4px; }
+.reason {
+  all: unset; box-sizing: border-box; width: 100%; min-height: 40px; padding: 8px 12px; border-radius: 8px;
+  border: 1px solid #EADFCB; background: #fff; color: #141016; font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.reason::placeholder { color: #5E566B; }
+.reason:focus-visible { outline: 3px solid #0F7B5A; outline-offset: 1px; }
+.reason[hidden] { display: none; }
 .actions button {
   all: unset; box-sizing: border-box; flex: 1; min-height: 44px; padding: 10px 8px; border-radius: 10px;
   font: 600 13px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif; text-align: center; cursor: pointer;
@@ -81,6 +90,8 @@ const CSS = `
 `;
 
 export interface Card {
+  /** What was typed in the reason box on the last single ask, trimmed. Empty when the box was not shown or left blank. */
+  readonly reason: string;
   /** Shows the card and resolves with what the person chose. Escape and the page losing her resolve as dismiss. */
   ask(c: CardContent): Promise<CardChoice>;
   /** Several new items at once: one card, each with its own two answers. Resolves when all are answered or dismissed. */
@@ -113,6 +124,12 @@ export function mountCard(root: ShadowRoot): Card {
   line.setAttribute('aria-live', 'polite');
   const sub = document.createElement('p');
   sub.className = 'sub';
+  const reason = document.createElement('input');
+  reason.className = 'reason';
+  reason.type = 'text';
+  reason.maxLength = 80;
+  reason.hidden = true;
+  reason.setAttribute('aria-label', 'What is it for');
   const actions = document.createElement('div');
   actions.className = 'actions';
   const primary = document.createElement('button');
@@ -130,7 +147,7 @@ export function mountCard(root: ShadowRoot): Card {
   notNow.className = 'notnow';
   notNow.textContent = 'Not now';
   notNow.hidden = true;
-  body.append(line, sub, actions, rows, notNow);
+  body.append(line, sub, reason, actions, rows, notNow);
   card.append(tile, body);
   root.append(style, card);
 
@@ -150,12 +167,14 @@ export function mountCard(root: ShadowRoot): Card {
   };
 
   primary.addEventListener('click', () => finish('primary'));
+  reason.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); finish('primary'); } });
   secondary.addEventListener('click', () => finish('secondary'));
   notNow.addEventListener('click', () => finish('dismiss'));
 
   const single = (on: boolean) => {
     sub.hidden = !on;
     actions.hidden = !on;
+    if (!on) reason.hidden = true;
     rows.hidden = on;
     notNow.hidden = on;
   };
@@ -198,6 +217,7 @@ export function mountCard(root: ShadowRoot): Card {
 
   return {
     get open() { return !!settle; },
+    get reason() { return reason.hidden ? '' : reason.value.trim(); },
     askMany(c) {
       if (settle) finish('dismiss');
       single(false);
@@ -221,10 +241,13 @@ export function mountCard(root: ShadowRoot): Card {
       sub.textContent = c.sub;
       primary.textContent = c.primary;
       secondary.textContent = c.secondary;
+      reason.value = '';
+      reason.hidden = !c.reasonField;
+      if (c.reasonField) reason.placeholder = c.reasonField;
       card.classList.remove('out');
       card.hidden = false;
       returnFocus = document.activeElement;
-      primary.focus({ preventScroll: true });
+      (c.reasonField ? reason : primary).focus({ preventScroll: true });
       return new Promise<CardChoice>((resolve) => { settle = resolve; });
     },
     close() { finish('dismiss'); },

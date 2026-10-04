@@ -19,6 +19,9 @@ const MAMA = {
   ackFits: ['Ehen. Carry on.', 'Okay. It fits. Carry on.'],
   agreed: ['Good. I am watching the cart.'],
   bought: ['Noted. It is in the book.'],
+  plan: ['{occasion}. Okay. That one is a plan, not a want. It stays off the meter.'],
+  planFund: ['{occasion}. Okay. That is a plan, not a want. It is {price} against {left} dollars left this week. Take {fund} dollars from savings for the week, or keep the plan as it is?'],
+  funded: ['Done. {fund} dollars came out of savings. The week is {budget} dollars now.'],
   askMany: ['{n} new things. What are they for?'],
   family: ['That one is not waste. Greet them for me.'],
   statementClose: ['Good week. Keep going.', 'Better than last week. I noticed.', 'We will do better. I am not angry.'],
@@ -39,6 +42,9 @@ const NANA = {
   ackFits: ['Okay, hon. That fits.'],
   agreed: ['Good call, hon.'],
   bought: ['Alright. Noted.'],
+  plan: ['{occasion}. Well, that is a plan, not a want. Off the meter it goes.'],
+  planFund: ['{occasion}, hon. That is a plan, not a want. It is {price} with {left} dollars left this week. Take {fund} from savings for the week, or leave it be?'],
+  funded: ['Done, hon. {fund} dollars out of savings. The week is {budget} now.'],
   askMany: ['{n} new things, hon. What are they for?'],
   family: ['That’s family. That doesn’t count.'],
   statementClose: ['Good week.', 'Better than last week. I noticed.', 'We’ll get there.'],
@@ -95,7 +101,9 @@ function fill(t, it, week = {}) {
     .replace('{left}', Math.max(0, budget - spent))
     .replace('{budget}', budget)
     .replace('{over}', Math.max(0, spent - budget))
-    .replace('{merchant}', shopName(it.merchant));
+    .replace('{merchant}', shopName(it.merchant))
+    .replace('{occasion}', cap(String(it.occasion || 'that')))
+    .replace('{fund}', Math.round(it.fund || 0));
   return line.charAt(0).toUpperCase() + line.slice(1);
 }
 
@@ -146,6 +154,16 @@ function buyText(week, it, who = 'mama') {
 }
 
 // Small acknowledgements the card needs on hand: "You're right, Mama", and the item leaving the cart.
+/** The fixed plan line when the model is off. */
+function planLine(who, it, week, proposal) {
+  const bank = who === 'nana' ? NANA : MAMA;
+  return fill(proposal ? bank.planFund[0] : bank.plan[0], { ...it, fund: proposal ? proposal.amount : 0 }, week);
+}
+function fundedLine(who, amount, week) {
+  const bank = who === 'nana' ? NANA : MAMA;
+  return fill(bank.funded[0], { fund: amount }, week);
+}
+
 function smallLines(who = 'mama') {
   const bank = who === 'nana' ? NANA : MAMA;
   return { agreed: bank.agreed[0], proud: bank.proud[0], watching: bank.watching[0], askMany: bank.askMany[0] };
@@ -240,29 +258,32 @@ No dashes of any kind, no emoji, no hashtags. Do not call yourself an app or an 
 For an ASK: a neutral question that names the item, nothing that judges, no mention of the budget numbers. For a REACTION:
 state the breach plainly with the numbers from the context (price, what is left this week, or the week's budget), end on care, never cruelty.
 For an ACKNOWLEDGEMENT: one sentence, warm, that confirms you heard and what it means (a need stays off the meter; a want that fits is fine).
-For AFTER A CHARGE past the week: name how far over the week is and the item; no lecture.`;
+For AFTER A CHARGE past the week: name how far over the week is and the item; no lecture.
+For A PLAN (the person gave a reason that is an occasion): say the occasion back, say it is a plan and not a want, and if a plan to fund it from savings is given, offer it as one question with the amount; if none is given, say it stays off the meter.
+For FUNDED: confirm the money moved and what the week is now, one sentence.
+Quote a remembered reason when it is relevant ("you said the chair was for your back").`;
 
 /**
  * Her line written from the whole situation: the verdict the rules reached, the week, the month's habits, the bills, what
  * she remembers, the store. The rules decided; this only words it. Returns null on any failure so the fixed pools take over.
  */
-async function contextLine({ kind, who = 'mama', verdict, it, week, month, memory, store, warm = false }) {
+async function contextLine({ kind, who = 'mama', verdict, it, week, month, memory, store, warm = false, reason = null, reasons = null, proposal = null, savings = null }) {
   const model = require('./model');
   // The cache key is the situation, not the prompt: the same item, price, week and store gives the same line whether
   // it was written ahead of time (while the ask was on screen) or at the moment of the card.
-  const situation = [kind, who, it.item, Math.round(it.price || 0), Math.round(week.spent || 0), Math.round(week.budget || 0), shopName(store || it.merchant), verdict.react ? 1 : 0].join('|');
+  const situation = [kind, who, it.item, Math.round(it.price || 0), Math.round(week.spent || 0), Math.round(week.budget || 0), shopName(store || it.merchant), verdict.react ? 1 : 0, reason || '', proposal ? proposal.amount : ''].join('|');
   const left = Math.max(0, Math.round((week.budget || 0) - (week.spent || 0)));
   const habits = (month && month.topWants ? month.topWants : []).slice(0, 3).map((w) => `$${w.amount} at ${w.merchant} (${w.category})`).join(', ');
   const bill = (week.bills || [])[0];
-  const remembered = memory && Object.keys(memory).length ? Object.entries(memory).slice(0, 8).map(([k, v]) => `${k}: ${v}`).join('; ') : 'nothing yet';
+  const remembered = memory && Object.keys(memory).length ? Object.entries(memory).slice(0, 8).map(([k, v]) => `${k}: ${v}${reasons && reasons[k] ? ` (they said: "${reasons[k]}")` : ''}`).join('; ') : 'nothing yet';
   const prompt = `${kind.toUpperCase()}.
 Item: ${it.item}. Price: $${Math.round(it.price || 0)}${it.qty > 1 ? ` (${it.qty} of them)` : ''}. Store: ${shopName(store || it.merchant)}.
 Verdict from the rules: ${verdict.label}${verdict.react ? ', she reacts' : ''}${verdict.tags && verdict.tags.length ? ` (${verdict.tags.join(', ')})` : ''}.
 This week: $${Math.round(week.spent || 0)} of $${Math.round(week.budget || 0)} fun money spent, $${left} left, ${week.daysLeft ?? '?'} day(s) to go${week.ratio >= 1 ? `, the week is already over by $${Math.round(week.spent - week.budget)}` : ''}.
 ${bill ? `Bill coming: ${bill.nickname || bill.payee} $${bill.amount} in ${bill.daysUntil} day(s).` : 'No bills in the next week.'}
 Last 30 days habits: ${habits || 'not much'}.
-What she remembers about this person's answers: ${remembered}.`;
-  const must = kind === 'ask' ? [it.item.split(' ')[0]] : kind === 'react' || kind === 'bought' ? [String(Math.round(it.price || 0))] : [];
+What she remembers about this person's answers: ${remembered}.${reason ? `\nThe person just said this item is for: "${reason}".` : ''}${proposal ? `\nThe plan she may offer: take $${proposal.amount} from savings for this week (savings hold $${savings}); the week would then cover it.` : ''}`;
+  const must = kind === 'ask' ? [it.item.split(' ')[0]] : kind === 'react' || kind === 'bought' ? [String(Math.round(it.price || 0))] : kind === 'plan' && proposal ? [String(proposal.amount)] : [];
   return model.say({ system: SYSTEM[who] + LINE_RULES, prompt, key: situation, mustInclude: must, maxLen: kind === 'ack' ? 160 : 240, timeoutMs: warm ? model.WARM_TIMEOUT_MS : undefined });
 }
 
@@ -326,5 +347,5 @@ function modelReply({ who = 'mama', userText, week, history, promises }) {
 module.exports = {
   shopName, backHome, setHome,
   lineFor, ackLine, buyLine, buyText, smallLines, subLine, weeklyStatement, monthlyStatement, watchLines, whatsLeft,
-  modelLine, modelReply, contextLine, toNaira, notifyLine, notifyText, MAMA, NANA,
+  modelLine, modelReply, contextLine, planLine, fundedLine, toNaira, notifyLine, notifyText, MAMA, NANA,
 };

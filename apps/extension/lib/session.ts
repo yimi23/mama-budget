@@ -1,7 +1,7 @@
 // Loaded only after detect.ts fires. Reads the cart, watches for changes, judges through the worker, and holds
 // at most one conversation at a time. Never caches DOM nodes: every tick re queries from the document.
 
-import type { BuyReply, CartRead, JudgeReply, Mood, Verdict, Week } from '@mama/shared/types';
+import type { BuyReply, CartRead, JudgeReply, Mood, PlanReply, Verdict, Week } from '@mama/shared/types';
 import type { HandledLists, Message } from '@mama/shared/messages';
 import { mountBadge, type Badge, type Grandma } from './ui/badge';
 import { mountCard, type Card } from './ui/card';
@@ -236,12 +236,43 @@ async function ask(g: Grandma, week: Week, v: Verdict) {
     grandma: g, mood: 'watching', tone: 'ask', line: v.line,
     sub: 'I ask once and remember your answer.',
     primary: 'It’s for something', secondary: wantLabel(v.short),
+    reasonField: 'What for? One line, if you like.',
   });
+  const reason = card!.reason;
   mark?.hide();
-  if (choice === 'primary') await send({ type: 'ANSWER', key: v.key, answer: 'need' });
-  else if (choice === 'secondary') await send({ type: 'ANSWER', key: v.key, answer: 'want' });
+  if (choice === 'primary') await send({ type: 'ANSWER', key: v.key, answer: 'need', reason: reason || undefined });
+  else if (choice === 'secondary') await send({ type: 'ANSWER', key: v.key, answer: 'want', reason: reason || undefined });
   if (choice !== 'dismiss') justAnswered = v.key;
   showWeek(g, week);
+  // A reason changes the plan on any store: an occasion makes it a plan, and may be worth funding from savings.
+  if (choice !== 'dismiss' && reason) await planFor(g, v, reason);
+}
+
+/** What the reason means. She says it back; if it is an occasion the item is planned; if it beats the week she offers savings. */
+async function planFor(g: Grandma, v: Verdict, reason: string) {
+  const reply = await send<({ ok: true } & PlanReply) | { ok: false }>({
+    type: 'PLAN', store: storeKey(location.href), currency: lastRead?.currency ?? 'USD', reason,
+    item: { name: v.name, short: v.short, price: v.price },
+  });
+  if (!reply?.ok || !reply.occasion || !reply.line) return;
+  justAnswered = null; // the plan line is the acknowledgement
+  await send({ type: 'ANSWER', key: v.key, answer: 'planned', reason });
+  remember(reply.line);
+  if (!reply.proposal) { bubble!.say(reply.line, `$${Math.round(v.price)}. Planned, so it stays off the meter.`); return; }
+  const choice = await card!.ask({
+    grandma: g, mood: 'watching', tone: 'ask', line: reply.line,
+    sub: `Savings hold $${Math.round(reply.savings)}. The week would cover it.`,
+    primary: `$${reply.proposal.amount} from savings`, secondary: 'Keep the plan',
+  });
+  if (choice !== 'primary') { bubble!.say(g === 'nana' ? 'Alright. The plan stays.' : 'Okay. The plan stays.'); return; }
+  const funded = await send<{ ok: true; week: Week; line: string } | { ok: false }>({
+    type: 'FUND', store: storeKey(location.href), item: { name: v.name, short: v.short }, amount: reply.proposal.amount,
+  });
+  if (!funded?.ok) return;
+  showWeek(g, funded.week);
+  remember(funded.line);
+  bubble!.say(funded.line, `$${Math.round(funded.week.left)} left this week now.`);
+  void send({ type: 'CUE', cue: 'proud' });
 }
 
 /** Several new items at once: one card. Each answer is saved the moment it is tapped. */
