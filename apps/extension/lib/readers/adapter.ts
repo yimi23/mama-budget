@@ -37,7 +37,7 @@ export interface AdapterSpec {
   subtotal?: Field;
 }
 
-function readField(scope: Element | Document, f: Field): string {
+export function readField(scope: Element | Document, f: Field): string {
   // A selector list matches in document order, so fallbacks are tried one at a time instead.
   const sels = f.sel == null ? [] : Array.isArray(f.sel) ? f.sel : [f.sel];
   let el: Element | null = sels.length ? null : scope.nodeType === 1 ? (scope as Element) : null;
@@ -84,4 +84,12 @@ export function runAdapter(spec: AdapterSpec, doc: Document): CartRead | null {
     via: spec.host,
     confidence: 1,
   };
+}
+
+/** The cart row showing this item, re queried now, or null. For the row mark; never cached. */
+export function locateRow(spec: AdapterSpec, doc: Document, name: string): Element | null {
+  const root = doc.querySelector(spec.root);
+  if (!root) return null;
+  for (const row of root.querySelectorAll(spec.row)) if (readField(row, spec.name) === name) return row;
+  return null;
 }

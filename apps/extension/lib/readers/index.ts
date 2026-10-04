@@ -5,7 +5,7 @@
 import type { CartRead } from '@mama/shared/types';
 import { storeKey } from '@mama/shared/store-key';
 import { readPlatform } from './platform';
-import { runAdapter, type AdapterSpec } from './adapter';
+import { locateRow as locateIn, runAdapter, type AdapterSpec } from './adapter';
 import { amazon } from './sites/amazon';
 import { target } from './sites/target';
 import { walmart } from './sites/walmart';
@@ -34,3 +34,11 @@ export function readKey(read: CartRead | null): string {
   return read.items.map((i) => `${i.name}|${i.qty}|${i.unitPrice}`).join(';') + `|${read.subtotal}|${read.currency}`;
 }
 
+
+/** Where the cart draws this item right now, for the row mark. Platform (JSON) carts have no known row: null. */
+export function locateRow(doc: Document, url: string, name: string): Element | null {
+  if (doc.documentElement.hasAttribute('data-mama-practice')) return locateIn(practice, doc, name);
+  const store = storeKey(url);
+  for (const spec of HAND_WRITTEN) if (spec.host === store) return locateIn(spec, doc, name);
+  return null;
+}
