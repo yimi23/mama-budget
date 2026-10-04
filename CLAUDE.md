@@ -9,6 +9,7 @@ WXT (Manifest V3, TypeScript) for the extension. Plain Node 22 `http` for the AP
 - `npm run dev` runs the extension and the api together. There is no fake shop. Test on amazon.com, target.com and one Shopify store (gymshark.com), logged in, with saved carts.
 - `npm test` runs the API tests (judge v1 and v2, the invariance proof, reasons, the text reader, the picker, the ledger questions, Photon) and the extension tests (detector, readers on saved real carts and product pages, flow, badge, week, onboarding, wiring). `npm run score` prints the 50 case score.
 - `npm run typecheck`.
+- `node tools/live.mjs <url> 0 "<click js>" poll` drives the built extension in Chrome for Testing against a live store and times her appearance (header of the file has the setup). Target and Walmart serve a bot wall to headless Chrome; their adapters are covered by the saved carts in tests.
 - `npm run build:ext`, then load unpacked from `apps/extension/build/chrome-mv3`. After reloading the extension, hard refresh the store tab (old content scripts are orphaned). `npm run update` pulls, installs and builds for a teammate.
 
 ## Architecture rules
