@@ -4,6 +4,8 @@
 
 Mama Budget is a Chrome extension and an iMessage thread. A grandmother (Nigerian Mama, Midwest Nana, Mexican American Abuela or Cantonese Grandma Wong) lives in the corner of your cart, protects needs and money sent home, asks once what a new want is for, and reacts only when an admitted want blows the week's envelope. The bank is Capital One Nessie. Her phone is Photon Spectrum on iMessage. Her voice is ElevenLabs. Claude reads carts, screenshots and typed reasons; rules keep every promise.
 
+**What she is not.** Not a blocker, not a guilt trip, not a concept. Nothing is ever blocked and nobody is shamed: she asks once, reacts only when you said it was a want and it blows the week, and Buy anyway is always there. A working extension with a built zip in Releases, 144 tests, and a live site at mamabudget.com.
+
 ## Inspiration
 
 Every money app tells you after the money is gone. The moment that changes behaviour is between the cart and the charge, and nobody lives there. We built her for international and first generation students who send money home: their budget has a line most apps have no category for, family. A bank files a $200 transfer home next to a $200 jacket. She files it under need, before any rule about wants.
