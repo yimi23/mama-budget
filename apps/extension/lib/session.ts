@@ -6,6 +6,7 @@ import type { HandledLists, Message } from '@mama/shared/messages';
 import { mountBadge, type Badge, type Grandma } from './ui/badge';
 import { mountCard, type Card } from './ui/card';
 import { mountBubble, type Bubble } from './ui/bubble';
+import { mountPanel, type Panel } from './ui/panel';
 import { ackSub, nextCard, wantLabel, type Handled } from './flow';
 import { storeKey } from '@mama/shared/store-key';
 import { toUSD } from '@mama/shared/currency';
@@ -35,6 +36,10 @@ let lastItemsAt = 0;
 let badge: Badge | undefined;
 let card: Card | undefined;
 let bubble: Bubble | undefined;
+let panel: Panel | undefined;
+let lastWeek: Week | undefined;
+/** The last three things she said, newest first. Also kept in storage.local for the popup. */
+let said: string[] = [];
 /** The key just answered on a card, so the next judgement can acknowledge it. */
 let justAnswered: string | null = null;
 let lastRead: CartRead | null = null;
@@ -81,16 +86,31 @@ async function grandma(): Promise<Grandma | null> {
 let saidPick = false;
 
 function showWeek(g: Grandma, week: Week, mood: Mood = week.mood) {
-  badge ??= mountBadge();
-  card ??= mountCard(badge.root);
-  bubble ??= mountBubble(badge.root);
+  if (!badge) {
+    badge = mountBadge();
+    card = mountCard(badge.root);
+    bubble = mountBubble(badge.root);
+    panel = mountPanel(badge.root);
+    badge.onClick(() => {
+      if (card!.open || !lastWeek) return; // a question on screen comes first
+      panel!.toggle({ week: lastWeek, said });
+    });
+  }
+  lastWeek = week;
   badge.update({ grandma: g, mood, ratio: week.ratio, left: week.left, daysLeft: week.daysLeft });
 }
 
 function hideAll() {
   card?.close();
   bubble?.hide();
+  panel?.close();
   badge?.hide();
+}
+
+/** Everything she says on a page goes on the record, newest first, three kept. */
+function remember(line: string) {
+  said = [line, ...said.filter((l) => l !== line)].slice(0, 3);
+  browser.storage.local.set({ said }).catch(() => {});
 }
 
 function logJudgement(reply: { ok: true } & JudgeReply) {
@@ -133,7 +153,7 @@ async function talk() {
         // She always answers an answer. A blown want gets its card below instead of a bubble.
         const v = reply.verdicts.find((x) => x.key === justAnswered);
         justAnswered = null;
-        if (v?.ack && !v.react) bubble!.say(v.ack, ackSub(v, reply.week) ?? '');
+        if (v?.ack && !v.react) { remember(v.ack); bubble!.say(v.ack, ackSub(v, reply.week) ?? ''); }
       }
       if (lastRead !== read) continue; // the cart moved while she was thinking
       const next = nextCard(reply.verdicts, handled);
@@ -164,6 +184,7 @@ function onRead(read: CartRead | null) {
   for (const [name, price] of putBack) {
     if (read?.items.some((i) => i.name === name)) continue;
     putBack.delete(name);
+    remember(lines.proud);
     bubble?.say(lines.proud, `$${Math.round(price)} stays in the week.`);
   }
   if (talking) {
@@ -178,6 +199,8 @@ async function ask(g: Grandma, week: Week, v: Verdict) {
   handled.asked.add(v.key);
   await send({ type: 'MARK', kind: 'asked', key: v.key });
   showWeek(g, week, 'watching');
+  panel?.close();
+  remember(v.line);
   const choice = await card!.ask({
     grandma: g, mood: 'watching', tone: 'ask', line: v.line,
     sub: 'She asks once and remembers your answer.',
@@ -277,6 +300,7 @@ export function start(ctx: Ctx, reason: 'cart' | 'add') {
   lastItemsAt ||= Date.now();
   if (!listening) {
     listening = true;
+    browser.storage.local.get('said').then(({ said: s }) => { if (Array.isArray(s) && !said.length) said = s.slice(0, 3); }).catch(() => {});
     // Picking or changing the grandma in the popup applies on the open cart at once: faces, lines, naira.
     browser.storage.onChanged.addListener((changes, area) => {
       if (area === 'local' && changes.settings) { lastKey = '(changed)'; schedule(0); }

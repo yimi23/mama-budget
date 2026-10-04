@@ -86,6 +86,8 @@ export interface Badge {
   update(s: BadgeState): void;
   /** Mood change only: 300ms, skipped under reduced motion. */
   shake(): void;
+  /** Tap on her face. */
+  onClick(cb: () => void): void;
   hide(): void;
   destroy(): void;
 }
@@ -130,6 +132,7 @@ export function mountBadge(): Badge {
   let faceKey = '';
   return {
     root,
+    onClick(cb) { badge.addEventListener('click', cb); },
     shake() {
       badge.classList.remove('shake');
       void badge.offsetWidth; // restart the animation
