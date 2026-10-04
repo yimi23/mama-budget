@@ -511,7 +511,8 @@ ${it.watched ? `This store is one she promised to watch: $${Math.round(it.watche
   return model.say({ system: SYSTEM[who] + LINE_RULES, prompt, key: situation, mustInclude: must, maxLen: kind === 'ack' ? 160 : 260, timeoutMs: warm ? model.WARM_TIMEOUT_MS : patient ? 4500 : undefined });
 }
 
-const FRESH_TIMEOUT_MS = Number(process.env.MODEL_FRESH_TIMEOUT_MS || 1800);
+// A text can afford a few seconds (she types while she thinks); 1.8s was never enough and every text fell back to the pool.
+const FRESH_TIMEOUT_MS = Number(process.env.MODEL_FRESH_TIMEOUT_MS || 4500);
 /**
  * The same line, said differently. For texts and acks where a second is affordable: the pool line is the brief,
  * every number in it must survive, and the result is never cached, so the same situation reads differently each
