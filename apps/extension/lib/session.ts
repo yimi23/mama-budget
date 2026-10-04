@@ -13,6 +13,7 @@ import { storeKey } from '@mama/shared/store-key';
 import { toUSD } from '@mama/shared/currency';
 import { locateRow, readCart, readKey } from './readers';
 import { addsUp } from './readers/settle';
+import { nextDelay } from './debounce';
 
 const DEBOUNCE_MS = 250;
 const AFTER_ADD_MS = 700;
@@ -405,9 +406,13 @@ async function tick() {
   }
 }
 
+/** Trailing debounce with a ceiling: see lib/debounce.ts. A page that keeps mutating cannot push the read past a second. */
+let firstPendingAt: number | null = null;
 export function schedule(delay = DEBOUNCE_MS) {
   clearTimeout(timer);
-  timer = setTimeout(tick, delay);
+  const now = Date.now();
+  firstPendingAt ??= now;
+  timer = setTimeout(() => { firstPendingAt = null; void tick(); }, nextDelay(delay, firstPendingAt, now));
 }
 
 function sleep() {

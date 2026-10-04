@@ -130,7 +130,7 @@ const routes = {
     for (const item of items) {
       if (known(item) || item.price < v2.ASK_LINE || listProtected(item)) continue; // rice gets no speculative line: it will be a need
       const cartCtx = { others: items.filter((x) => x !== item).map((x) => shortName(x.item)), total: items.reduce((t, x) => t + (x.price || 0), 0) };
-      const seenCtx = (require('./notify/memory').read().sightings || {})[v2.keyOf(item)] || null;
+      const seenCtx = v2.recall(require('./notify/memory').read().sightings || {}, v2.keyOf(item)) || null;
       void contextLine({ kind: 'ask', who, verdict: { label: 'ask', react: false, mood: 'watching', tags: watched ? ['ask', 'watched'] : ['ask'] }, it: spokenOf(item), week: w, month: monthNow, memory, reasons: saidReasons, store, warm: true, cart: cartCtx, seen: seenCtx }).catch(() => null);
     }
     // How long a verdict may wait for the model: nothing for a small item (a nod either way), a short wait for one

@@ -18,6 +18,22 @@ const ASK_LINE = 15; // below this she never asks, a small want is a nod at most
 const key = (it) => String(it.item || '').toLowerCase().replace(/,.*$/, '').replace(/[^a-z0-9 ]/g, '').trim();
 const has = (t, words) => words.some((w) => String(t).toLowerCase().includes(w));
 
+/**
+ * What memory holds for this key. Exact first; else the entry whose key begins with this one or that this one begins
+ * with, when the shorter is at least two words and ten characters. Readers name one item differently (JSON-LD says
+ * "The Let Them Theory", the model reads the full subtitle off the cart), and an answer given once must hold.
+ */
+function recall(map, k) {
+  if (!map || typeof map !== 'object') return undefined;
+  if (map[k] !== undefined) return map[k];
+  if (!k || k.length < 10 || k.split(' ').length < 2) return undefined;
+  for (const other of Object.keys(map)) {
+    if (other.length < 10 || other.split(' ').length < 2) continue;
+    if (k.startsWith(other + ' ') || other.startsWith(k + ' ')) return map[other];
+  }
+  return undefined;
+}
+
 // Loudness scales the ask line, never the math: Full Nigerian Mother asks from $15, Mama from $25, Gentle Auntie from
 // $40. `now` is injected (not read) so the judge stays pure; it is here for the quiet hours rule when that ships.
 const ASK_LINE_FOR = { full: 15, mama: 25, gentle: 40 };
@@ -40,13 +56,14 @@ function judge(it, month = { budget: 75, spent: 0 }, memory = {}, { loudness, no
 
   // Layer 1: what you told her. Memory beats every guess, the model's and the word list's. An admitted want stays a
   // want whatever the context says; a remembered need or plan is never reopened.
-  if (memory[k] === 'need') return out('need', false, base, 'You told her this is a need for you.', ['remembered']);
-  if (memory[k] === 'planned') return out('need', false, base, 'You said you were saving for this.', ['planned']);
+  const held = recall(memory, k);
+  if (held === 'need') return out('need', false, base, 'You told her this is a need for you.', ['remembered']);
+  if (held === 'planned') return out('need', false, base, 'You said you were saving for this.', ['planned']);
 
   const price = Number(it.price || 0);
   const blown = month.spent + price > month.budget;
 
-  if (memory[k] === 'want') {
+  if (held === 'want') {
     // She has the right to react: you said it yourself. The envelope decides whether she does.
     // A want that fits the week is a nod. One that blows it gets the Shocked card. Gele down comes later, when a real
     // order lands and the week's ratio passes 1 (that is the week's own mood, not this verdict's).
@@ -77,4 +94,4 @@ function once(it, label, month) {
   return judge(it, month, { [key(it)]: label });
 }
 
-module.exports = { judge, remember, once, keyOf: key, PROTECTED, ASK_LINE };
+module.exports = { judge, remember, once, keyOf: key, PROTECTED, ASK_LINE, recall };
