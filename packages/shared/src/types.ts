@@ -11,6 +11,8 @@ export interface CartItem {
   unitPrice: number;
   /** Set only on the way to the judge, when unitPrice has been converted to USD: the price as the store shows it. */
   storeUnitPrice?: number;
+  /** A subscription or plan repeats; a purchase is once. Read by reader 4, so she can say "20 dollars a month". */
+  period?: 'once' | 'week' | 'month' | 'year';
 }
 
 export interface CartRead {

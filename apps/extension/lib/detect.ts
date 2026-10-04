@@ -2,16 +2,23 @@
 // No imports, no DOM writes. Two signals wake her on a cart page, one does not.
 
 const CART_PATH = /(^|[\/_.-])(cart|checkout|bag|basket|order)s?([\/_.?#-]|$)/i;
+// Where money leaves without a cart. Whole path segments only: /pricing and /billing count, retail-pricing.html does not.
+const PAY_PATH = /(^|\/)(billing|subscribe|subscription|pricing|plans?|upgrade|payment|pay|checkouts?)(\/|$)/i;
 const CONFIRM_PATH = /(thank[-_]?you|order[-_]?confirmation|order[-_]?placed|confirmation)/i;
-const ADD_WORDS = /\b(add to (cart|bag|basket|trolley)|buy now|add to order|ajouter au panier|in den warenkorb|añadir a la cesta|agregar al carrito)\b/i;
+const ADD_WORDS = /\b(add to (cart|bag|basket|trolley)|buy now|add to order|start (my |your )?(free )?trial|upgrade( now| to [a-z ]+)?|pay now|pay \$?\d|place (your )?order|confirm (purchase|payment|order)|continue to payment|get (plus|pro|premium)|ajouter au panier|in den warenkorb|añadir a la cesta|agregar al carrito)\b/i;
 const SUBTOTAL_WORDS = /\b(subtotal|sub-total|order total|estimated total|cart total|basket total)\b|\btotal\s*:?\s*(US\$|CA\$|[$£€₦])\s?\d/i;
-const CHECKOUT_WORDS = /\b(check ?out|proceed to (checkout|payment)|place (your )?order)\b/i;
+const CHECKOUT_WORDS = /\b(check ?out|proceed to (checkout|payment)|place (your )?order|pay now|subscribe now|start (free )?trial|confirm (purchase|payment)|continue to payment)\b/i;
+// A price that repeats: "$20/month", "$200 per year", "$8.99 a month". Subscriptions have no cart, only this.
+const RECURRING = /(?:US\$|[$£€₦])\s?\d[\d,]*(?:\.\d{1,2})?\s*(?:\/|per|a|each)\s*(?:mo|month|yr|year|week)\b/i;
 const ORDER_NUMBER = /\border\s*(number|no\.?|#)\s*[:#]?\s*[A-Z0-9-]{5,}/i;
 
 const SUBTOTAL_SELECTOR =
   '[id*="subtotal" i],[class*="subtotal" i],[data-test*="subtotal" i],[data-testid*="subtotal" i],[id*="sub-total" i],[class*="sub-total" i]';
 const CHECKOUT_SELECTOR =
   'a[href*="checkout" i],button[name*="checkout" i],input[name*="checkout" i],[id*="checkout" i],[class*="checkout-button" i],[data-test*="checkout" i]';
+// Where a card is about to be typed or a hosted checkout is on the page: Stripe, Paddle, Braintree, PayPal, Shop Pay.
+const PAYMENT_SELECTOR =
+  'input[autocomplete="cc-number"],input[name*="cardnumber" i],input[name*="card_number" i],iframe[src*="stripe.com" i],iframe[src*="paddle.com" i],iframe[src*="braintreegateway" i],iframe[src*="paypal.com" i],iframe[src*="shop.app" i],iframe[name*="__privateStripeFrame" i]';
 
 export interface PageSignals {
   url: string;
@@ -20,6 +27,8 @@ export interface PageSignals {
   text: string;
   hasSubtotalNode: boolean;
   hasCheckoutNode: boolean;
+  /** A card field or a hosted checkout frame: money is about to leave even without a cart. */
+  hasPaymentNode?: boolean;
 }
 
 /**
@@ -30,11 +39,13 @@ export interface PageSignals {
 export function cartSignalCount(p: PageSignals): number {
   let path = '';
   try { path = new URL(p.url).pathname; } catch { /* keep empty */ }
-  const urlSignal = CART_PATH.test(path) || /\b(cart|basket|bag)\b/i.test(p.title);
-  const subtotal = p.hasSubtotalNode || SUBTOTAL_WORDS.test(p.text);
-  const checkout = p.hasCheckoutNode || CHECKOUT_WORDS.test(p.text);
-  const n = (urlSignal ? 1 : 0) + (subtotal ? 1 : 0) + (checkout ? 1 : 0);
-  const structural = urlSignal || p.hasSubtotalNode || p.hasCheckoutNode;
+  const urlSignal = CART_PATH.test(path) || PAY_PATH.test(path) || /\b(cart|basket|bag|checkout|billing|pricing)\b/i.test(p.title);
+  // Money leaving: a subtotal, or a price that repeats every month (a subscription has no cart).
+  const money = p.hasSubtotalNode || SUBTOTAL_WORDS.test(p.text) || RECURRING.test(p.text);
+  // A way to pay: a checkout control, a pay or subscribe control, a card field or a hosted checkout frame.
+  const pay = p.hasCheckoutNode || !!p.hasPaymentNode || CHECKOUT_WORDS.test(p.text);
+  const n = (urlSignal ? 1 : 0) + (money ? 1 : 0) + (pay ? 1 : 0);
+  const structural = urlSignal || p.hasSubtotalNode || p.hasCheckoutNode || !!p.hasPaymentNode;
   return structural ? n : Math.min(n, 1);
 }
 
@@ -68,7 +79,9 @@ export function orderIdFrom(text: string, url: string): string {
 
 /** Pure: does this clicked label read as add to cart or buy now. */
 export function isAddToCartLabel(label: string): boolean {
-  return ADD_WORDS.test(label.replace(/\s+/g, ' ').trim());
+  const l = label.replace(/\s+/g, ' ').trim();
+  // "Subscribe" and "Subscribe now" as the whole button; never "Subscribe to our newsletter".
+  return ADD_WORDS.test(l) || /^subscribe( now| and pay| & save)?$/i.test(l);
 }
 
 const SKIP = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE', 'SVG']);
@@ -94,16 +107,16 @@ function visibleText(doc: Document, root: Element, cap: number): string {
 export function liveCartSignalCount(doc: Document, url: string): number {
   let path = '';
   try { path = new URL(url).pathname; } catch { /* keep empty */ }
-  let n = CART_PATH.test(path) || /\b(cart|basket|bag)\b/i.test(doc.title) ? 1 : 0;
+  let n = CART_PATH.test(path) || PAY_PATH.test(path) || /\b(cart|basket|bag|checkout|billing|pricing)\b/i.test(doc.title) ? 1 : 0;
   const subNode = !!doc.querySelector(SUBTOTAL_SELECTOR);
-  const chkNode = !!doc.querySelector(CHECKOUT_SELECTOR);
-  n += (subNode ? 1 : 0) + (chkNode ? 1 : 0);
+  const payNode = !!doc.querySelector(CHECKOUT_SELECTOR) || !!doc.querySelector(PAYMENT_SELECTOR);
+  n += (subNode ? 1 : 0) + (payNode ? 1 : 0);
   if (n >= 2) return n;
   // Text can only add to a structural signal; with none, the page is shut without walking its text.
   if (n === 0 || !doc.body) return n;
   const text = visibleText(doc, doc.body, 20000);
-  if (!subNode && SUBTOTAL_WORDS.test(text)) n++;
-  if (!chkNode && CHECKOUT_WORDS.test(text)) n++;
+  if (!subNode && (SUBTOTAL_WORDS.test(text) || RECURRING.test(text))) n++;
+  if (!payNode && CHECKOUT_WORDS.test(text)) n++;
   return n;
 }
 
@@ -116,6 +129,7 @@ export function readSignals(doc: Document, url: string): PageSignals {
     text: body ? visibleText(doc, body, 20000) : '',
     hasSubtotalNode: !!doc.querySelector(SUBTOTAL_SELECTOR),
     hasCheckoutNode: !!doc.querySelector(CHECKOUT_SELECTOR),
+    hasPaymentNode: !!doc.querySelector(PAYMENT_SELECTOR),
   };
 }
 

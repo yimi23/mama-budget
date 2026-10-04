@@ -107,7 +107,7 @@ const routes = {
     const memory = body.memory && typeof body.memory === 'object' ? body.memory : {};
     const saidReasons = body.reasons && typeof body.reasons === 'object' ? body.reasons : null;
     setHome(body.home);
-    const items = (body.items || []).map((it) => ({ item: String(it.name || ''), price: Number(it.unitPrice || 0) * Number(it.qty || 1), storePrice: it.storeUnitPrice != null ? Number(it.storeUnitPrice) * Number(it.qty || 1) : null, merchant: it.store || '', currency: body.currency || 'USD', home: body.home || null }));
+    const items = (body.items || []).map((it) => ({ item: String(it.name || ''), price: Number(it.unitPrice || 0) * Number(it.qty || 1), storePrice: it.storeUnitPrice != null ? Number(it.storeUnitPrice) * Number(it.qty || 1) : null, merchant: it.store || '', currency: body.currency || 'USD', home: body.home || null, period: ['week', 'month', 'year'].includes(it.period) ? it.period : null }));
     // The rules judge the full title (the protected word is often at the end: "...Fragrant Rice"); her line gets the short name.
     const judged = items.map((item) => ({ item, v: v2.judge(item, w, memory, { loudness: body.loudness, now: new Date() }) }));
     // Cards only (an ask or a reaction) get a line written from context, three at most per call, in parallel, each
@@ -117,7 +117,8 @@ const routes = {
     let budgetLeft = 3;
     const verdicts = await Promise.all(judged.map(async ({ item, v }) => {
       if (body.confidence != null && Number(body.confidence) < 0.7 && v.react) { v = { ...v, react: false, label: 'ask', mood: 'watching', reason: 'Read from page text, so she asks rather than scolds.', tags: [...v.tags, 'lowconfidence'] }; }
-      const spoken = { ...item, item: shortName(item.item) };
+      // "ChatGPT Plus, 20 dollars a month": the period is part of the name she says, and the first charge is what the week judges.
+      const spoken = { ...item, item: item.period ? `${shortName(item.item)} at $${Math.round(item.price)} a ${item.period}` : shortName(item.item) };
       let line = lineFor(v, spoken, w, who);
       let ack = ackLine(v, spoken, who);
       if (ack) {

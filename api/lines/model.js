@@ -49,8 +49,8 @@ const ITEMS_SCHEMA = {
     items: {
       type: 'array',
       items: {
-        type: 'object', additionalProperties: false, required: ['name', 'qty', 'unitPrice'],
-        properties: { name: { type: 'string' }, qty: { type: 'integer' }, unitPrice: { type: 'number' } },
+        type: 'object', additionalProperties: false, required: ['name', 'qty', 'unitPrice', 'period'],
+        properties: { name: { type: 'string' }, qty: { type: 'integer' }, unitPrice: { type: 'number' }, period: { type: 'string', enum: ['once', 'week', 'month', 'year'] } },
       },
     },
     subtotal: { type: ['number', 'null'] },
@@ -59,7 +59,9 @@ const ITEMS_SCHEMA = {
   },
 };
 
-const EXTRACT_SYSTEM = `You read the visible text of a shopping cart page and return the items the person is about to pay for.
+const EXTRACT_SYSTEM = `You read the visible text of a page where someone is about to pay (a cart, a checkout, a plan or subscription page) and return what they are about to pay for.
+A subscription or plan is one item: name is the plan ("ChatGPT Plus"), unitPrice is the amount per period, period is month or year (or week). A one time purchase has period "once".
+On a pricing page with several plans and one selected or highlighted, return only the selected plan; if none is selected, return nothing.
 Rules: only items in the active cart or bag; never "saved for later", "recently viewed", "you may also like" or recommendations.
 qty is the quantity shown (default 1). unitPrice is the price of one unit in the store's currency, as a number.
 subtotal is the cart subtotal or total if shown, else null. currency from the symbols on the page. confidence is 0 to 1:
@@ -79,7 +81,7 @@ async function extractItems(text) {
     const raw = res.content.filter((b) => b.type === 'text').map((b) => b.text).join('');
     const out = JSON.parse(raw);
     if (!Array.isArray(out.items)) return null;
-    out.items = out.items.filter((i) => i && i.name && i.unitPrice > 0).map((i) => ({ name: String(i.name).trim(), qty: Math.max(1, Math.round(i.qty || 1)), unitPrice: Number(i.unitPrice) }));
+    out.items = out.items.filter((i) => i && i.name && i.unitPrice > 0).map((i) => ({ name: String(i.name).trim(), qty: Math.max(1, Math.round(i.qty || 1)), unitPrice: Number(i.unitPrice), period: ['week', 'month', 'year'].includes(i.period) ? i.period : 'once' }));
     out.confidence = Math.max(0, Math.min(1, Number(out.confidence) || 0));
     return out;
   } catch {

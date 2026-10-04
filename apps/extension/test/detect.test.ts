@@ -109,3 +109,14 @@ test('confirmation pages get a stable order id, so a reload never posts twice', 
   assert.equal(orderIdFrom('Thanks for your order', 'https://x/thank-you?o=5#top'), 'https://x/thank-you?o=5');
   assert.equal(orderIdFrom('Thanks', 'https://x/thank-you?o=5'), orderIdFrom('Thanks', 'https://x/thank-you?o=5'));
 });
+
+test('where money leaves without a cart: a subscription checkout and a pay button', () => {
+  assert.ok(isCartPage(page({ url: 'https://checkout.stripe.com/c/pay/cs_live_abc', text: 'ChatGPT Plus Subscribe $20.00 per month Due today $20.00 Card number', hasCheckoutNode: false, hasPaymentNode: true })), 'Stripe checkout');
+  assert.ok(isCartPage(page({ url: 'https://app.example.com/billing', text: 'Pro plan $12 / month Upgrade Pay now' })), 'billing page with a recurring price');
+  assert.ok(isCartPage(page({ url: 'https://example.com/pricing', title: 'Pricing', text: 'Starter $8 per month Start free trial' })), 'pricing with a trial button');
+  assert.equal(isCartPage(page({ url: 'https://example.com/blog/why-we-charge-monthly', text: 'Our customers pay $20 a month and love it. Subscribe to the newsletter.' })), false, 'prose about prices stays shut');
+  assert.ok(isAddToCartLabel('Subscribe now'));
+  assert.ok(isAddToCartLabel('Start free trial'));
+  assert.ok(isAddToCartLabel('Upgrade to Pro'));
+  assert.equal(isAddToCartLabel('Subscribe to our newsletter'), false);
+});
