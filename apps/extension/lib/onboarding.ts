@@ -154,8 +154,20 @@ export function countUp(to: number, ms: number, t: number): number {
 }
 
 /** The settings the onboarding writes. Everything she needs to run lives here (CLAUDE.md: state in chrome.storage). */
+export type Home = 'NGN' | 'GHS' | 'KES' | 'INR' | 'PHP' | 'MXN' | 'none';
+export const HOMES: readonly { code: Home; name: string }[] = [
+  { code: 'NGN', name: 'Naira' }, { code: 'GHS', name: 'Cedi' }, { code: 'KES', name: 'Shilling' },
+  { code: 'INR', name: 'Rupee' }, { code: 'PHP', name: 'Peso (PHP)' }, { code: 'MXN', name: 'Peso (MXN)' }, { code: 'none', name: 'None' },
+];
+/** Until chosen: naira with Mama, none with Nana. The grandma never decides it after that. */
+export function homeFor(s: Settings): Home {
+  return s.home ?? (s.grandma === 'nana' ? 'none' : 'NGN');
+}
+
 export interface Settings {
   grandma?: Grandma;
+  /** Currency back home for her loud lines. */
+  home?: Home;
   loudness?: Loudness;
   sounds?: boolean;
   phone?: string;

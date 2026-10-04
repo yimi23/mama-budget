@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const { judge, remember } = require('../judge/rules_v2');
-const { lineFor, shopName, ackLine, buyLine, buyText, smallLines } = require('../lines/writer');
+const { lineFor, shopName, backHome, ackLine, buyLine, buyText, smallLines } = require('../lines/writer');
 
 const week = { budget: 75, spent: 50 }; // the demo seed: $25 left
 
@@ -50,12 +50,15 @@ test('her line keeps the product casing and starts with a capital', () => {
   assert.doesNotMatch(line, /[-–—]/, 'no dashes in copy');
 });
 
-test('Mama adds the naira, except on a store already in naira', () => {
+test('the figure back home follows the person, not the grandma', () => {
   const memory = remember({}, { item: 'AirPods Pro' }, 'want');
   const v = judge({ item: 'AirPods Pro', price: 179 }, week, memory);
-  assert.match(lineFor(v, { item: 'AirPods Pro', price: 179, currency: 'USD' }, week), /naira/);
-  assert.doesNotMatch(lineFor(v, { item: 'AirPods Pro', price: 179, currency: 'NGN' }, week), /naira/);
-  assert.doesNotMatch(lineFor(v, { item: 'AirPods Pro', price: 179 }, week, 'nana'), /naira/);
+  assert.match(lineFor(v, { item: 'AirPods Pro', price: 179, currency: 'USD', home: 'NGN' }, week), /286,400 naira/);
+  assert.match(lineFor(v, { item: 'AirPods Pro', price: 179, currency: 'USD', home: 'NGN' }, week, 'nana'), /naira/, 'a Nigerian with Nana still gets naira');
+  assert.doesNotMatch(lineFor(v, { item: 'AirPods Pro', price: 179, currency: 'USD' }, week), /naira/, 'no home currency, no figure');
+  assert.doesNotMatch(lineFor(v, { item: 'AirPods Pro', price: 179, currency: 'NGN', home: 'NGN' }, week), /naira/, 'store already in naira');
+  assert.match(lineFor(v, { item: 'AirPods Pro', price: 179, currency: 'USD', home: 'GHS' }, week), /cedis/);
+  assert.equal(backHome(100, { home: 'INR', currency: 'USD' }), ' That is 8,400 rupees.');
 });
 
 test('every answer gets an acknowledgement; a declared need gets no comment on its price', () => {
@@ -73,8 +76,9 @@ test('after a charge: Gele down past the envelope, a note inside it, numbers in 
   const blown = { budget: 75, spent: 229, ratio: 229 / 75 };
   const inside = { budget: 75, spent: 70, ratio: 70 / 75 };
   const pods = { item: 'AirPods Pro', price: 179, currency: 'USD' };
-  assert.match(buyLine(blown, pods), /naira/);
-  assert.doesNotMatch(buyLine(blown, { ...pods, currency: 'NGN' }), /naira/);
+  assert.match(buyLine(blown, { ...pods, home: 'NGN' }), /naira/);
+  assert.doesNotMatch(buyLine(blown, { ...pods, currency: 'NGN', home: 'NGN' }), /naira/);
+  assert.doesNotMatch(buyLine(blown, pods), /naira/);
   assert.doesNotMatch(buyLine(inside, { item: 'Desk lamp', price: 20 }), /naira/);
   assert.match(buyText(blown, pods), /\$179 on AirPods Pro\. \$229 of \$75 fun money gone this week\. \$0 left\./);
   assert.ok(smallLines().agreed && smallLines().proud && smallLines('nana').agreed);

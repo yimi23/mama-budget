@@ -102,7 +102,7 @@ const routes = {
     const w = nessie.week();
     const who = body.grandma === 'nana' ? 'nana' : 'mama';
     const memory = body.memory && typeof body.memory === 'object' ? body.memory : {};
-    const items = (body.items || []).map((it) => ({ item: String(it.name || ''), price: Number(it.unitPrice || 0) * Number(it.qty || 1), merchant: it.store || '', currency: body.currency || 'USD' }));
+    const items = (body.items || []).map((it) => ({ item: String(it.name || ''), price: Number(it.unitPrice || 0) * Number(it.qty || 1), merchant: it.store || '', currency: body.currency || 'USD', home: body.home || null }));
     // The rules judge the full title (the protected word is often at the end: "...Fragrant Rice"); her line gets the short name.
     const judged = items.map((item) => ({ item, v: v2.judge(item, w, memory) }));
     const verdicts = judged.map(({ item, v }) => {
@@ -132,7 +132,7 @@ const routes = {
     }
     await nessie.purchase({ item: short, price, merchant: body.store || 'Store', tag, requestId: String(body.requestId) });
     const w = nessie.week();
-    const it = { item: short, price, merchant: body.store || '', currency: body.currency || 'USD' };
+    const it = { item: short, price, merchant: body.store || '', currency: body.currency || 'USD', home: body.home || null };
     const line = tag === 'need' ? smallLines(who).agreed : buyLine(w, it, who);
     const left = Math.max(0, w.budget - w.spent);
     const sub = `$${Math.round(price)} on ${short}. $${w.spent} of $${w.budget} gone this week. $${left} left.`;

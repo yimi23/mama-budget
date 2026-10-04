@@ -31,7 +31,7 @@ async function judgeCart(store: string, currency: CurrencyCode, items: CartItem[
   const reply = await call<JudgeReply>('/v2/judge', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ items: items.map((i) => ({ ...i, store })), memory, currency, grandma: (settings as { grandma?: string }).grandma ?? 'mama' }),
+    body: JSON.stringify({ items: items.map((i) => ({ ...i, store })), memory, currency, grandma: (settings as { grandma?: string }).grandma ?? 'mama', home: await homeSetting() }),
   });
   return reply ? { ok: true as const, ...reply, handled: await handledLists() } : { ok: false as const };
 }
@@ -85,13 +85,21 @@ async function grandmaSetting(): Promise<string> {
   return (settings as { grandma?: string }).grandma ?? 'mama';
 }
 
+/** The person's currency back home for her loud lines. Chosen on the popup home screen; until then, naira with Mama, none with Nana. */
+async function homeSetting(): Promise<string | null> {
+  const { settings = {} } = await browser.storage.local.get('settings');
+  const st = settings as { grandma?: string; home?: string };
+  if (st.home) return st.home === 'none' ? null : st.home;
+  return st.grandma === 'nana' ? null : 'NGN';
+}
+
 async function buyItem(msg: Extract<Message, { type: 'BUY' }>) {
   if (!(await apiUp())) return { ok: false as const };
   const reply = await call<BuyReply>('/v2/buy', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
-      ...msg.item, store: msg.store, currency: msg.currency, tag: 'want', grandma: await grandmaSetting(),
+      ...msg.item, store: msg.store, currency: msg.currency, tag: 'want', grandma: await grandmaSetting(), home: await homeSetting(),
       // One charge per item per week from the card, however many times the card is answered.
       requestId: `card:${weekKey()}:${postedKey(msg.item.name)}`,
     }),

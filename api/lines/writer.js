@@ -45,6 +45,19 @@ const NANA = {
 
 const NGN = Number(process.env.USD_NGN || 1600); // update before demo
 
+// "Back home" money. The person's own currency (settings.home), never the grandma's: a Nigerian student with Nana
+// still thinks in naira; an American with Mama does not want a naira figure. Rates per USD, rough, demo grade.
+const HOME = {
+  NGN: [NGN, 'naira'], GHS: [15.5, 'cedis'], KES: [129, 'shillings'], INR: [84, 'rupees'], PHP: [57, 'pesos'], MXN: [18, 'pesos'],
+};
+/** " That is 286,400 naira." or '' when there is nothing to add (no home currency, or the store already prices in it). */
+function backHome(usd, it) {
+  const code = it.home;
+  if (!code || !HOME[code] || it.currency === code || !usd) return '';
+  const [rate, name] = HOME[code];
+  return ` That is ${Math.round(usd * rate).toLocaleString()} ${name}.`;
+}
+
 // Product names keep their own casing ("AirPods Pro", not "airpods pro"); the line's first letter is capitalised
 // after filling, so a line that opens with the item still reads as a sentence.
 // "amazon.com" -> "Amazon", "jumia.com.ng" -> "Jumia", "Target" -> "Target". Her lines name the shop the way a person does.
@@ -85,11 +98,8 @@ function lineFor(verdict, it, month, who = 'mama') {
   // Shocked lines are chosen by the breach; the rest vary by the item so repeats do not sound canned.
   const pick = key === 'shocked' ? (Number(it.price || 0) > Number(month.budget || 0) ? 1 : 0) : (it.item || '').length % pool.length;
   const base = fill(pool[Math.min(pick, pool.length - 1)], it, month);
-  // Mama adds the naira, unless the store already priced it in naira.
-  if (who === 'mama' && verdict.react && it.price && it.currency !== 'NGN') {
-    return `${base} That is ${Math.round(it.price * NGN).toLocaleString()} naira.`;
-  }
-  return base;
+  // The figure back home goes on loud lines only, in the person's own currency (settings.home).
+  return verdict.react ? base + backHome(it.price, it) : base;
 }
 
 // What she says right after you answer the card. She always acknowledges; silence after an answer reads as a
@@ -108,7 +118,7 @@ function buyLine(week, it, who = 'mama') {
   const bank = who === 'nana' ? NANA : MAMA;
   if ((week.ratio || 0) >= 1) {
     const base = fill(bank.down[(it.item || '').length % bank.down.length], it, week);
-    return who === 'mama' && it.price && it.currency !== 'NGN' ? `${base} That is ${Math.round(it.price * NGN).toLocaleString()} naira.` : base;
+    return base + backHome(it.price, it);
   }
   return fill(bank.bought[0], it);
 }
@@ -267,7 +277,7 @@ function modelReply({ who = 'mama', userText, week, history, promises }) {
 }
 
 module.exports = {
-  shopName,
+  shopName, backHome,
   lineFor, ackLine, buyLine, buyText, smallLines, subLine, weeklyStatement, monthlyStatement, watchLines, whatsLeft,
   modelLine, modelReply, toNaira, notifyLine, notifyText, MAMA, NANA,
 };
