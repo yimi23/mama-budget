@@ -8,8 +8,9 @@ import { readPlatform } from './platform';
 import { runAdapter, type AdapterSpec } from './adapter';
 import { amazon } from './sites/amazon';
 import { target } from './sites/target';
+import { walmart } from './sites/walmart';
 
-const HAND_WRITTEN: AdapterSpec[] = [amazon, target];
+const HAND_WRITTEN: AdapterSpec[] = [amazon, target, walmart];
 
 export async function readCart(doc: Document, url: string): Promise<CartRead | null> {
   const platform = await readPlatform(doc);

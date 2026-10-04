@@ -2,13 +2,25 @@
 // and learned specs (from /learn) run through the same code. Re queries the document on every call.
 
 import type { CartItem, CartRead } from '@mama/shared/types';
-import { currencyOf, parsePrice } from '@mama/shared/currency';
+import { currencyOf, firstPrice, parsePrice } from '@mama/shared/currency';
 
 export interface Field {
   /** CSS selector inside the row (or the document, for subtotal), or several tried in order. Omit to read the row itself. */
   sel?: string | string[];
   /** Attribute to read. Omit to read text. */
   attr?: string;
+  /** Use the parent of the first element whose own text is exactly this, e.g. "Subtotal" next to its amount. */
+  label?: string;
+  /** firstPrice: keep only the first amount written with a currency mark. */
+  pick?: 'firstPrice';
+}
+
+function byLabel(scope: Element | Document, label: string): Element | null {
+  const want = label.trim().toLowerCase();
+  for (const el of scope.querySelectorAll('span,div,p,dt,td,th,strong,b,h2,h3,h4')) {
+    if (el.children.length === 0 && el.textContent?.trim().toLowerCase() === want) return el.parentElement;
+  }
+  return null;
 }
 
 export interface AdapterSpec {
@@ -30,9 +42,10 @@ function readField(scope: Element | Document, f: Field): string {
   const sels = f.sel == null ? [] : Array.isArray(f.sel) ? f.sel : [f.sel];
   let el: Element | null = sels.length ? null : scope.nodeType === 1 ? (scope as Element) : null;
   for (const s of sels) if ((el = scope.querySelector(s))) break;
+  if (f.label) el = byLabel(el ?? scope, f.label);
   if (!el) return '';
-  const v = f.attr ? el.getAttribute(f.attr) ?? '' : el.textContent ?? '';
-  return v.replace(/\s+/g, ' ').trim();
+  const v = (f.attr ? el.getAttribute(f.attr) ?? '' : el.textContent ?? '').replace(/\s+/g, ' ').trim();
+  return f.pick === 'firstPrice' ? firstPrice(v) : v;
 }
 
 const near = (a: number, b: number) => Math.abs(a - b) < 0.01;

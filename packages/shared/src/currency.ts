@@ -45,3 +45,9 @@ export function parsePrice(text: string): number | null {
 export function toUSD(amount: number, currency: CurrencyCode): number {
   return amount / PER_USD[currency];
 }
+
+/** First amount written with a currency mark: "10K+ bought Current price $2.50, Was $2.96" -> "$2.50". */
+export function firstPrice(text: string): string {
+  const m = text.match(/(?:US\$|CA\$|C\$|[$£€₦])\s?\d[\d,]*(?:\.\d{1,2})?|\d[\d.,]*\s?(?:€|NGN|USD|GBP|EUR)/);
+  return m ? m[0] : '';
+}
