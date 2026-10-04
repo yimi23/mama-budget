@@ -158,7 +158,11 @@ function listen(onIncoming) {
       if (res.react && reaction) await space.send(reaction(EMOJI[res.react] || EMOJI.like, t.last)).catch((e) => console.log('[photon] tapback failed:', e.message));
       if (res.reply) {
         const content = t.images.length && inThread ? inThread(res.reply, t.last) : res.reply;
-        await space.send(content).catch((e) => console.log('[photon] reply send failed:', e.message));
+        try { await space.send(content); } catch (e) {
+          console.log('[photon] reply send failed:', e.message);
+          // The thread is on Spectrum, but a refused reply (daily limit) still reaches the phone through the Mac kit.
+          try { const kit = require('./kit'); if (kit.available() && /^\+?\d{10,15}$/.test(String(t.fromId || ''))) await kit.send(t.fromId, res.reply); } catch (e2) { console.log('[photon] kit fallback failed:', e2.message); }
+        }
       }
       if (res.voiceLine && voiceMsg) {
         const v = await res.voiceLine().catch(() => null);

@@ -40,12 +40,19 @@ async function notify(to, text, mood, opts = {}) {
     log.push({ to: dest, text, mood: mood || null, sender, sent: false, held, direction: 'out', at: Date.now() });
     return { sender, sent: false, held };
   }
-  const sent = sender === 'photon' ? await photon.send(dest, text).catch(() => null)
+  let sent = sender === 'photon' ? await photon.send(dest, text).catch(() => null)
     : sender === 'imessage' ? await kit.send(dest, text).catch(() => null)
     : null;
+  // Spectrum refused (a daily send limit, an outage): the Mac kit carries the text if it can, from this Mac's own
+  // number, rather than the text vanishing. Logged as the kit's, so the transcript says what happened.
+  let via = sender;
+  if (!sent && sender === 'photon' && kit.available()) {
+    sent = await kit.send(dest, text).catch(() => null);
+    if (sent) { via = 'imessage'; console.log('[photon] refused; the Mac kit carried the text to', String(dest).slice(-4)); }
+  }
   if (sent) gate.record(dest, !!opts.prompted);
-  log.push({ to: dest, text, mood: mood || null, sender, sent: !!sent, direction: 'out', at: Date.now() });
-  return { sender, sent: !!sent };
+  log.push({ to: dest, text, mood: mood || null, sender: via, sent: !!sent, direction: 'out', at: Date.now() });
+  return { sender: via, sent: !!sent };
 }
 
 /** Records the user's own text in the same transcript, before a reply is decided. */
