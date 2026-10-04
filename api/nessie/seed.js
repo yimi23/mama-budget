@@ -97,8 +97,12 @@ async function main() {
       await call('POST', `/accounts/${c.accountId}/deposits`, { medium: 'balance', transaction_date: d.date, status: 'completed', amount: d.amount, description: `income | ${d.item}` });
     }
     for (const t of c.transfers) {
-      const payee = t.to === 'family' ? c.familyAccountId : c.savingsId;
-      await call('POST', `/accounts/${c.accountId}/transfers`, { medium: 'balance', payee_id: payee, amount: t.amount, transaction_date: t.date, status: 'completed', description: `${t.tag} | ${t.item}` });
+      const destId = t.to === 'family' ? c.familyAccountId : c.savingsId;
+      const description = `${t.tag} | ${t.item}`;
+      // Nessie rejects "medium"/"payee_id" on /transfers and never stores a destination (verified
+      // against the live sandbox), so money sent home or to savings is a withdrawal here, deposit there.
+      await call('POST', `/accounts/${c.accountId}/withdrawals`, { medium: 'balance', amount: t.amount, transaction_date: t.date, status: 'completed', description });
+      await call('POST', `/accounts/${destId}/deposits`, { medium: 'balance', amount: t.amount, transaction_date: t.date, status: 'completed', description });
     }
     await call('POST', `/accounts/${c.accountId}/bills`, { status: 'recurring', payee: BILL.payee, nickname: BILL.nickname, payment_date: c.bills[0].due, recurring_date: BILL.recurringDay, payment_amount: BILL.amount });
     console.log('Nessie seeded', { customerId: cid, accountId: c.accountId, merchants: Object.keys(c.merchantIds).length, purchases: c.purchases.length });

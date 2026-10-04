@@ -6,6 +6,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+require('../env'); // loads api/.env into process.env before NESSIE_KEY is read below
 
 const BASE = process.env.NESSIE_BASE || 'https://api.nessieisreal.com';
 const KEY = process.env.NESSIE_KEY || '';
@@ -23,7 +24,10 @@ async function call(method, route, body) {
   const t = setTimeout(() => ctrl.abort(), 4000);
   try {
     const r = await fetch(url, { method, headers: { 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined, signal: ctrl.signal });
-    if (!r.ok) throw new Error(`${method} ${route} -> ${r.status}`);
+    if (!r.ok) {
+      const detail = await r.text().catch(() => '');
+      throw new Error(`${method} ${route} -> ${r.status} ${detail}`.trim());
+    }
     return r.status === 204 ? null : r.json();
   } finally { clearTimeout(t); }
 }
@@ -56,11 +60,21 @@ async function purchase({ item, price, merchant, tag = 'want', requestId }) {
   return rec;
 }
 
+// Nessie rejects "medium" and "payee_id" on /transfers ("extra fields not permitted") and never
+// stores or reports a destination for one (verified against the live sandbox), so a transfer record
+// alone can't move money or say where it went. A withdrawal on the source account plus a deposit on
+// the destination account does both for real, tagged the same "<tag> | <item>" way as purchases so
+// the description stays meaningful if anything ever reads these live instead of the local cache.
+async function moveMoney(fromId, toId, amount, date, description) {
+  await call('POST', `/accounts/${fromId}/withdrawals`, { medium: 'balance', amount, transaction_date: date, status: 'completed', description });
+  await call('POST', `/accounts/${toId}/deposits`, { medium: 'balance', amount, transaction_date: date, status: 'completed', description });
+}
+
 async function transferHome(amount, requestId) {
   const c = readCache();
   if (requestId && c.transfers.some((t) => t.requestId === requestId)) return c.transfers.find((t) => t.requestId === requestId);
   const rec = { amount: whole(amount), to: 'family', tag: 'family', item: 'Sent home', date: today(), requestId };
-  try { await call('POST', `/accounts/${c.accountId}/transfers`, { medium: 'balance', payee_id: c.familyAccountId, amount: rec.amount, transaction_date: rec.date, status: 'completed', description: 'family | Sent home' }); } catch {}
+  try { await moveMoney(c.accountId, c.familyAccountId, rec.amount, rec.date, 'family | Sent home'); } catch {}
   c.transfers.push(rec); writeCache(c);
   return rec;
 }
@@ -69,7 +83,7 @@ async function moveToSavings(amount, requestId) {
   const c = readCache();
   if (requestId && c.transfers.some((t) => t.requestId === requestId)) return c.transfers.find((t) => t.requestId === requestId);
   const rec = { amount: whole(amount), to: 'savings', tag: 'saved', item: 'Moved to savings', date: today(), requestId };
-  try { await call('POST', `/accounts/${c.accountId}/transfers`, { medium: 'balance', payee_id: c.savingsId, amount: rec.amount, transaction_date: rec.date, status: 'completed', description: 'saved | Moved to savings' }); } catch {}
+  try { await moveMoney(c.accountId, c.savingsId, rec.amount, rec.date, 'saved | Moved to savings'); } catch {}
   c.transfers.push(rec); writeCache(c);
   return rec;
 }

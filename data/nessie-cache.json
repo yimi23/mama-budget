@@ -1,140 +1,140 @@
 {
-  "accountId": null,
-  "familyAccountId": null,
-  "savingsId": null,
+  "accountId": "e3ec6ebf-b863-4b6f-af49-70e70d3efe21",
+  "familyAccountId": "65e5c924-d111-4140-a4e4-579996f43c4d",
+  "savingsId": "7df01b5b-a2e6-4a4e-b0a0-2a9d5dd55895",
   "purchases": [
     {
       "item": "Electric bill",
       "amount": 48,
       "merchant": "Consumers Energy",
       "tag": "need",
-      "date": "2026-09-04"
+      "date": "2026-09-05"
     },
     {
       "item": "Phone bill",
       "amount": 45,
       "merchant": "T-Mobile",
       "tag": "need",
-      "date": "2026-09-05"
+      "date": "2026-09-06"
     },
     {
       "item": "Eggs, milk, bread",
       "amount": 14,
       "merchant": "Kroger",
       "tag": "need",
-      "date": "2026-09-06"
+      "date": "2026-09-07"
     },
     {
       "item": "20 lb bag of rice",
       "amount": 24,
       "merchant": "Target",
       "tag": "need",
-      "date": "2026-09-09"
+      "date": "2026-09-10"
     },
     {
       "item": "Textbook",
       "amount": 62,
       "merchant": "CMU Bookstore",
       "tag": "need",
-      "date": "2026-09-12"
+      "date": "2026-09-13"
     },
     {
       "item": "Groceries",
       "amount": 31,
       "merchant": "Kroger",
       "tag": "need",
-      "date": "2026-09-15"
+      "date": "2026-09-16"
     },
     {
       "item": "Bus pass",
       "amount": 30,
       "merchant": "Ann Arbor Transit",
       "tag": "need",
-      "date": "2026-09-21"
+      "date": "2026-09-22"
     },
     {
       "item": "Groceries",
       "amount": 22,
       "merchant": "Kroger",
       "tag": "need",
-      "date": "2026-09-27"
+      "date": "2026-09-28"
     },
     {
       "item": "Food delivery",
       "amount": 32,
       "merchant": "DoorDash",
       "tag": "want",
-      "date": "2026-09-07"
+      "date": "2026-09-08"
     },
     {
       "item": "Latte",
       "amount": 7,
       "merchant": "Starbucks",
       "tag": "want",
-      "date": "2026-09-08"
+      "date": "2026-09-09"
     },
     {
       "item": "Food delivery",
       "amount": 27,
       "merchant": "DoorDash",
       "tag": "want",
-      "date": "2026-09-11"
+      "date": "2026-09-12"
     },
     {
       "item": "Bubble tea",
       "amount": 8,
       "merchant": "Boba shop",
       "tag": "want",
-      "date": "2026-09-13"
+      "date": "2026-09-14"
     },
     {
       "item": "Hoodie",
       "amount": 55,
       "merchant": "Online store",
       "tag": "want",
-      "date": "2026-09-16"
+      "date": "2026-09-17"
     },
     {
       "item": "Latte",
       "amount": 7,
       "merchant": "Starbucks",
       "tag": "want",
-      "date": "2026-09-18"
+      "date": "2026-09-19"
     },
     {
       "item": "Food delivery",
       "amount": 24,
       "merchant": "DoorDash",
       "tag": "want",
-      "date": "2026-09-20"
+      "date": "2026-09-21"
     },
     {
       "item": "Bar tab",
       "amount": 16,
       "merchant": "Bar",
       "tag": "want",
-      "date": "2026-09-30"
+      "date": "2026-10-01"
     },
     {
       "item": "Bubble tea",
       "amount": 9,
       "merchant": "Boba shop",
       "tag": "want",
-      "date": "2026-09-29"
+      "date": "2026-09-30"
     },
     {
       "item": "Latte",
       "amount": 6,
       "merchant": "Starbucks",
       "tag": "want",
-      "date": "2026-09-28"
+      "date": "2026-09-29"
     },
     {
       "item": "Food delivery",
       "amount": 19,
       "merchant": "DoorDash",
       "tag": "want",
-      "date": "2026-10-01"
+      "date": "2026-10-02"
     }
   ],
   "transfers": [
@@ -143,26 +143,26 @@
       "to": "family",
       "item": "Sent home",
       "tag": "family",
-      "date": "2026-09-14"
+      "date": "2026-09-15"
     },
     {
       "amount": 40,
       "to": "savings",
       "item": "Moved to savings",
       "tag": "saved",
-      "date": "2026-09-30"
+      "date": "2026-10-01"
     }
   ],
   "deposits": [
     {
       "amount": 480,
       "item": "Paycheck",
-      "date": "2026-09-03"
+      "date": "2026-09-04"
     },
     {
       "amount": 480,
       "item": "Paycheck",
-      "date": "2026-09-18"
+      "date": "2026-09-19"
     }
   ],
   "merchants": [
@@ -211,15 +211,28 @@
       "category": "Bars"
     }
   ],
-  "merchantIds": {},
+  "merchantIds": {
+    "Kroger": "72333863-9b78-4a6c-8790-607c8bdd9df0",
+    "Target": "6f6a51a6-52ab-4ed9-ab7b-1e9110fe7b37",
+    "Consumers Energy": "97271cc7-9691-40d4-9ff8-fd63e3337c55",
+    "T-Mobile": "d47cc855-1fdb-4fe5-a243-e30faa03a711",
+    "CMU Bookstore": "b6fc7ba2-7b3f-4d3b-a098-75061f3de057",
+    "Ann Arbor Transit": "c7a3e705-cc69-4eff-acfb-777480a21430",
+    "DoorDash": "0905e821-0d54-4b8a-b908-36fb33dc1563",
+    "Starbucks": "11d27baa-68c6-462e-8e99-f56b5de70e02",
+    "Boba shop": "b8df6384-b415-4313-9068-8aafcd9b48f9",
+    "Online store": "a5a12e0f-9123-49d4-8bdf-82c9b6b916f8",
+    "Bar": "646dfbb4-1aa3-4d67-8e34-9f4517b537ca"
+  },
   "envelope": 75,
   "bills": [
     {
       "payee": "Landlord",
       "nickname": "Rent",
       "amount": 650,
-      "due": "2026-10-07",
+      "due": "2026-10-08",
       "recurringDay": 1
     }
-  ]
+  ],
+  "customerId": "0beac533-57f0-49f5-ba29-013d81a6c776"
 }
