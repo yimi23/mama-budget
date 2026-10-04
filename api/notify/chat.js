@@ -92,7 +92,7 @@ function fallbackReply(text, { week, who, apology, storedPromise, intent }) {
     return writer.phrase(who, 'apology') + tail;
   }
   if (/how much|left|budget/i.test(text)) return writer.whatsLeft(week, who);
-  return bank.calm[0] + tail;
+  return textLine('unknown', { left, who }) + tail;
 }
 
 const GRANDMA_HELLO = {
@@ -105,8 +105,9 @@ const GRANDMA_HELLO = {
 async function handleIncoming(text, who = 'mama', from, messageId, { images = [] } = {}) {
   notify.logIncoming(from, images.length ? `${text || ''} [photo]`.trim() : text);
   const mem = memory.read();
-  // The grandma they chose by text outranks the one the caller assumed; she stays until they change her.
-  if (mem.grandma) who = mem.grandma;
+  // The grandma they chose by text outranks the one the caller assumed; she stays until they change her. Before any
+  // text chose, the one picked in the extension speaks.
+  who = memory.whoSpeaks(mem) === 'mama' && !mem.grandma && !mem.defaultGrandma ? who : memory.whoSpeaks(mem);
   memory.addHistory(mem, 'user', text);
   mem.lastInboundAt = Date.now(); // the two week silence rule in photon/schedule.js reads this
   schedule.heardFrom();

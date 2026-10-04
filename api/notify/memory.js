@@ -10,13 +10,13 @@ const FILE = path.join(__dirname, '..', '..', 'data', 'mama-memory.json');
 const MAX_HISTORY = 40;
 
 function empty() {
-  return { history: [], promises: [], commented: [], lastInboundAt: null, items: {}, reasons: {}, pending: null, grandma: null };
+  return { history: [], promises: [], commented: [], lastInboundAt: null, items: {}, reasons: {}, pending: null, grandma: null, defaultGrandma: null };
 }
 
 function read() {
   try {
     const m = JSON.parse(fs.readFileSync(FILE, 'utf8'));
-    return { history: m.history || [], promises: m.promises || [], commented: m.commented || [], lastInboundAt: m.lastInboundAt || null, items: m.items || {}, reasons: m.reasons || {}, pending: m.pending || null, grandma: m.grandma || null };
+    return { history: m.history || [], promises: m.promises || [], commented: m.commented || [], lastInboundAt: m.lastInboundAt || null, items: m.items || {}, reasons: m.reasons || {}, pending: m.pending || null, grandma: m.grandma || null, defaultGrandma: m.defaultGrandma || null };
   } catch {
     return empty();
   }
@@ -78,4 +78,9 @@ function noteCommented(m, entry) {
   if (m.commented.length > MAX_HISTORY) m.commented = m.commented.slice(-MAX_HISTORY);
 }
 
-module.exports = { read, write, reset, addHistory, addPromise, activePromises, findBrokenPromise, markBroken, noteCommented };
+/** Who speaks in texts: the grandma they texted for, else the one picked in the extension, else Mama. */
+function whoSpeaks(m) { return m.grandma || m.defaultGrandma || 'mama'; }
+/** The extension's pick, remembered as the default for texts until they text for someone else. */
+function setDefaultGrandma(who) { const m = read(); if (who && m.defaultGrandma !== who) { m.defaultGrandma = who; write(m); } }
+
+module.exports = { read, write, reset, addHistory, addPromise, activePromises, findBrokenPromise, markBroken, noteCommented, whoSpeaks, setDefaultGrandma };

@@ -88,7 +88,7 @@ async function main() {
     const cust = await call('POST', '/customers', { first_name: 'Demo', last_name: 'Student', address: { street_number: '500', street_name: 'S State St', city: 'Ann Arbor', state: 'MI', zip: '48109' } });
     const cid = cust.objectCreated._id;
     const chk = await call('POST', `/customers/${cid}/accounts`, { type: 'Checking', nickname: 'Checking', rewards: 0, balance: 1400 });
-    const sav = await call('POST', `/customers/${cid}/accounts`, { type: 'Savings', nickname: 'Savings', rewards: 0, balance: 120 });
+    const sav = await call('POST', `/customers/${cid}/accounts`, { type: 'Savings', nickname: 'Savings', rewards: 0, balance: 640 });
     const fam = await call('POST', '/customers', { first_name: 'Family', last_name: 'Home', address: { street_number: '1', street_name: 'Warri Rd', city: 'Warri', state: 'DE', zip: '00000' } });
     const famAcct = await call('POST', `/customers/${fam.objectCreated._id}/accounts`, { type: 'Checking', nickname: 'Family', rewards: 0, balance: 0 });
     c.customerId = cid; c.accountId = chk.objectCreated._id; c.savingsId = sav.objectCreated._id; c.familyAccountId = famAcct.objectCreated._id;

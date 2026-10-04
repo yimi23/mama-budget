@@ -129,7 +129,7 @@ async function handlePurchase(p, cache) {
 
   const mem = memory.read();
   const broken = memory.findBrokenPromise(mem, itemName, merchant);
-  const who = mem.grandma || require('../photon/schedule').grandma();
+  const who = memory.whoSpeaks(mem);
   let text = writer.notifyText(level, weekAfter, { item: itemName, price: amount, merchant }, who, cartNames);
   if (broken) {
     memory.markBroken(mem, broken, itemName);
@@ -150,7 +150,7 @@ async function handleWithdrawal(w, cache) {
     cache.transfers.push({ amount: Number(w.amount || 0), to: tagged.tag === 'family' ? 'family' : 'savings', item: tagged.item, tag: tagged.tag, date: String(w.transaction_date || '').slice(0, 10), nessieId: w._id });
   }
   const weekAfter = nessie.week();
-  const text = writer.notifyText('proud', weekAfter, { item: tagged.item, price: Number(w.amount || 0) }, memory.read().grandma || require('../photon/schedule').grandma());
+  const text = writer.notifyText('proud', weekAfter, { item: tagged.item, price: Number(w.amount || 0) }, memory.whoSpeaks(memory.read()));
   const mem = memory.read();
   memory.addHistory(mem, 'mama', text);
   memory.write(mem);

@@ -75,7 +75,7 @@ function monthlyText(now = new Date(), who = grandma()) {
   return monthlyStatement({ month, needsTotal, sentHome, lastMonthSpent: lastMonthSpent || null, who });
 }
 
-function grandma() { const g = readState().grandma; return g && require('../lines/character').GRANDMAS[g] ? g : 'mama'; }
+function grandma() { const g = readState().grandma || require('../notify/memory').whoSpeaks(require('../notify/memory').read()); return g && require('../lines/character').GRANDMAS[g] ? g : 'mama'; }
 
 // Send one statement now. notify() decides photon vs log and logs either way (see GET /messages);
 // "texted" only means an actual send happened, same contract as every other notification in the app.

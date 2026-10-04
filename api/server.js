@@ -105,6 +105,7 @@ const routes = {
   // v2 for the extension: protect the obvious, ask once, remember. Memory lives in the extension and comes with each call;
   // verdict.key is what the extension stores the answer under, so the key logic stays in rules_v2 only.
   'POST /v2/judge': async (body) => {
+    if (body.grandma) require('./notify/memory').setDefaultGrandma(whoOf(body.grandma));
     const w = nessie.week();
     const who = whoOf(body.grandma);
     const memory = body.memory && typeof body.memory === 'object' ? body.memory : {};
