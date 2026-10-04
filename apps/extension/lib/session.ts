@@ -55,6 +55,12 @@ const putBack = new Map<string, number>();
 // popup reaches open tabs and other tabs never repeat her. Answers themselves are durable in storage.local.
 const handled: Handled = { asked: new Set(), reacted: new Set() };
 
+/** The line total as the store shows it (naira, pounds), for lines that say the store price first. */
+function storePriceOf(name: string): number | undefined {
+  const it = lastRead?.items.find((i) => i.name === name);
+  return it ? it.unitPrice * it.qty : undefined;
+}
+
 async function send<T>(msg: Message): Promise<T | null> {
   // After an extension reload this script is orphaned; the runtime id disappears.
   if (!browser.runtime?.id) return null;
@@ -69,7 +75,7 @@ type JudgeResult = ({ ok: true; handled: HandledLists } & JudgeReply) | { ok: fa
 
 async function judge(read: CartRead): Promise<JudgeResult | null> {
   // The envelope is in USD; a naira or pound cart is judged in dollars. The store currency goes along for her line.
-  const items = read.items.map((i) => ({ ...i, unitPrice: Math.round(toUSD(i.unitPrice, read.currency) * 100) / 100 }));
+  const items = read.items.map((i) => ({ ...i, unitPrice: Math.round(toUSD(i.unitPrice, read.currency) * 100) / 100, storeUnitPrice: i.unitPrice }));
   return send<JudgeResult>({ type: 'JUDGE', store: storeKey(location.href), currency: read.currency, items });
 }
 
@@ -275,7 +281,7 @@ async function react(g: Grandma, week: Week, v: Verdict, also: Verdict[] = []) {
   // Buy anyway: the charge lands in the bank now. The meter moves, she says her line, the text goes if it can.
   const reply = await send<({ ok: true } & BuyReply) | { ok: false }>({
     type: 'BUY', store: storeKey(location.href), currency: lastRead?.currency ?? 'USD',
-    item: { name: v.name, short: v.short, price: v.price },
+    item: { name: v.name, short: v.short, price: v.price, storePrice: storePriceOf(v.name) },
   });
   if (!reply?.ok) return hideAll();
   showWeek(g, reply.week);

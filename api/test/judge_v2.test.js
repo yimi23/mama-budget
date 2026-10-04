@@ -111,3 +111,13 @@ test('loudness scales the ask line, never the math', () => {
   assert.equal(lamp('gentle').label, 'want', 'Gentle Auntie asks from $40');
   assert.equal(judge({ item: 'Desk lamp', price: 30 }, week).label, 'ask', 'no tier given: the $15 line');
 });
+
+test('on a naira store she says the store price first, dollars after, and adds no naira line', () => {
+  const memory = remember({}, { item: 'AirPods Pro' }, 'want');
+  const v = judge({ item: 'AirPods Pro', price: 179 }, week, memory);
+  const line = lineFor(v, { item: 'AirPods Pro', price: 179, storePrice: 286400, currency: 'NGN', home: 'NGN' }, week);
+  assert.match(line, /₦286,400 \(179 dollars\)/);
+  assert.doesNotMatch(line, /That is .* naira/);
+  const usd = lineFor(v, { item: 'AirPods Pro', price: 179, storePrice: 179, currency: 'USD' }, week);
+  assert.match(usd, /alone is 179 dollars\./);
+});

@@ -9,7 +9,7 @@ const MAMA = {
   // Loud lines name the plan, not the pantry: the price, the item, what is left in the week. Scold the receipt.
   // Picked by the breach, not by chance: [0] the item beats what is left, [1] the item alone beats the whole week.
   shocked: [
-    '{price} dollars, with {left} dollars left this week. You are sure?',
+    '{price}, with {left} dollars left this week. You are sure?',
     'We said {budget} dollars for the week. {item} alone is {price}.',
   ],
   down: ['That is the week gone. {over} dollars over, on {item}.', 'Okay. I have heard. {over} dollars past the week.'],
@@ -28,8 +28,8 @@ const NANA = {
   calm: ['Looks good, hon.', 'Okay.'],
   watching: ['Honey. I’m looking.', 'Three quarters gone. Just so you know.'],
   shocked: [
-    '{price} dollars for {item}, hon. You had {left} left this week.',
-    '{price} dollars for {item}, hon. That is more than the whole week.',
+    '{price} for {item}, hon. You had {left} left this week.',
+    '{price} for {item}, hon. That is more than the whole week.',
   ],
   down: ['Okay. {over} over for the week. I’m not going to say anything.'],
   proud: ['Oh good. I knew you would.', 'Well look at you. Good for you, hon.'],
@@ -75,12 +75,22 @@ function shopName(merchant) {
 }
 
 // week gives the plan numbers: {left} before this purchase, {budget}, and {over} once the week is past it.
+// Store currency first, USD after (CLAUDE.md): on a naira store "₦286,400 (179 dollars)"; on a dollar store "179 dollars".
+const SYMBOL = { NGN: '₦', GBP: '£', EUR: '€', CAD: 'CA$', GHS: 'GH₵', KES: 'KSh ', INR: '₹' };
+function priceText(it) {
+  const usd = Math.round(it.price || 0);
+  if (it.currency && it.currency !== 'USD' && it.storePrice) {
+    return `${SYMBOL[it.currency] || `${it.currency} `}${Math.round(it.storePrice).toLocaleString()} (${usd} dollars)`;
+  }
+  return `${usd} dollars`;
+}
+
 function fill(t, it, week = {}) {
   const budget = Math.round(week.budget || 0);
   const spent = Math.round(week.spent || 0);
   const line = t
     .replace('{item}', (it.item || 'this').replace(/,.*$/, '').trim())
-    .replace('{price}', Math.round(it.price || 0))
+    .replace('{price}', priceText(it))
     .replace('{left}', Math.max(0, budget - spent))
     .replace('{budget}', budget)
     .replace('{over}', Math.max(0, spent - budget))

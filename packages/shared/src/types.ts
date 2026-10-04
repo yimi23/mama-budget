@@ -9,6 +9,8 @@ export interface CartItem {
   qty: number;
   /** Major units in the store currency, e.g. 24.99 */
   unitPrice: number;
+  /** Set only on the way to the judge, when unitPrice has been converted to USD: the price as the store shows it. */
+  storeUnitPrice?: number;
 }
 
 export interface CartRead {

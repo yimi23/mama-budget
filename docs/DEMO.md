@@ -24,7 +24,7 @@ Open: "You set your fun money for the week. Budget apps tell you after it is gon
 4. **"I just want them."** Badge shakes, Shocked face, coral card, her voice: "We said 75 dollars for the week. AirPods Pro alone is 179. That is 286,400 naira." Let the room hear her.
 5. **"You're right, Mama."** Bubble: "Good. I am watching the cart." Judge removes the AirPods on Amazon. Within a second, proud: "My pikin. Come and hug me." with "$179 stays in the week." Say: "She protects the obvious, asks about the rest, and remembers."
 6. **Buy anyway** (second item, the Instax or the book). Meter turns coral, bubble: "154 dollars past the week" with "$255 on Fujifilm Instax Mini 99. $305 of $75 gone this week. $0 left." If Photon is live the judge's phone buzzes with the same numbers three seconds later. Say: "That charge is on a Capital One Nessie account. Simulated bank, real moment."
-7. **Name a store.** Ask the judge for any store. allbirds.com, target.com and walmart.com are known to work; on an unknown Shopify store she still reads the cart. Open it, add anything, she is there. Say nothing about how.
+7. **Name a store.** Offer the judge a choice rather than an open question: "Allbirds, Target or Walmart?" Any Shopify store also works with no code written for it (Allbirds, Gymshark excepted). If they name something else and she stays quiet, say the admitted limit ("on a store she has never seen she reads nothing yet; that is the learner, not built") and move to the score. Never debug on stage.
 8. **The score.** One slide. Say the real numbers.
 
 Close: "She grows with you." Then stop talking.

@@ -1,3 +1,5 @@
+/* Bricolage Grotesque 800, bundled (extension pages cannot load Google Fonts). OFL licensed. */
+@font-face { font-family: 'Bricolage Grotesque'; font-weight: 800; font-style: normal; font-display: swap; src: url('/fonts/bricolage-800.woff2') format('woff2'); }
 /* docs/DESIGN.md: cream ground, ink buttons, sentence case, system font for function, Bricolage 800 for headlines,
    color only on her. 400 by 560, min height not height. Lifted from design/screens 02 to 09. */
 :root {
