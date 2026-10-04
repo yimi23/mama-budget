@@ -111,7 +111,7 @@ const routes = {
     const memory = body.memory && typeof body.memory === 'object' ? body.memory : {};
     const saidReasons = body.reasons && typeof body.reasons === 'object' ? body.reasons : null;
     setHome(body.home);
-    const items = (body.items || []).map((it) => ({ item: String(it.name || ''), price: Number(it.unitPrice || 0) * Number(it.qty || 1), storePrice: it.storeUnitPrice != null ? Number(it.storeUnitPrice) * Number(it.qty || 1) : null, merchant: it.store || '', currency: body.currency || 'USD', home: body.home || null, period: ['week', 'month', 'year'].includes(it.period) ? it.period : null }));
+    const items = (body.items || []).map((it) => ({ item: String(it.name || ''), price: Number(it.unitPrice || 0) * Number(it.qty || 1), storePrice: it.storeUnitPrice != null ? Number(it.storeUnitPrice) * Number(it.qty || 1) : null, merchant: it.store || body.store || '', currency: body.currency || 'USD', home: body.home || null, period: ['week', 'month', 'year'].includes(it.period) ? it.period : null }));
     // The rules judge the full title (the protected word is often at the end: "...Fragrant Rice"); her line gets the short name.
     // A merchant she promised to watch (the month's top wants) by host token: "doordash" in doordash.com.
     const store = (body.items || [])[0]?.store || '';
@@ -122,17 +122,17 @@ const routes = {
     const habits = (nessie.month().topWants || []).slice(0, 3).map((t) => `$${t.amount} at ${t.merchant}`).join(', ');
     const known = (item) => memory[v2.keyOf(item)] != null;
     const monthNow = nessie.month();
-    const deadline = Date.now() + 2800; // the whole judgement, classification and her line, inside this
+    const deadline = Date.now() + 3000; // the whole judgement, classification and her line, inside this
     const spokenOf = (item) => ({ ...item, item: item.period ? `${shortName(item.item)} at $${Math.round(item.price)} a ${item.period}` : shortName(item.item) });
     // Her ask line starts now, in parallel with classification: an unknown item past the lowest ask line is an ask more
     // often than not, and lines are cached by situation, so the real call a few seconds on finds it written or in flight.
+    const listProtected = (item) => v2.PROTECTED.some((wd) => v2.keyOf(item).includes(wd));
     for (const item of items) {
-      if (known(item) || item.price < v2.ASK_LINE) continue;
+      if (known(item) || item.price < v2.ASK_LINE || listProtected(item)) continue; // rice gets no speculative line: it will be a need
       void contextLine({ kind: 'ask', who, verdict: { label: 'ask', react: false, mood: 'watching', tags: watched ? ['ask', 'watched'] : ['ask'] }, it: spokenOf(item), week: w, month: monthNow, memory, reasons: saidReasons, store, warm: true }).catch(() => null);
     }
     // How long a verdict may wait for the model: nothing for a small item (a nod either way), a short wait for one
     // the word list already protects (the model can only overrule it), the full race for a real unknown.
-    const listProtected = (item) => v2.PROTECTED.some((wd) => v2.keyOf(item).includes(wd));
     const waitFor = (item) => (item.price < v2.ASK_LINE ? 0 : listProtected(item) ? 800 : undefined);
     const kinds = await Promise.all(items.map(async (item) => {
       if (known(item)) return undefined;
