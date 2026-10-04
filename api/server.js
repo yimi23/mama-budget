@@ -8,7 +8,7 @@
 //   GET  /week                                                  -> this week's envelope: budget, spent, left, kept, mood, bills
 //   GET  /month                                                 -> the 30 day read for onboarding: true line, watches, proposed envelope
 //   GET  /month?history=30                                      -> same
-//   POST /v2/judge  { items:[{name,qty,unitPrice,store}], memory, grandma } -> v2 verdict per item (ask, remember), lines, week
+//   POST /v2/judge  { items:[{name,qty,unitPrice,store}], memory, grandma, currency } -> v2 verdict per item (ask, remember), lines, week
 //   GET  /health
 
 const http = require('node:http');
@@ -48,7 +48,7 @@ const routes = {
     const memory = body.memory && typeof body.memory === 'object' ? body.memory : {};
     const verdicts = (body.items || []).map((it) => {
       // The rules judge the full title (the protected word is often at the end: "...Fragrant Rice"); her line gets the short name.
-      const item = { item: String(it.name || ''), price: Number(it.unitPrice || 0) * Number(it.qty || 1), merchant: it.store || '' };
+      const item = { item: String(it.name || ''), price: Number(it.unitPrice || 0) * Number(it.qty || 1), merchant: it.store || '', currency: body.currency || 'USD' };
       const v = v2.judge(item, w, memory);
       const spoken = { ...item, item: shortName(item.item) };
       return { name: it.name, short: spoken.item, price: item.price, ...v, line: lineFor(v, spoken, w, who), sub: subLine(w) };
@@ -90,7 +90,11 @@ function shortName(name) {
 function rank(mood) { return ['calm', 'proud', 'watching', 'shocked', 'down'].indexOf(mood); }
 
 http.createServer(async (req, res) => {
-  const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'content-type', 'Access-Control-Allow-Methods': 'GET,POST,OPTIONS' };
+  // Only the extension (and local tooling) may call from a browser. A store's own page scripts get no CORS grant,
+  // so nothing on the web can post to /buy or /transfer through a visitor's browser.
+  const origin = req.headers.origin || '';
+  const trusted = /^chrome-extension:\/\/[a-z]{32}$/.test(origin) || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+  const cors = { 'Access-Control-Allow-Origin': trusted ? origin : 'null', 'Vary': 'Origin', 'Access-Control-Allow-Headers': 'content-type', 'Access-Control-Allow-Methods': 'GET,POST,OPTIONS' };
   if (req.method === 'OPTIONS') { res.writeHead(204, cors); return res.end(); }
   const key = `${req.method} ${req.url.split('?')[0]}`;
   const handler = routes[key];

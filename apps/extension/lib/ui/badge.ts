@@ -57,7 +57,10 @@ const CSS = `
 }
 `;
 
+const finite = (n: number) => (Number.isFinite(n) ? n : 0);
+
 export function meterColor(ratio: number): string {
+  ratio = finite(ratio);
   if (ratio >= 1) return CORAL;
   if (ratio >= 0.75) return GOLD;
   return GREEN;
@@ -65,12 +68,13 @@ export function meterColor(ratio: number): string {
 
 /** Fill height in px. Never empty, so the bar always reads as a meter. */
 export function meterHeight(ratio: number): number {
-  return Math.round(Math.max(0.08, Math.min(1, ratio)) * METER_PX);
+  return Math.round(Math.max(0.08, Math.min(1, finite(ratio))) * METER_PX);
 }
 
 export function describe(s: BadgeState): string {
-  const days = s.daysLeft === 1 ? '1 day' : `${s.daysLeft} days`;
-  return `Mama Budget. $${Math.round(s.left)} left this week, ${days} to go.`;
+  const daysLeft = finite(s.daysLeft);
+  const days = daysLeft === 1 ? '1 day' : `${daysLeft} days`;
+  return `Mama Budget. $${Math.round(finite(s.left))} left this week, ${days} to go.`;
 }
 
 export interface Badge {

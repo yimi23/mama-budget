@@ -22,15 +22,20 @@ export interface PageSignals {
   hasCheckoutNode: boolean;
 }
 
-/** Pure: how many cart signals does this page show. */
+/**
+ * Pure: how many cart signals does this page show.
+ * Words alone never make two: an order email in Gmail says "Subtotal" and "Checkout" too. At least one signal must
+ * be structural (the URL or title, or a subtotal or checkout element), so prose cannot wake her.
+ */
 export function cartSignalCount(p: PageSignals): number {
   let path = '';
   try { path = new URL(p.url).pathname; } catch { /* keep empty */ }
-  let n = 0;
-  if (CART_PATH.test(path) || /\b(cart|basket|bag)\b/i.test(p.title)) n++;
-  if (p.hasSubtotalNode || SUBTOTAL_WORDS.test(p.text)) n++;
-  if (p.hasCheckoutNode || CHECKOUT_WORDS.test(p.text)) n++;
-  return n;
+  const urlSignal = CART_PATH.test(path) || /\b(cart|basket|bag)\b/i.test(p.title);
+  const subtotal = p.hasSubtotalNode || SUBTOTAL_WORDS.test(p.text);
+  const checkout = p.hasCheckoutNode || CHECKOUT_WORDS.test(p.text);
+  const n = (urlSignal ? 1 : 0) + (subtotal ? 1 : 0) + (checkout ? 1 : 0);
+  const structural = urlSignal || p.hasSubtotalNode || p.hasCheckoutNode;
+  return structural ? n : Math.min(n, 1);
 }
 
 export function isCartPage(p: PageSignals): boolean {
@@ -79,8 +84,8 @@ export function liveCartSignalCount(doc: Document, url: string): number {
   const chkNode = !!doc.querySelector(CHECKOUT_SELECTOR);
   n += (subNode ? 1 : 0) + (chkNode ? 1 : 0);
   if (n >= 2) return n;
-  const textCouldAdd = (subNode ? 0 : 1) + (chkNode ? 0 : 1);
-  if (n + textCouldAdd < 2 || !doc.body) return n;
+  // Text can only add to a structural signal; with none, the page is shut without walking its text.
+  if (n === 0 || !doc.body) return n;
   const text = visibleText(doc, doc.body, 20000);
   if (!subNode && SUBTOTAL_WORDS.test(text)) n++;
   if (!chkNode && CHECKOUT_WORDS.test(text)) n++;

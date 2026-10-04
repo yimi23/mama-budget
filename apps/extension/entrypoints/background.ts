@@ -1,7 +1,7 @@
 // Service worker. Stateless: everything lives in chrome.storage. Every listener is top level and synchronous.
 
 import type { HandledLists, Message } from '@mama/shared/messages';
-import type { Answer, CartItem, JudgeReply, Week } from '@mama/shared/types';
+import type { Answer, CartItem, CurrencyCode, JudgeReply, Week } from '@mama/shared/types';
 import { apiUp, call } from '../lib/api';
 
 const LAST_CART_TTL_MS = 30 * 60 * 1000;
@@ -23,13 +23,13 @@ async function getWeek() {
   return week ? { ok: true as const, week } : { ok: false as const };
 }
 
-async function judgeCart(store: string, items: CartItem[]) {
+async function judgeCart(store: string, currency: CurrencyCode, items: CartItem[]) {
   if (!(await apiUp())) return { ok: false as const };
   const { memory = {}, settings = {} } = await browser.storage.local.get(['memory', 'settings']);
   const reply = await call<JudgeReply>('/v2/judge', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ items: items.map((i) => ({ ...i, store })), memory, grandma: (settings as { grandma?: string }).grandma ?? 'mama' }),
+    body: JSON.stringify({ items: items.map((i) => ({ ...i, store })), memory, currency, grandma: (settings as { grandma?: string }).grandma ?? 'mama' }),
   });
   return reply ? { ok: true as const, ...reply, handled: await handledLists() } : { ok: false as const };
 }
@@ -71,7 +71,7 @@ export default defineBackground(() => {
         getWeek().then(sendResponse, () => sendResponse({ ok: false }));
         return true;
       case 'JUDGE':
-        judgeCart(msg.store, msg.items).then(sendResponse, () => sendResponse({ ok: false }));
+        judgeCart(msg.store, msg.currency, msg.items).then(sendResponse, () => sendResponse({ ok: false }));
         return true;
       case 'MARK':
         mark(msg.kind, msg.key).then(() => sendResponse({ ok: true }), () => sendResponse({ ok: true }));

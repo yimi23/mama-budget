@@ -25,9 +25,18 @@ const PARSE: Record<Platform, (j: unknown) => CartRead | null> = {
   bigcommerce: parseBigCommerce,
 };
 
+// Shopify themes mutate the page constantly (carousels), and every tick would otherwise hit /cart.js.
+// At most one fetch per MIN_INTERVAL_MS: a tick inside the window waits out the remainder, then fetches fresh,
+// so an add to cart whose only change lands inside the window is still seen.
+const MIN_INTERVAL_MS = 800;
+let lastAt = 0;
+
 export async function readPlatform(doc: Document): Promise<CartRead | null> {
   const platform = detectPlatform(doc);
   if (!platform) return null;
+  const wait = MIN_INTERVAL_MS - (Date.now() - lastAt);
+  if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+  lastAt = Date.now();
   try {
     const res = await fetch(ENDPOINT[platform], {
       credentials: 'same-origin',

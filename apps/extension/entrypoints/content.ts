@@ -14,12 +14,13 @@ export default defineContentScript({
   main(ctx) {
     let open = false;
     let watcher: MutationObserver | undefined;
+    let session: typeof import('../lib/session') | undefined;
 
     const wake = async (reason: 'cart' | 'add') => {
       if (!ctx.isValid) return;
       open = true;
       watcher?.disconnect();
-      const session = await import('../lib/session');
+      session ??= await import('../lib/session');
       session.start(ctx, reason);
     };
 
@@ -51,6 +52,8 @@ export default defineContentScript({
     };
 
     const onPage = () => {
+      // Once awake, a navigation re arms the session (it may have gone to sleep on an empty page).
+      if (open) return wake('cart');
       if (check() === 1) watchForLateCart();
     };
 

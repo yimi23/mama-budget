@@ -17,7 +17,7 @@ test('shopping pages wake her', () => {
     { url: 'https://www.zara.com/us/en/shop/cart', text: 'Shopping bag Total $59.90 Continue', hasCheckoutNode: true },
     { url: 'https://www.walmart.com/checkout', text: 'Subtotal $24.00 Place order' },
     { url: 'https://shop.example.com/basket', text: 'Basket total £12.00' },
-    { url: 'https://store.example.com/products/x', text: 'Order total $45 Proceed to checkout' },
+    { url: 'https://store.example.com/products/x', text: 'Order total $45 Proceed to checkout', hasCheckoutNode: true },
   ];
   for (const p of yes) assert.ok(isCartPage(page(p)), p.url);
 });
@@ -34,6 +34,9 @@ test('ordinary pages stay shut', () => {
     { url: 'https://www.amazon.com/dp/B0D1XD1ZV3', text: 'AirPods Pro 2 Add to Cart Buy Now' },
     { url: 'https://docs.google.com/document/d/1', text: 'Untitled document' },
     { url: 'https://twitter.com/home', text: 'What is happening' },
+    // An order confirmation email: both words, no cart URL, no cart elements. Prose never wakes her.
+    { url: 'https://mail.google.com/mail/u/0/#inbox/abc', title: 'Your order has shipped', text: 'Order summary Subtotal $45.00 Shipping $0 Checkout again at example.com' },
+    { url: 'https://www.nytimes.com/2026/10/03/technology/retail-pricing.html', text: 'Retailers fight over the subtotal line and the checkout button' },
     // Zara favorites, from the live page Oct 3: a wishlist with a Bag link in the header is not a cart.
     { url: 'https://www.zara.com/us/en/wishlist', title: 'Favorites | ZARA United States', text: 'Skip to main content Search Bag0 Help WOMAN MAN KIDS NEW ARRIVALS' },
   ];

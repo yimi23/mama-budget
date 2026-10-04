@@ -34,11 +34,14 @@ const NANA = {
 
 const NGN = Number(process.env.USD_NGN || 1600); // update before demo
 
+// Product names keep their own casing ("AirPods Pro", not "airpods pro"); the line's first letter is capitalised
+// after filling, so a line that opens with the item still reads as a sentence.
 function fill(t, it) {
-  return t
-    .replace('{item}', (it.item || 'this').replace(/,.*$/, '').toLowerCase())
+  const line = t
+    .replace('{item}', (it.item || 'this').replace(/,.*$/, '').trim())
     .replace('{price}', Math.round(it.price || 0))
     .replace('{merchant}', it.merchant || 'the shop');
+  return line.charAt(0).toUpperCase() + line.slice(1);
 }
 
 /**
@@ -54,7 +57,8 @@ function lineFor(verdict, it, month, who = 'mama') {
   if (verdict.tags && verdict.tags.includes('family')) key = 'family';
   const pool = bank[key] || bank.calm;
   const base = fill(pool[(it.item || '').length % pool.length], it);
-  if (who === 'mama' && verdict.react && it.price) {
+  // Mama adds the naira, unless the store already priced it in naira.
+  if (who === 'mama' && verdict.react && it.price && it.currency !== 'NGN') {
     return `${base} That is ${Math.round(it.price * NGN).toLocaleString()} naira.`;
   }
   return base;

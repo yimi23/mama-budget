@@ -38,9 +38,11 @@ function judge(it, month = { budget: 75, spent: 0 }, memory = {}) {
   const blown = month.spent + price > month.budget;
 
   if (memory[k] === 'want') {
-    // She has the right to react: you said it yourself.
-    const react = price >= ASK_LINE || blown;
-    return out('want', react, blown ? 'down' : react ? 'shocked' : base, 'An admitted want.', ['remembered', ...(blown ? ['blown'] : [])]);
+    // She has the right to react: you said it yourself. The envelope decides whether she does.
+    // A want that fits the week is a nod. One that blows it gets the Shocked card. Gele down comes later, when a real
+    // order lands and the week's ratio passes 1 (that is the week's own mood, not this verdict's).
+    if (!blown) return out('want', false, base, 'An admitted want that fits the week. A nod.', ['remembered', 'fits']);
+    return out('want', true, 'shocked', 'An admitted want that blows the week.', ['remembered', 'blown']);
   }
 
   // Unknown item. Small: a nod. Otherwise: ask, neutral face, nothing moves.

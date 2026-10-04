@@ -1,6 +1,6 @@
 // Every message between content script, popup and worker. Add the case here before writing the handler.
 
-import type { Answer, CartItem, CartRead, JudgeReply, Week } from './types.ts';
+import type { Answer, CartItem, CartRead, CurrencyCode, JudgeReply, Week } from './types.ts';
 
 /** What she already asked about or reacted to this browser session, across every tab and reload. */
 export interface HandledLists {
@@ -11,7 +11,7 @@ export interface HandledLists {
 export type Message =
   | { type: 'CART_READ'; store: string; url: string; read: CartRead }
   | { type: 'GET_WEEK' }
-  | { type: 'JUDGE'; store: string; items: CartItem[] }
+  | { type: 'JUDGE'; store: string; currency: CurrencyCode; items: CartItem[] }
   | { type: 'ANSWER'; key: string; answer: Answer }
   | { type: 'MARK'; kind: 'asked' | 'reacted'; key: string }
   | { type: 'START_OVER' }

@@ -1,7 +1,7 @@
-// Loaded only after detect.ts fires. Reads the cart, watches for changes, hands each new read to the worker.
-// Never caches DOM nodes: every tick re queries from the document.
+// Loaded only after detect.ts fires. Reads the cart, watches for changes, judges through the worker, and holds
+// at most one conversation at a time. Never caches DOM nodes: every tick re queries from the document.
 
-import type { Answer, CartRead, JudgeReply, Mood, Verdict, Week } from '@mama/shared/types';
+import type { CartRead, JudgeReply, Mood, Verdict, Week } from '@mama/shared/types';
 import type { HandledLists, Message } from '@mama/shared/messages';
 import { mountBadge, type Badge, type Grandma } from './ui/badge';
 import { mountCard, type Card } from './ui/card';
@@ -13,21 +13,34 @@ import { addsUp } from './readers/settle';
 
 const DEBOUNCE_MS = 400;
 const AFTER_ADD_MS = 1200;
-// A read that does not add up to the page subtotal is a cart still rendering. Wait; accept it if it holds this long
-// (some stores show discounts that never add up).
+// A read that does not add up to the page subtotal is a cart still rendering. Wait; accept it only once it has
+// held unchanged for this long (some stores show discounts that never add up).
 const SETTLE_MS = 1500;
+// A page that has shown no items for this long (order history, an emptied cart) stops being watched.
+// An add to cart click or a navigation starts the watch again.
+const IDLE_SLEEP_MS = 60_000;
+
+interface Ctx { onInvalidated(cb: () => void): void }
 
 let lastKey = '(start)';
 let unsettledKey = '';
+let unsettledAt = 0;
 let timer: ReturnType<typeof setTimeout> | undefined;
 let reading = false;
-let started = false;
+let dirty = false;
+let observer: MutationObserver | undefined;
+let lastItemsAt = 0;
+
 let badge: Badge | undefined;
 let card: Card | undefined;
 let lastRead: CartRead | null = null;
 let talking = false;
-// Mirrors the worker's per browser session lists (storage.session), so reloads and other tabs never repeat her.
-// Answers themselves are durable in storage.local through the worker.
+/** The item name on the open card, so a card about something no longer in the cart can close. */
+let discussing: string | null = null;
+let lastLog = '';
+let lastShown = '';
+// Mirrors the worker's per browser session lists (storage.session) on every judgement, so Start over in the
+// popup reaches open tabs and other tabs never repeat her. Answers themselves are durable in storage.local.
 const handled: Handled = { asked: new Set(), reacted: new Set() };
 
 async function send<T>(msg: Message): Promise<T | null> {
@@ -43,9 +56,9 @@ async function send<T>(msg: Message): Promise<T | null> {
 type JudgeResult = ({ ok: true; handled: HandledLists } & JudgeReply) | { ok: false };
 
 async function judge(read: CartRead): Promise<JudgeResult | null> {
-  // The envelope is in USD; a naira or pound cart is judged in dollars.
+  // The envelope is in USD; a naira or pound cart is judged in dollars. The store currency goes along for her line.
   const items = read.items.map((i) => ({ ...i, unitPrice: Math.round(toUSD(i.unitPrice, read.currency) * 100) / 100 }));
-  return send<JudgeResult>({ type: 'JUDGE', store: storeKey(location.href), items });
+  return send<JudgeResult>({ type: 'JUDGE', store: storeKey(location.href), currency: read.currency, items });
 }
 
 async function grandma(): Promise<Grandma> {
@@ -68,111 +81,149 @@ function hideAll() {
   badge?.hide();
 }
 
-/** Judge the cart, set the badge, and hold at most one conversation at a time. */
-async function talk(read: CartRead | null) {
-  lastRead = read;
-  if (!read || !read.items.length) return hideAll();
-  if (talking) return; // the conversation in progress picks up the newest read when it ends
+function logJudgement(reply: { ok: true } & JudgeReply) {
+  const text =
+    `[mama] judged, $${Math.round(reply.week.left)} left this week\n` +
+    reply.verdicts.map((v) => `  ${v.label}${v.react ? ' (react)' : ''}  ${v.short}  ${v.reason}`).join('\n');
+  if (text !== lastLog) console.info(text);
+  lastLog = text;
+}
+
+/**
+ * The conversation. Judge the newest read, set the badge, show one card, then judge again: an answer changes
+ * memory, and a changed cart changes everything, so every card starts from a fresh verdict. Ends when nothing
+ * is left to say or the cart is empty. Any failure hides her; nothing is ever shown as an error on a store.
+ */
+async function talk() {
+  if (talking) return;
   talking = true;
   try {
     const g = await grandma();
-    let reply = await judge(read);
-    if (!reply?.ok) {
-      console.info('[mama] API not answering, staying hidden');
-      return hideAll();
-    }
-    console.info(
-      `[mama] judged, $${Math.round(reply.week.left)} left this week\n` +
-        reply.verdicts.map((v) => `  ${v.label}${v.react ? ' (react)' : ''}  ${v.short}  ${v.reason}`).join('\n'),
-    );
-    for (const k of reply.handled.asked) handled.asked.add(k);
-    for (const k of reply.handled.reacted) handled.reacted.add(k);
-    showWeek(g, reply.week);
-    for (let next = nextCard(reply.verdicts, handled); next; next = reply.ok ? nextCard(reply.verdicts, handled) : null) {
-      if (next.kind === 'react') await react(g, reply.week, next.verdict);
-      else {
-        const wanted = await ask(g, reply.week, next.verdict);
-        if (!wanted) continue;
-        // "I just want them": judge again with the answer remembered. She reacts only if the envelope says so.
-        const again = await judge(lastRead ?? read);
-        if (!again?.ok) return hideAll();
-        reply = again;
-        const v = reply.verdicts.find((x) => x.key === next!.verdict.key);
-        if (!v?.react) showWeek(g, reply.week); // it fits the week: a nod, nothing more
+    for (;;) {
+      const read = lastRead;
+      if (!read || !read.items.length) return hideAll();
+      const reply = await judge(read);
+      if (!reply?.ok) {
+        console.info('[mama] API not answering, staying hidden');
+        return hideAll();
       }
-      if (lastRead !== read && lastRead) {
-        const fresh = await judge(lastRead);
-        if (!fresh?.ok) return hideAll();
-        reply = fresh;
+      logJudgement(reply);
+      handled.asked = new Set(reply.handled.asked);
+      handled.reacted = new Set(reply.handled.reacted);
+      showWeek(g, reply.week);
+      if (lastRead !== read) continue; // the cart moved while she was thinking
+      const next = nextCard(reply.verdicts, handled);
+      if (!next) return;
+      // The same card twice on an unchanged cart means a mark did not land. Never loop on her.
+      const stamp = `${next.kind}:${next.verdict.key}:${readKey(read)}`;
+      if (stamp === lastShown) return;
+      lastShown = stamp;
+      discussing = next.verdict.name;
+      try {
+        if (next.kind === 'react') await react(g, reply.week, next.verdict);
+        else await ask(g, reply.week, next.verdict);
+      } finally {
+        discussing = null;
       }
     }
-    showWeek(g, reply.week);
+  } catch {
+    hideAll(); // context invalidated mid card, or anything else: she simply goes
   } finally {
     talking = false;
   }
 }
 
-async function answer(key: string, a: Answer) {
-  await send({ type: 'ANSWER', key, answer: a });
+/** A new read landed. Close a card about an item that left the cart; the running conversation picks up the rest. */
+function onRead(read: CartRead | null) {
+  lastRead = read;
+  if (read?.items.length) lastItemsAt = Date.now();
+  if (talking) {
+    if (discussing && card?.open && !read?.items.some((i) => i.name === discussing)) card.close();
+    return;
+  }
+  void talk();
 }
 
-/** The neutral ask: watching face, meter still, no voice. Returns true for "I just want them". */
-async function ask(g: Grandma, week: Week, v: Verdict): Promise<boolean> {
+/** The neutral ask: watching face, meter still, no voice. The answer is stored before she moves on. */
+async function ask(g: Grandma, week: Week, v: Verdict) {
   handled.asked.add(v.key);
-  send({ type: 'MARK', kind: 'asked', key: v.key });
+  await send({ type: 'MARK', kind: 'asked', key: v.key });
   showWeek(g, week, 'watching');
   const choice = await card!.ask({
     grandma: g, mood: 'watching', tone: 'ask', line: v.line,
     sub: 'She asks once and remembers your answer.',
-    primary: 'It\u2019s for something', secondary: wantLabel(v.short),
+    primary: 'It’s for something', secondary: wantLabel(v.short),
   });
-  if (choice === 'primary') { await answer(v.key, 'need'); showWeek(g, week); return false; }
-  if (choice === 'secondary') { await answer(v.key, 'want'); return true; }
+  if (choice === 'primary') await send({ type: 'ANSWER', key: v.key, answer: 'need' });
+  else if (choice === 'secondary') await send({ type: 'ANSWER', key: v.key, answer: 'want' });
   showWeek(g, week);
-  return false;
 }
 
 /** A want she has the right to react to. Once per item. Buy anyway always works and touches nothing on the store. */
 async function react(g: Grandma, week: Week, v: Verdict) {
   handled.reacted.add(v.key);
-  send({ type: 'MARK', kind: 'reacted', key: v.key });
+  await send({ type: 'MARK', kind: 'reacted', key: v.key });
   showWeek(g, week, v.mood);
   badge!.shake();
   await card!.ask({
     grandma: g, mood: v.mood, tone: 'alarm', line: v.line, sub: v.sub,
-    primary: g === 'nana' ? 'You\u2019re right, Nana' : 'You\u2019re right, Mama', secondary: 'Buy anyway',
+    primary: g === 'nana' ? 'You’re right, Nana' : 'You’re right, Mama', secondary: 'Buy anyway',
   });
 }
 
-async function tick() {
-  if (reading) return;
-  reading = true;
-  try {
-    const read: CartRead | null = await readCart(document, location.href);
-    const key = readKey(read);
-    if (key === lastKey) return;
-    if (!read) {
-      if (lastKey !== 'none') console.info(`[mama] cart page on ${location.hostname}, no reader found items yet`);
+async function readOnce() {
+  const read: CartRead | null = await readCart(document, location.href);
+  const key = readKey(read);
+  if (key === lastKey) return;
+  if (!read) {
+    if (lastKey !== 'none') {
+      console.info(`[mama] cart page on ${location.hostname}, no reader found items yet`);
       lastKey = 'none';
-      talk(null);
-      return;
+      onRead(null);
     }
-    if (!addsUp(read) && key !== unsettledKey) {
+    return;
+  }
+  const now = Date.now();
+  if (!addsUp(read)) {
+    if (key !== unsettledKey) {
       unsettledKey = key;
+      unsettledAt = now;
       schedule(SETTLE_MS);
       return;
     }
-    unsettledKey = '';
-    lastKey = key;
-    // Plain text so a copied console line shows the whole read.
-    console.info(
-      `[mama] cart via ${read.via}, subtotal ${read.subtotal ?? '?'} ${read.currency}\n` +
-        read.items.map((i) => `  ${i.qty} x ${i.unitPrice}  ${i.name}`).join('\n'),
-    );
-    send({ type: 'CART_READ', store: storeKey(location.href), url: location.origin + location.pathname, read });
-    talk(read);
+    const remaining = SETTLE_MS - (now - unsettledAt);
+    if (remaining > 0) {
+      schedule(remaining);
+      return;
+    }
+  }
+  unsettledKey = '';
+  lastKey = key;
+  // Plain text so a copied console line shows the whole read.
+  console.info(
+    `[mama] cart via ${read.via}, subtotal ${read.subtotal ?? '?'} ${read.currency}\n` +
+      read.items.map((i) => `  ${i.qty} x ${i.unitPrice}  ${i.name}`).join('\n'),
+  );
+  void send({ type: 'CART_READ', store: storeKey(location.href), url: location.origin + location.pathname, read });
+  onRead(read);
+}
+
+async function tick() {
+  if (reading) {
+    dirty = true; // a change landed mid read: run once more when this read ends
+    return;
+  }
+  reading = true;
+  try {
+    do {
+      dirty = false;
+      await readOnce();
+    } while (dirty);
+  } catch {
+    // a reader threw on odd markup: nothing to show, the next change tries again
   } finally {
     reading = false;
+    if (!lastRead?.items.length && lastItemsAt && Date.now() - lastItemsAt > IDLE_SLEEP_MS) sleep();
   }
 }
 
@@ -181,12 +232,22 @@ export function schedule(delay = DEBOUNCE_MS) {
   timer = setTimeout(tick, delay);
 }
 
-/** Called once by content.ts when the gate opens. Safe to call again. */
-export function start(ctx: { onInvalidated(cb: () => void): void }, reason: 'cart' | 'add') {
+function sleep() {
+  observer?.disconnect();
+  observer = undefined;
+  clearTimeout(timer);
+  hideAll();
+  console.info('[mama] nothing in the cart for a minute, sleeping until the page changes');
+}
+
+/** Called by content.ts when the gate opens, on navigation, and on an add to cart click. Safe to call again. */
+export function start(ctx: Ctx, reason: 'cart' | 'add') {
+  lastItemsAt ||= Date.now();
+  if (!observer) {
+    lastItemsAt = Date.now();
+    observer = new MutationObserver(() => schedule());
+    observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+    ctx.onInvalidated(() => { sleep(); badge?.destroy(); });
+  }
   schedule(reason === 'add' ? AFTER_ADD_MS : 0);
-  if (started) return;
-  started = true;
-  const observer = new MutationObserver(() => schedule());
-  observer.observe(document.body, { childList: true, subtree: true, characterData: true });
-  ctx.onInvalidated(() => { observer.disconnect(); clearTimeout(timer); badge?.destroy(); });
 }

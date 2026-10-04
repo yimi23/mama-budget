@@ -10,7 +10,7 @@
     "api": "node api/server.js",
     "seed": "node api/nessie/seed.js",
     "score": "node scoring/score.js",
-    "test": "node --test api/test/judge.test.js && npm test -w @mama/extension",
+    "test": "node --test api/test/*.test.js && npm test -w @mama/extension",
     "typecheck": "npm run typecheck -w @mama/extension"
   },
   "engines": {
