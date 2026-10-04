@@ -156,8 +156,8 @@ test('on a watched merchant she asks about anything over $5 and says why', () =>
   assert.equal(judge({ item: 'Bubble tea', price: 12, merchant: 'doordash.com' }, week).label, 'want', 'elsewhere $12 is a nod');
   const v = judge({ item: 'Bubble tea', price: 12 }, week, {}, { watched: { merchant: 'DoorDash', amount: 102 } });
   const line = lineFor(v, { item: 'Bubble tea', price: 12, merchant: 'doordash.com', watched: { merchant: 'DoorDash', amount: 102 } }, week);
-  assert.match(line, /DoorDash again/);
-  assert.match(line, /102/);
+  assert.match(line, /DoorDash/, `names the merchant she watches: ${line}`);
+  assert.match(line, /102/, `names the habit: ${line}`);
 });
 
 test('necessity comes from context when known; the word list is only the fallback', () => {

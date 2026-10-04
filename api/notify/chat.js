@@ -18,6 +18,54 @@ const watch = require('./watch');
 const schedule = require('../photon/schedule');
 const { weigh } = require('./weigh');
 
+const DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const dayOf = (d) => { const t = new Date(`${d}T12:00:00`); return Number.isNaN(t.getTime()) ? '' : DAY[t.getDay()]; };
+
+/** The ledger as she would read it out: this week's lines, the month by merchant, bills, savings, home. */
+function ledgerView() {
+  const c = nessie.readCache();
+  const ws = nessie.weekStart();
+  const startMs = new Date(typeof ws === 'string' && ws.length === 10 ? `${ws}T00:00:00` : ws).getTime();
+  const all = (c.purchases || []).slice().sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  const thisWeek = all.filter((x) => new Date(`${String(x.date).slice(0, 10)}T12:00:00`).getTime() >= startMs);
+  const month = nessie.month();
+  return {
+    thisWeek, month,
+    savings: nessie.savingsBalance ? nessie.savingsBalance() : null,
+    text: [
+      `This week's purchases: ${thisWeek.length ? thisWeek.map((x) => `${x.item} $${x.amount} at ${x.merchant} (${dayOf(x.date)}, ${x.tag})`).join('; ') : 'none yet'}.`,
+      `Last 30 days by merchant: ${(month.topWants || []).map((w) => `${w.merchant} $${w.amount}`).join(', ') || 'nothing'}.`,
+      `Bills: ${(month.bills || []).map((b) => `${b.nickname || b.payee} $${b.amount} due in ${b.daysUntil} day(s)`).join('; ') || 'none'}.`,
+      `Savings: $${nessie.savingsBalance ? nessie.savingsBalance() : '?'}. Sent home this month: $${month.sentHome || 0}. Kept this week: $${month.kept || 0}.`,
+    ].join('\n'),
+  };
+}
+
+function boughtLine(view, about, week, who) {
+  const left = Math.max(0, week.budget - week.spent);
+  if (about) {
+    const hit = (x) => `${x.merchant} ${x.item}`.toLowerCase().includes(about.toLowerCase());
+    const mine = view.thisWeek.filter(hit);
+    const monthHit = (view.month.topWants || []).find((w) => w.merchant.toLowerCase().includes(about.toLowerCase()));
+    const weekSum = mine.reduce((s, x) => s + x.amount, 0);
+    if (!mine.length && !monthHit) return who === 'nana' ? `Nothing at ${about} that I can see, hon.` : `Nothing at ${about} that I can see.`;
+    return `$${weekSum} at ${monthHit ? monthHit.merchant : about} this week${monthHit ? `, $${monthHit.amount} in the last 30 days` : ''}. $${left} left this week.`;
+  }
+  const wants = view.thisWeek.filter((x) => x.tag === 'want');
+  if (!wants.length) return `Nothing on wants this week yet. $${left} left.`;
+  return `This week: ${wants.map((x) => `${x.item} $${x.amount} (${x.merchant}, ${dayOf(x.date)})`).join(', ')}. $${week.spent} on wants, $${left} left.`;
+}
+
+function billsLine(view, who) {
+  const bills = view.month.bills || [];
+  if (!bills.length) return who === 'nana' ? 'Nothing due that I can see, hon.' : 'Nothing due that I can see.';
+  return bills.map((b) => `${b.nickname || b.payee}, $${b.amount}, due in ${b.daysUntil} day${b.daysUntil === 1 ? '' : 's'}.`).join(' ') + (bills.length === 1 ? ' That is it this month.' : '');
+}
+
+function savingsLine(view, week) {
+  return `$${view.savings ?? '?'} in savings. $${week.kept} kept this week.${view.month.sentHome ? ` $${view.month.sentHome} went home this month.` : ''}`;
+}
+
 const APOLOGY = /\b(sorry|my bad|you.?re right|i.?m sorry|i apologi[sz]e|forgive me)\b/i;
 
 function extractPromise(text) {
@@ -63,6 +111,11 @@ async function handleIncoming(text, who = 'mama', from, messageId, { images = []
   const requestId = messageId ? `imsg-${messageId}` : undefined;
   const say = (reply, mood) => { memory.addHistory(mem, who, reply); memory.write(mem); return { reply, mood, intent: cmd.intent }; };
   if (cmd.intent === 'left') return say(await writer.fresh(who, writer.whatsLeft(before, who)), before.mood);
+  if (cmd.intent === 'bought' || cmd.intent === 'bills' || cmd.intent === 'savings') {
+    const view = ledgerView();
+    const line = cmd.intent === 'bought' ? boughtLine(view, cmd.about, before, who) : cmd.intent === 'bills' ? billsLine(view, who) : savingsLine(view, before);
+    return say(await writer.fresh(who, line, { situation: 'they asked about their own ledger; every number must stay' }), before.mood);
+  }
   if (cmd.intent === 'save' || cmd.intent === 'home') {
     if (!(cmd.amount > 0)) return say(textLine('nothing', { who }), 'calm');
     if (cmd.intent === 'save' && cmd.amount > left) return say(textLine('tooMuch', { amount: cmd.amount, left, who }), 'watching');
@@ -85,7 +138,7 @@ async function handleIncoming(text, who = 'mama', from, messageId, { images = []
   const apology = APOLOGY.test(text);
   const promiseText = extractPromise(text);
 
-  let reply = await writer.modelReply({ who, userText: text, week, history: mem.history, promises: memory.activePromises(mem) }).catch(() => null);
+  let reply = await writer.modelReply({ who, userText: text, week, ledger: ledgerView().text, history: mem.history, promises: memory.activePromises(mem), items: mem.items || {}, reasons: mem.reasons || {} }).catch(() => null);
   if (!reply) reply = fallbackReply(text, { week, who, apology, storedPromise: promiseText, intent: cmd.intent });
 
   if (promiseText) memory.addPromise(mem, promiseText);
@@ -94,4 +147,4 @@ async function handleIncoming(text, who = 'mama', from, messageId, { images = []
   return { reply, mood: apology ? 'calm' : week.mood, intent: cmd.intent };
 }
 
-module.exports = { handleIncoming };
+module.exports = { handleIncoming, ledgerView, boughtLine, billsLine, savingsLine };

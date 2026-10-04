@@ -36,8 +36,8 @@ const MAMA = {
     '{price} for {item}? Shebi we said {budget} dollars for the whole week.',
     'Haba. {price} on {item} when {left} dollars is what remains.',
     '{item}, {price}. The week has {left} dollars in it. Do the mathematics.',
-    'Chai. {price}. That is more than the {left} dollars you have left, my dear.',
-    'See me see trouble. {price} for {item} and the week is almost finished.',
+    'Chai. {price} for {item}. That is more than the {left} dollars you have left, my dear.',
+    'See me see trouble. {price} for {item}, and only {left} dollars left in the week.',
     '{price}? Is it because I am talking gently? {left} dollars left o.',
     'Imagine. {item} at {price}, and only {left} dollars left this week. I love you, but no.',
   ],
@@ -45,7 +45,7 @@ const MAMA = {
     'We said {budget} dollars for the week. {item} alone is {price}. Put it back.',
     '{price} for {item}. The whole week is {budget} dollars. Does money grow on trees?',
     'Ehn ehn. {item} alone is {price}, more than the {budget} dollar week. Let me keep that money for you.',
-    'Nawa o. {price} on one {item}. That is more than the week itself. Cut your coat according to your size.',
+    'Nawa o. {price} on one {item}, more than the {budget} dollar week itself. Cut your coat according to your size.',
     '{price}? For {item}? The week is {budget} dollars, my pikin. At all, at all.',
     'Haba. {price} on {item} when the whole week is {budget} dollars. Put it down, we will talk.',
   ],
@@ -86,7 +86,7 @@ const MAMA = {
   askWatched: [
     '{item}? {watchedMerchant} again. {habit} dollars here last month.',
     '{watchedMerchant} again o. {habit} dollars here last month. What is {item} for?',
-    'Ehen. {watchedMerchant}. I said I would say something. {habit} dollars last month. What is this one for?',
+    'Ehen. {watchedMerchant} again. I said I would say something. {habit} dollars last month. What is this one for?',
   ],
   ackNeed: ['Okay. I will remember.', 'Noted. A need. I will not ask again.', 'Fine. That one is yours. Carry on.', 'Okay o. It is a need. Shikena.'],
   ackFits: ['Okay. It fits. Carry on.', 'It fits the week. Enjoy it small.', 'Fine. {left} dollars after it. Go on.', 'Ehen. Within the week. No wahala.', 'That one fits. I will not disturb you.'],
@@ -117,19 +117,19 @@ const NANA = {
   ],
   shocked: [
     'Well. {price} for {item}, with {left} dollars left this week. I’ll just leave that there.',
-    'For Pete’s sake. {price}, and {left} dollars left in the week.',
+    'For Pete’s sake. {price} for {item}, and {left} dollars left in the week.',
     '{price} for {item}. Isn’t that something. {left} dollars left, hon.',
-    'Hm. {price}. With {left} dollars to go. That’s sure different.',
+    'Hm. {price} for {item}. With {left} dollars to go. That’s sure different.',
     'Oh for cryin’ out loud. {price} on {item} and {left} dollars left.',
-    '{item}, {price}. That is more than what’s left this week. You know that. I love you anyway.',
-    'Uff da. {price}. The week has {left} dollars in it.',
+    '{item}, {price}. That is more than the {left} dollars left this week. You know that. I love you anyway.',
+    'Uff da. {price} for {item}. The week has {left} dollars in it.',
   ],
   shockedBig: [
-    '{price} for {item}, hon. That is the whole week and then some. Put it back.',
+    '{price} for {item}, hon. That is the whole {budget} dollar week and then some. Put it back.',
     'Good grief. {price} on one {item}. The week is {budget} dollars.',
-    '{price}? The whole week is {budget} dollars. If you can’t pay cash, you don’t need it.',
-    'Holy buckets. {price} for {item}. More than the week itself. Put it back for me.',
-    'Well don’t that beat all. {price}, and the week is {budget}. No.',
+    '{price} for {item}? The whole week is {budget} dollars. If you can’t pay cash, you don’t need it.',
+    'Holy buckets. {price} for {item}. More than the {budget} dollar week itself. Put it back for me.',
+    'Well don’t that beat all. {price} for {item}, and the week is {budget}. No.',
   ],
   down: [
     'That is {over} dollars over the week, hon. I’m not going to say anything. You already know.',
@@ -161,6 +161,11 @@ const NANA = {
   family: ['That’s family. That doesn’t count.', 'Family. Never counts. Tell them hi from me.', 'Money home is money home. Good.'],
   statementClose: ['Good week.', 'Better than last week. I noticed.', 'We’ll get there.'],
 };
+
+// The grandmas. Adding one is a brief in character.js, a bank of lines here (same keys), text lines in texts.js, and a
+// voice id in the env; everything else keys off `who`.
+const BANK = { mama: MAMA, nana: NANA };
+const bankOf = (who) => BANK[who] || MAMA;
 
 const NGN = Number(process.env.USD_NGN || 1600); // update before demo
 
@@ -230,7 +235,7 @@ function fill(t, it, week = {}) {
  * @param {'mama'|'nana'} who
  */
 function lineFor(verdict, it, month, who = 'mama') {
-  const bank = who === 'nana' ? NANA : MAMA;
+  const bank = bankOf(who);
   let key = verdict.mood;
   if (verdict.label === 'ask') key = it.watched && bank.askWatched ? 'askWatched' : 'ask';
   if (verdict.tags && verdict.tags.includes('family')) key = 'family';
@@ -248,7 +253,7 @@ function lineFor(verdict, it, month, who = 'mama') {
 // What she says right after you answer the card. She always acknowledges; silence after an answer reads as a
 // dropped call. A declared need gets no comment on its price, by the house rule: need never sets her off.
 function ackLine(verdict, it, who = 'mama') {
-  const bank = who === 'nana' ? NANA : MAMA;
+  const bank = bankOf(who);
   const tags = verdict.tags || [];
   if (verdict.label === 'need' && tags.includes('remembered')) return fill(pick(who, 'ackNeed', bank.ackNeed), it);
   if (verdict.label === 'want' && tags.includes('fits')) return fill(pick(who, 'ackFits', bank.ackFits), it);
@@ -258,7 +263,7 @@ function ackLine(verdict, it, who = 'mama') {
 // After a charge lands. The week's own ratio decides: past the envelope is Gele down and she says so with the
 // naira; inside it she only notes it. Nothing about the person, ever.
 function buyLine(week, it, who = 'mama') {
-  const bank = who === 'nana' ? NANA : MAMA;
+  const bank = bankOf(who);
   if ((week.ratio || 0) >= 1) {
     const base = fill(pick(who, 'down', bank.down), it, week);
     return base + backHome(it.price, it);
@@ -275,18 +280,18 @@ function buyText(week, it, who = 'mama') {
 // Small acknowledgements the card needs on hand: "You're right, Mama", and the item leaving the cart.
 /** The fixed plan line when the model is off. */
 function planLine(who, it, week, proposal) {
-  const bank = who === 'nana' ? NANA : MAMA;
+  const bank = bankOf(who);
   const plain = !it.occasion || it.occasion === 'that';
   if (plain && !proposal) return fill(bank.plan[1] || bank.plan[0], it, week);
   return fill(proposal ? bank.planFund[0] : bank.plan[0], { ...it, fund: proposal ? proposal.amount : 0, occasion: plain ? 'That' : it.occasion }, week);
 }
 function fundedLine(who, amount, week) {
-  const bank = who === 'nana' ? NANA : MAMA;
+  const bank = bankOf(who);
   return fill(bank.funded[0], { fund: amount }, week);
 }
 
 function smallLines(who = 'mama') {
-  const bank = who === 'nana' ? NANA : MAMA;
+  const bank = bankOf(who);
   return { agreed: pick(who, 'agreed', bank.agreed), proud: rare(who, bank.rare) || pick(who, 'proud', bank.proud), watching: pick(who, 'watching', bank.watching), askMany: pick(who, 'askMany', bank.askMany) };
 }
 
@@ -299,7 +304,7 @@ function subLine(month) {
 
 // Weekly statement. Four lines. Numbers first, one line of her at the end.
 function weeklyStatement({ week, biggest, who = 'mama', trend = 0 }) {
-  const bank = who === 'nana' ? NANA : MAMA;
+  const bank = bankOf(who);
   const left = Math.max(0, week.budget - week.spent);
   const close = trend < 0 ? bank.statementClose[1] : trend > 0 ? bank.statementClose[2] : bank.statementClose[0];
   const days = week.daysLeft != null ? week.daysLeft : daysLeftInWeek();
@@ -357,31 +362,11 @@ function daysLeftInWeek(now = new Date()) {
 }
 
 // Optional: let the model write the line in character. It voices the verdict, never changes it.
-const SYSTEM = {
-  mama: `You are Mama, a Nigerian mother who loves her child and shows it by speaking up about money. Warm first, loud second.
-Voice: Nigerian English, with Pidgin only when emotion peaks and one marker per line at most. The markers and what they carry:
-ehen (go on, I see), ehn ehn (no, shock), o at the end (emphasis), sha (anyway), oya (go on), nawa o (unbelievable), chai and haba
-(mild disbelief), shebi (right?), no wahala, my pikin or omo mi (love), it is well (acceptance), shine your eye (be careful).
-Mother lines you may use when they fit the numbers: there is rice at home; does money grow on trees; let me keep that money for you;
-cut your coat according to your size; is it because I am talking gently (a second nudge only); do the mathematics.
-Humour comes from specifics (this item, this store, this week, what they told you), never from catchphrases. Open with the number or
-the item, not with a marker, unless the marker is the whole point. Vary your openers; the person has heard "Ehen" enough.
-Never: sorry for yourself, I am not your mate, the hiss, "you always", any word about the person's character, two markers in one line,
-a proverb with no number next to it, anything a stranger could say about any item. Scold the receipt, never the person.
-You are given a verdict and you only voice it. You never change whether something is a need or a want. Every scolding ends with love.`,
-  nana: `You are Nana, a Midwestern grandmother, 74, retired school secretary from Grand Rapids. Sweet first, dry second. Understatement
-is the joke; she says less than she means and lets the silence work. Short sentences. One regional word per line at most, often none:
-ope, you betcha, uff da, oh for Pete's sake, for cryin' out loud, oh for cute, holy buckets, good grief, that's different (about an item,
-never a person), I suppose, well. Thrift from her mother when the numbers earn it: use it up, wear it out, make it do, or do without;
-waste not, want not; a penny saved; if you can't pay cash you don't need it. "Hon" in at most one line out of three.
-Humour from specifics (this item, this store, this week, what they told you), never from catchphrases. Open with the number or the item.
-Never: that's one way to do it, you're young yet, aren't you ambitious, I'm not mad I'm disappointed, anything about the person's
-character, anything a stranger could say about any item. Always name the amount and the item.
-You are given a verdict and you only voice it. You never change whether something is a need or a want. You are never cruel.`,
-};
+const character = require('./character');
+const SYSTEM = { get mama() { return character.brief('mama'); }, get nana() { return character.brief('nana'); } };
 
-async function callModel(system, userContent) {
-  return require('./model').say({ system, prompt: userContent, maxLen: 400 });
+async function callModel(system, userContent, timeoutMs = 6000) {
+  return require('./model').say({ system, prompt: userContent, maxLen: 400, timeoutMs });
 }
 
 const LINE_RULES = `
@@ -453,7 +438,7 @@ function toNaira(usd) {
 // use for the matching mood, so a new want-at-75% notification sounds exactly like the card's own
 // "watching" mood, over-budget sounds like "down", and proud reuses the proud bank -- no new wording.
 function notifyLine(level, it, who = 'mama', week = {}) {
-  const bank = who === 'nana' ? NANA : MAMA;
+  const bank = bankOf(who);
   const pool = level === 'warning' ? bank.watching : level === 'over' ? bank.down : level === 'proud' ? bank.proud : bank.bought;
   return fill((level === 'proud' && rare(who, bank.rare)) || pick(who, `notify:${level}`, pool), it, week);
 }
@@ -479,24 +464,27 @@ function notifyText(level, week, it, who = 'mama', cartItemNames) {
 // the live bank numbers and any open promises so she can soften, celebrate or call out a broken one.
 const CHAT_RULES = `
 You are replying inside an ongoing text conversation, not announcing a single purchase.
-Use the recent conversation and the list of promises below for context.
-If the user apologizes or agrees with you, soften and close with love.
-If a promise below is marked broken, you may bring it up plainly, but still end with love.
-Needs and money sent home or to savings are never scolded.
-Two or three short sentences, texting style, no greeting like "Hi" or signature.`;
+Answer money questions from the ledger below and nothing else: what they bought (list it, item, amount, where, which day), what is
+due (the bill, the amount, in how many days), savings, what went home, what is left. If a number is not in the ledger, say you do not
+have it. If the user apologizes or agrees with you, soften and close with love. If a promise below is marked broken, you may bring it
+up plainly, but still end with love. Needs and money sent home or to savings are never scolded.
+Two or three short sentences, texting style, no greeting like "Hi" or signature. A list may run longer, one item per line.`;
 
-function modelReply({ who = 'mama', userText, week, history, promises }) {
-  const historyLines = (history || []).slice(-6).map((h) => `${h.from === 'user' ? 'User' : 'You'}: ${h.text}`).join('\n') || '(nothing yet)';
+function modelReply({ who = 'mama', userText, week, ledger = '', history, promises, items = {}, reasons = {} }) {
+  const historyLines = (history || []).slice(-8).map((h) => `${h.from === 'user' ? 'User' : 'You'}: ${h.text}`).join('\n') || '(nothing yet)';
   const promiseLines = (promises || []).map((p) => `- "${p.text}"${p.broken ? ' (broken)' : ''}`).join('\n') || 'None.';
   const bill = (week.bills || [])[0];
   const bank = `This week: $${week.spent} of $${week.budget} gone, $${week.left ?? Math.max(0, week.budget - week.spent)} left, kept $${week.kept}.` +
     (bill ? ` ${bill.nickname || bill.payee} due in ${bill.daysUntil} day(s).` : '');
-  const content = `Recent conversation:\n${historyLines}\n\nPromises:\n${promiseLines}\n\n${bank}\n\nThe user just texted: "${userText}"\nReply in character.`;
+  const remembered = Object.keys(items).length
+    ? Object.entries(items).slice(-10).map(([k, v]) => `${k}: ${v}${reasons[k] ? ` (they said: "${reasons[k]}")` : ''}`).join('; ')
+    : 'nothing yet';
+  const content = `Recent conversation:\n${historyLines}\n\nPromises:\n${promiseLines}\n\n${bank}\n\nLedger:\n${ledger || '(no detail)'}\n\nWhat you remember about items: ${remembered}\n\nThe user just texted: "${userText}"\nReply in character.`;
   return callModel(SYSTEM[who] + '\n' + CHAT_RULES, content);
 }
 
 module.exports = {
-  fresh,
+  fresh, bankOf, BANK,
   shopName, backHome, setHome,
   lineFor, ackLine, buyLine, buyText, smallLines, subLine, weeklyStatement, monthlyStatement, watchLines, whatsLeft,
   modelLine, modelReply, contextLine, planLine, fundedLine, toNaira, notifyLine, notifyText, MAMA, NANA,
