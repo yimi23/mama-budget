@@ -141,7 +141,7 @@ export const COPY: Record<Grandma, Copy> = {
 };
 
 /** The one line on screen 03 about the test. The numbers are docs/RESULTS.md, two raters; in her voice. */
-export const MOTHERS_LINE = 'Checked against two real mothers, 50 purchases. Where they agreed, I agreed with them 81% of the time. Your bank’s categories managed 69%.';
+export const MOTHERS_LINE = 'Two real mothers labelled 50 purchases. Where they agreed, so did I: 81% of the time. Your bank’s categories: 69%.';
 
 const ONES = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
 const TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];

@@ -40,35 +40,33 @@
 
       <!-- 03 Who is checking on you. Neither speaks first. -->
       <section data-step="grandma" hidden>
-        <header><h1>Who is checking on you?</h1><p class="lead">Same rules. Different mouth. You can change this later.</p></header>
+        <header><h1>Who is checking on you?</h1><p class="lead">Same rules. Different mouth.</p><p class="foot" id="mothers"></p></header>
         <div class="pick" role="radiogroup" aria-label="Your grandma">
           <div class="grandma" data-grandma="mama">
             <button type="button" class="tile mama" role="radio" aria-checked="false" aria-label="Mama"><img src="/faces/mama/calm.svg" alt="" /></button>
             <span class="name">Mama</span>
-            <span class="desc">Nigerian. Warm first, loud second. Scolds the receipt, never you.</span>
+            <span class="desc">Nigerian. Warm first, loud second.</span>
             <button type="button" class="hear" data-hear="mama"><span class="play"></span>Hear her</button>
           </div>
           <div class="grandma" data-grandma="nana">
             <button type="button" class="tile nana" role="radio" aria-checked="false" aria-label="Nana"><img src="/faces/nana/calm.svg" alt="" /></button>
             <span class="name">Nana</span>
-            <span class="desc">Midwestern. Sweet first, dry second. Says less than she means.</span>
+            <span class="desc">Midwestern. Sweet first, dry second.</span>
             <button type="button" class="hear" data-hear="nana"><span class="play"></span>Hear her</button>
           </div>
           <div class="grandma" data-grandma="abuela">
             <button type="button" class="tile abuela" role="radio" aria-checked="false" aria-label="Abuela"><img src="/faces/abuela/calm.svg" alt="" /></button>
             <span class="name">Abuela</span>
-            <span class="desc">Mexican American. Quick, warm, dramatic about prices, never about you.</span>
+            <span class="desc">Mexican American. Dramatic about prices.</span>
             <button type="button" class="hear" data-hear="abuela"><span class="play"></span>Hear her</button>
           </div>
           <div class="grandma" data-grandma="wong">
             <button type="button" class="tile wong" role="radio" aria-checked="false" aria-label="Grandma Wong"><img src="/faces/wong/calm.svg" alt="" /></button>
             <span class="name">Grandma Wong</span>
-            <span class="desc">Ran a shop for thirty years. Quiet, dry, compares everything to rice.</span>
+            <span class="desc">Ran a shop for 30 years. One dry line.</span>
             <button type="button" class="hear" data-hear="wong"><span class="play"></span>Hear her</button>
           </div>
         </div>
-        <div class="spacer"></div>
-        <p class="foot" id="mothers"></p>
       </section>
 
       <!-- 04 Where the money lives. She is not on this screen. -->
@@ -179,11 +177,11 @@
       <section data-step="home" hidden>
         <header><h1 id="home-title">Mama is in your cart.</h1><p class="lead" id="home-status"></p></header>
         <div class="list settings">
-          <div class="row stack"><span class="row-title">Where she runs</span><input id="home-api" type="url" inputmode="url" placeholder="http://localhost:8787" aria-label="API address" /><span class="row-sub" id="home-api-sub">Empty means this computer. A teammate's laptop: their address, port 8787.</span></div>
           <div class="row stack"><span class="row-title">Who</span><div class="seg" id="home-grandma"><button type="button" data-v="mama">Mama</button><button type="button" data-v="nana">Nana</button><button type="button" data-v="abuela">Abuela</button><button type="button" data-v="wong">Wong</button></div></div>
           <div class="row stack"><span class="row-title">How loud</span><div class="seg" id="home-loud"></div></div>
           <label class="row between"><span class="row-title">Sounds</span><input type="checkbox" id="home-sounds" /></label>
-          <label class="row between"><span class="row-title">Pause her<span class="row-sub">She leaves every page until you turn this off.</span></span><input type="checkbox" id="home-paused" /></label>
+          <label class="row between"><span class="stack-text"><span class="row-title">Pause her</span><span class="row-sub">She leaves every page until you turn this off.</span></span><input type="checkbox" id="home-paused" /></label>
+          <div class="row stack quiet"><span class="row-title">Where she runs</span><input id="home-api" type="url" inputmode="url" placeholder="http://localhost:8787" aria-label="API address" /><span class="row-sub" id="home-api-sub">Empty means this computer.</span></div>
           <label class="row between"><span class="row-title">Money back home</span><select id="home-currency" aria-label="Currency back home"></select></label>
           <div class="row between"><span class="row-title">Phone</span><span class="row-sub" id="home-phone">Not set</span></div>
           <div class="row between"><span class="row-title">Fun money a week</span><span class="row-sub" id="home-envelope"></span></div>
