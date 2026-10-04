@@ -25,7 +25,9 @@ async function load() {
   const { settings: s = {}, onboarding = {} } = await browser.storage.local.get(['settings', 'onboarding']);
   settings = s as Settings;
   const o = onboarding as Partial<Flow>;
-  flow = settings.onboarded ? { step: 'home', bank: false, texted: false } : { bank: false, texted: false, ...o, step: (o.step as Step) ?? 'welcome' };
+  // Until onboarding has been completed once it always starts at Welcome. Closing the popup halfway, or reloading the
+  // extension, never drops anyone into the middle of it. What was already answered (grandma, bank) is still saved.
+  flow = settings.onboarded ? { step: 'home', bank: false, texted: false } : { bank: false, texted: false, ...o, step: 'welcome' as Step };
   if (flow.step === 'reading' || flow.step === 'saw' || flow.step === 'watch') flow.step = flow.month ? flow.step : 'bank';
 }
 async function saveSettings(patch: Partial<Settings>) {
