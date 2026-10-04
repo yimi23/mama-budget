@@ -54,6 +54,6 @@ test('phone formatting and E.164', () => {
 test('words, naira and timing helpers', () => {
   assert.equal(words(40), 'forty'); assert.equal(words(102), 'one hundred and two');
   assert.equal(naira(75), '₦120,000');
-  assert.equal(speechSeconds('Rice is at home.'), 2.4);
+  assert.equal(speechSeconds('Rice is at home.'), 2.2);
   assert.equal(countUp(40, 600, 0), 0); assert.equal(countUp(40, 600, 600), 40); assert.ok(countUp(40, 600, 300) > 20);
 });

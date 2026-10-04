@@ -175,7 +175,7 @@ async function speak(msg: Extract<Message, { type: 'SPEAK' }>): Promise<{ ok: bo
     });
     if (!res.ok || !(res.headers.get('content-type') ?? '').startsWith('audio/')) {
       // No ElevenLabs: the browser's own voice, so a line is never only text when sound is on.
-      try { browser.tts.speak(msg.text, { rate: 0.9, volume: volumeFor(st.loudness) }); return { ok: true, duration: null }; } catch { return silent; }
+      try { browser.tts.speak(msg.text, { rate: 0.95, volume: volumeFor(st.loudness) }); return { ok: true, duration: null }; } catch { return silent; }
     }
     const dataUrl = toDataUrl(await res.arrayBuffer());
     if (!(await offscreenReady())) return silent;

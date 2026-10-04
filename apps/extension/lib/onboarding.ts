@@ -143,8 +143,8 @@ export function naira(usd: number, perUsd = 1600): string {
 /** How long she will be speaking, when the player did not say: about 2.4 words a second plus a breath. */
 export function speechSeconds(text: string): number {
   const n = text.trim().split(/\s+/).filter(Boolean).length;
-  // About 2.1 words a second at speed 0.9, plus a breath, so the text never lands before she says it.
-  return Math.max(1, Math.round((n / 2.1 + 0.5) * 10) / 10);
+  // About 2.3 words a second at these paces, plus a breath, so the text never lands before she says it.
+  return Math.max(1, Math.round((n / 2.3 + 0.5) * 10) / 10);
 }
 
 /** Decelerating count from 0 to `to` over `ms`, sampled at `t` ms. Screen 09's kept number. */
