@@ -118,7 +118,8 @@ const inFlight = new Map();
 
 // The caller waits CLASSIFY_WAIT_MS at most; the request itself keeps going and lands in the cache, so the next
 // judgement of the same cart (a change, an answer) is right and instant even when the first one had to fall back.
-async function classifyJSON({ system, prompt, schema, key, waitMs = CLASSIFY_WAIT_MS }) {
+async function classifyJSON({ system, prompt, schema, key, waitMs }) {
+  waitMs = waitMs == null ? CLASSIFY_WAIT_MS : waitMs;
   if (!ready()) return null;
   const k = cacheKey([MODEL, 'classify', system, key || prompt]);
   if (classCache.has(k)) return classCache.get(k);
@@ -150,9 +151,9 @@ const ITEM_SCHEMA = { type: 'object', additionalProperties: false, required: ['k
   properties: { kind: { type: 'string', enum: ['necessity', 'discretionary', 'unsure'] }, confidence: { type: 'number' }, why: { type: 'string' } } };
 
 /** Is this item an obvious necessity? { kind, confidence, why } or null when the model is off or slow. */
-async function classifyItem({ name, price, store, habits }) {
+async function classifyItem({ name, price, store, habits, waitMs }) {
   const prompt = `Item: ${name}. Price: $${Math.round(price || 0)}. Store: ${store || 'unknown'}.${habits ? ` This person's recent habits: ${habits}.` : ''}`;
-  return classifyJSON({ system: ITEM_SYSTEM, prompt, schema: ITEM_SCHEMA, key: `${name}|${store}` });
+  return classifyJSON({ system: ITEM_SYSTEM, prompt, schema: ITEM_SCHEMA, key: `${name}|${store}`, waitMs });
 }
 
 const REASON_SYSTEM = `You read the one line a person typed when asked what a purchase is for, and say what it means for their budget.

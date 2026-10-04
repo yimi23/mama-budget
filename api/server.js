@@ -129,9 +129,15 @@ const routes = {
       if (known(item) || item.price < v2.ASK_LINE) continue;
       void contextLine({ kind: 'ask', who, verdict: { label: 'ask', react: false, mood: 'watching', tags: watched ? ['ask', 'watched'] : ['ask'] }, it: spokenOf(item), week: w, month: monthNow, memory, reasons: saidReasons, store, warm: true }).catch(() => null);
     }
+    // How long a verdict may wait for the model: nothing for a small item (a nod either way), a short wait for one
+    // the word list already protects (the model can only overrule it), the full race for a real unknown.
+    const listProtected = (item) => v2.PROTECTED.some((wd) => v2.keyOf(item).includes(wd));
+    const waitFor = (item) => (item.price < v2.ASK_LINE ? 0 : listProtected(item) ? 800 : undefined);
     const kinds = await Promise.all(items.map(async (item) => {
       if (known(item)) return undefined;
-      const c = await model.classifyItem({ name: item.item, price: item.price, store, habits }).catch(() => null);
+      const waitMs = waitFor(item);
+      if (waitMs === 0) return undefined;
+      const c = await model.classifyItem({ name: item.item, price: item.price, store, habits, waitMs }).catch(() => null);
       if (!c || c.kind === 'unsure' || Number(c.confidence) < 0.8) return undefined;
       return c.kind === 'necessity';
     }));

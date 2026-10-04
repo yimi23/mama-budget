@@ -14,11 +14,11 @@ import { toUSD } from '@mama/shared/currency';
 import { locateRow, readCart, readKey } from './readers';
 import { addsUp } from './readers/settle';
 
-const DEBOUNCE_MS = 400;
-const AFTER_ADD_MS = 1200;
+const DEBOUNCE_MS = 250;
+const AFTER_ADD_MS = 700;
 // A read that does not add up to the page subtotal is a cart still rendering. Wait; accept it only once it has
 // held unchanged for this long (some stores show discounts that never add up).
-const SETTLE_MS = 1500;
+const SETTLE_MS = 1000;
 // A page that has shown no items for this long (order history, an emptied cart) stops being watched.
 // An add to cart click or a navigation starts the watch again.
 const IDLE_SLEEP_MS = 60_000;
