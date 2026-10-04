@@ -145,7 +145,8 @@ async function judgeItems(items, { who, mem, w, left, now }) {
   // and only a price she fetched. Said as cash back in the week, which is the framing that moves people.
   const dear = (react || ask || fits[0] || {}).it;
   const followUp = dear && dear.price >= CHEAPER_FROM && model.ready() ? () => cheaper(dear, who) : null;
-  return { reply: lines.join('\n'), mood, react: tapback, intent: 'weigh', followUp, verdicts: judged.map((j) => ({ item: j.it.item, price: j.it.price, label: j.v.label, react: j.v.react })) };
+  const reply = lines.length === 1 ? await writer.fresh(who, lines[0], { situation: `$${left} fun money left this week` }) : lines.join('\n');
+  return { reply, mood, react: tapback, intent: 'weigh', followUp, verdicts: judged.map((j) => ({ item: j.it.item, price: j.it.price, label: j.v.label, react: j.v.react })) };
 }
 
 /** The answer to "what is it for?": an occasion plans it, a need is remembered, a want is weighed now. */
@@ -163,17 +164,17 @@ async function answer(it, text, { who, mem, w, left }) {
   if (kind === 'occasion') {
     mem.items[k] = 'planned';
     mem.reasons = { ...(mem.reasons || {}), [k]: text };
-    return { reply: textLine('planned', { who, item: it.item, price: it.price, occasion: occasion || text, left }), mood: 'calm', intent: 'answer' };
+    return { reply: await writer.fresh(who, textLine('planned', { who, item: it.item, price: it.price, occasion: occasion || text, left }), { situation: `they said it is for ${occasion || text}` }), mood: 'calm', intent: 'answer' };
   }
   if (kind === 'need') {
     mem.items[k] = 'need';
     mem.reasons = { ...(mem.reasons || {}), [k]: text };
-    return { reply: textLine('needNoted', { who, item: it.item }), mood: 'calm', react: 'like', intent: 'answer' };
+    return { reply: await writer.fresh(who, textLine('needNoted', { who, item: it.item }), { situation: `they said: ${text}` }), mood: 'calm', react: 'like', intent: 'answer' };
   }
   mem.items[k] = 'want';
   const v = v2.judge(it, w, mem.items, { loudness: 'mama' });
-  if (v.react) return { reply: writer.lineFor(v, it, w, who), mood: 'shocked', intent: 'answer' };
-  return { reply: textLine('fits', { who, item: it.item, price: it.price, left: Math.max(0, left - it.price) }), mood: 'calm', react: 'like', intent: 'answer' };
+  if (v.react) return { reply: await writer.fresh(who, writer.lineFor(v, it, w, who), { situation: 'they admitted it is just a want and it blows the week' }), mood: 'shocked', intent: 'answer' };
+  return { reply: await writer.fresh(who, textLine('fits', { who, item: it.item, price: it.price, left: Math.max(0, left - it.price) })), mood: 'calm', react: 'like', intent: 'answer' };
 }
 
 module.exports = { weigh, looksLikePurchase, fallbackItems, PRICE };

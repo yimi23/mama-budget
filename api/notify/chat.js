@@ -62,7 +62,7 @@ async function handleIncoming(text, who = 'mama', from, messageId, { images = []
   const left = Math.max(0, before.budget - before.spent);
   const requestId = messageId ? `imsg-${messageId}` : undefined;
   const say = (reply, mood) => { memory.addHistory(mem, who, reply); memory.write(mem); return { reply, mood, intent: cmd.intent }; };
-  if (cmd.intent === 'left') return say(writer.whatsLeft(before, who), before.mood);
+  if (cmd.intent === 'left') return say(await writer.fresh(who, writer.whatsLeft(before, who)), before.mood);
   if (cmd.intent === 'save' || cmd.intent === 'home') {
     if (!(cmd.amount > 0)) return say(textLine('nothing', { who }), 'calm');
     if (cmd.intent === 'save' && cmd.amount > left) return say(textLine('tooMuch', { amount: cmd.amount, left, who }), 'watching');

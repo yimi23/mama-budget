@@ -300,6 +300,7 @@ const routes = {
   },
 
   'POST /reset': async () => {
+    require('./lines/pick').reset();
     const seed = require('./nessie/seed');
     await seed.main();
     watch.resetState();

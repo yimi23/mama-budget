@@ -94,6 +94,8 @@ function priceText(it) {
   return `${usd} dollars`;
 }
 
+const { pick } = require('./pick');
+
 function fill(t, it, week = {}) {
   const budget = Math.round(week.budget || 0);
   const spent = Math.round(week.spent || 0);
@@ -123,9 +125,12 @@ function lineFor(verdict, it, month, who = 'mama') {
   if (verdict.label === 'ask') key = it.watched && bank.askWatched ? 'askWatched' : 'ask';
   if (verdict.tags && verdict.tags.includes('family')) key = 'family';
   const pool = bank[key] || bank.calm;
-  // Shocked lines are chosen by the breach; the rest vary by the item so repeats do not sound canned.
-  const pick = key === 'shocked' ? (Number(it.price || 0) > Number(month.budget || 0) ? 1 : 0) : (it.item || '').length % pool.length;
-  const base = fill(pool[Math.min(pick, pool.length - 1)], it, month);
+  // Shocked lines are chosen by the breach (a price past the whole week gets the bigger line); every other situation
+  // gets a line she has not said lately.
+  const chosen = key === 'shocked'
+    ? pick(who, Number(it.price || 0) > Number(month.budget || 0) ? 'shockedBig' : 'shocked', bank.shockedBig && Number(it.price || 0) > Number(month.budget || 0) ? bank.shockedBig : pool.length > 1 && !bank.shockedBig ? [pool[Number(it.price || 0) > Number(month.budget || 0) ? 1 : 0]] : pool)
+    : pick(who, key, pool);
+  const base = fill(chosen, it, month);
   // The figure back home goes on loud lines only, in the person's own currency (settings.home).
   return verdict.react ? base + backHome(it.price, it) : base;
 }
@@ -135,8 +140,8 @@ function lineFor(verdict, it, month, who = 'mama') {
 function ackLine(verdict, it, who = 'mama') {
   const bank = who === 'nana' ? NANA : MAMA;
   const tags = verdict.tags || [];
-  if (verdict.label === 'need' && tags.includes('remembered')) return fill(bank.ackNeed[0], it);
-  if (verdict.label === 'want' && tags.includes('fits')) return fill(bank.ackFits[(it.item || '').length % bank.ackFits.length], it);
+  if (verdict.label === 'need' && tags.includes('remembered')) return fill(pick(who, 'ackNeed', bank.ackNeed), it);
+  if (verdict.label === 'want' && tags.includes('fits')) return fill(pick(who, 'ackFits', bank.ackFits), it);
   return null;
 }
 
@@ -145,7 +150,7 @@ function ackLine(verdict, it, who = 'mama') {
 function buyLine(week, it, who = 'mama') {
   const bank = who === 'nana' ? NANA : MAMA;
   if ((week.ratio || 0) >= 1) {
-    const base = fill(bank.down[(it.item || '').length % bank.down.length], it, week);
+    const base = fill(pick(who, 'down', bank.down), it, week);
     return base + backHome(it.price, it);
   }
   return fill(bank.bought[0], it);
@@ -172,7 +177,7 @@ function fundedLine(who, amount, week) {
 
 function smallLines(who = 'mama') {
   const bank = who === 'nana' ? NANA : MAMA;
-  return { agreed: bank.agreed[0], proud: bank.proud[0], watching: bank.watching[0], askMany: bank.askMany[0] };
+  return { agreed: pick(who, 'agreed', bank.agreed), proud: pick(who, 'proud', bank.proud), watching: pick(who, 'watching', bank.watching), askMany: pick(who, 'askMany', bank.askMany) };
 }
 
 // The sub line under her quote. Numbers, not character.
@@ -295,6 +300,21 @@ ${it.watched ? `This store is one she promised to watch: $${Math.round(it.watche
   return model.say({ system: SYSTEM[who] + LINE_RULES, prompt, key: situation, mustInclude: must, maxLen: kind === 'ack' ? 160 : 260, timeoutMs: warm ? model.WARM_TIMEOUT_MS : patient ? 4500 : undefined });
 }
 
+const FRESH_TIMEOUT_MS = Number(process.env.MODEL_FRESH_TIMEOUT_MS || 1800);
+/**
+ * The same line, said differently. For texts and acks where a second is affordable: the pool line is the brief,
+ * every number in it must survive, and the result is never cached, so the same situation reads differently each
+ * time. Falls back to the line itself when the model is off, slow, or drops a number.
+ */
+async function fresh(who, line, { situation = '' } = {}) {
+  const model = require('./model');
+  if (!line || !model.ready()) return line;
+  const numbers = (line.match(/\$?\d[\d,]*(?:\.\d+)?%?/g) || []).map((n) => n.replace(/[$,]/g, ''));
+  const prompt = `Say this in your own words, a different way than you usually would, in one or two short sentences under ${Math.max(90, line.length + 30)} characters. Keep every number and every product name exactly as written. Do not add advice.${situation ? ` Situation: ${situation}.` : ''}\nLine: "${line}"`;
+  const out = await model.say({ system: SYSTEM[who] + LINE_RULES, prompt, key: null, mustInclude: numbers, maxLen: Math.max(140, line.length + 40), timeoutMs: FRESH_TIMEOUT_MS }).catch(() => null);
+  return out || line;
+}
+
 async function modelLine(verdict, it, month, who = 'mama') {
   const content = `Verdict: ${verdict.label}, mood ${verdict.mood}, severity ${verdict.severity}. Item: ${it.item}, $${it.price} at ${it.merchant || 'a shop'}. Context: ${it.context || 'none'}. Budget used: ${Math.round((month.ratio || 0) * 100)}%. Say your line.`;
   return callModel(SYSTEM[who], content);
@@ -312,7 +332,7 @@ function toNaira(usd) {
 function notifyLine(level, it, who = 'mama', week = {}) {
   const bank = who === 'nana' ? NANA : MAMA;
   const pool = level === 'warning' ? bank.watching : level === 'over' ? bank.down : level === 'proud' ? bank.proud : bank.bought;
-  return fill(pool[(it.item || '').length % pool.length], it, week);
+  return fill(pick(who, `notify:${level}`, pool), it, week);
 }
 
 // The full text: her line, then the numbers (amount, what's left, days to the next bill, naira),
@@ -353,6 +373,7 @@ function modelReply({ who = 'mama', userText, week, history, promises }) {
 }
 
 module.exports = {
+  fresh,
   shopName, backHome, setHome,
   lineFor, ackLine, buyLine, buyText, smallLines, subLine, weeklyStatement, monthlyStatement, watchLines, whatsLeft,
   modelLine, modelReply, contextLine, planLine, fundedLine, toNaira, notifyLine, notifyText, MAMA, NANA,

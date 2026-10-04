@@ -1,6 +1,8 @@
 // What she says in Messages when it is not a statement or a charge. Those live in writer.js.
 // Same rules: numbers first, one line of her, nothing about the person, one cultural marker at most.
 
+const { pick } = require('./pick');
+
 const MAMA = {
   saved: ['${amount} moved to savings. My pikin. That is how it is done.', 'Good. ${amount} is in savings. I saw it.'],
   home: ['${amount} sent home. That one is never waste. Greet them for me.'],
@@ -45,7 +47,7 @@ const NANA = {
 function textLine(key, { amount, left, who = 'mama', item, price, occasion, store } = {}) {
   const bank = who === 'nana' ? NANA : MAMA;
   const pool = bank[key] || bank.unknown;
-  const t = pool[Math.round(amount || left || 0) % pool.length];
+  const t = pick(who, `text:${key}`, pool);
   return t.replace('${amount}', `$${Math.round(amount || 0)}`).replace(/\$\{left\}/g, `$${Math.round(left || 0)}`)
     .replace('${item}', String(item || 'That').trim()).replace('${price}', `$${Math.round(price || 0)}`)
     .replace('${occasion}', String(occasion || 'the occasion').trim().replace(/[.!?]+$/, ''))
