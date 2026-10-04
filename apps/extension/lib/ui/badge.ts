@@ -47,10 +47,13 @@ const CSS = `
 .badge:hover { transform: scale(1.04); }
 .badge:focus-visible { outline: 3px solid #22172A; outline-offset: 3px; }
 .face { width: 100%; height: 100%; display: block; pointer-events: none; }
+.badge.shake { animation: shake 300ms cubic-bezier(0.3, 0, 0.8, 0.15); }
+@keyframes shake { 0%, 100% { transform: none; } 20% { transform: rotate(-8deg); } 40% { transform: rotate(7deg); } 60% { transform: rotate(-5deg); } 80% { transform: rotate(3deg); } }
 @keyframes enter { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) {
   .wrap { animation: none; }
   .fill, .badge { transition: none; }
+  .badge.shake { animation: none; }
 }
 `;
 
@@ -71,7 +74,11 @@ export function describe(s: BadgeState): string {
 }
 
 export interface Badge {
+  /** The shared shadow root, so the card lives in the same single host. */
+  root: ShadowRoot;
   update(s: BadgeState): void;
+  /** Mood change only: 300ms, skipped under reduced motion. */
+  shake(): void;
   hide(): void;
   destroy(): void;
 }
@@ -115,6 +122,12 @@ export function mountBadge(): Badge {
 
   let faceKey = '';
   return {
+    root,
+    shake() {
+      badge.classList.remove('shake');
+      void badge.offsetWidth; // restart the animation
+      badge.classList.add('shake');
+    },
     update(s) {
       const key = `${s.grandma}/${s.mood}`;
       if (key !== faceKey) {

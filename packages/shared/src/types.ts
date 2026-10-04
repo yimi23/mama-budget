@@ -36,3 +36,29 @@ export interface Week {
   daysLeft: number;
   bills: { payee: string; nickname?: string; amount: number; due: string; daysUntil: number }[];
 }
+
+export type Label = 'need' | 'want' | 'ask';
+export type Answer = 'need' | 'want';
+
+/** One item's verdict from POST /v2/judge. The judge decided; the line only says it. */
+export interface Verdict {
+  name: string;
+  /** Short spoken name for her lines: "Fujifilm Instax Mini 99". */
+  short: string;
+  price: number;
+  /** What an answer is stored under. Key logic lives in the rules only. */
+  key: string;
+  label: Label;
+  react: boolean;
+  mood: Mood;
+  reason: string;
+  tags: string[];
+  line: string;
+  sub: string;
+}
+
+export interface JudgeReply {
+  week: Week;
+  mood: Mood;
+  verdicts: Verdict[];
+}
