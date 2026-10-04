@@ -1,0 +1,31 @@
+# Every push to main becomes the build teammates and judges download: tests, the extension zip, a rolling "latest"
+# release. The versioned releases (v0.1.0) stay hand made.
+name: build
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build:ext
+      - name: Zip the extension
+        run: cd apps/extension/build && zip -qr ../../../mama-budget-extension-latest.zip chrome-mv3 -x "*.DS_Store"
+      - name: Rolling latest release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest build (main)
+          prerelease: true
+          body: "Built from the newest push to main. Unzip, then chrome://extensions, Developer mode, Load unpacked, pick chrome-mv3. Teammates: npm run update does the same from source."
+          files: mama-budget-extension-latest.zip

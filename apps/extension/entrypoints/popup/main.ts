@@ -364,6 +364,25 @@ function paintHome() {
 }
 SHOW.home = () => { homeNote.textContent = ''; paintHome(); };
 for (const b of document.querySelectorAll<HTMLButtonElement>('#home-grandma button')) b.addEventListener('click', async () => { await saveSettings({ grandma: b.dataset.v as Grandma }); paintHome(); });
+// The API address: saved on change, checked at once, so a wrong address shows before a judge does.
+{
+  const field = $('#home-api') as HTMLInputElement;
+  const sub = $('#home-api-sub');
+  field.value = settings.apiUrl ?? '';
+  field.addEventListener('change', async () => {
+    const url = field.value.trim().replace(/\/+$/, '');
+    await saveSettings({ apiUrl: url || undefined });
+    if (!url) { sub.textContent = 'Empty means this computer.'; return; }
+    sub.textContent = 'Checking…';
+    try {
+      const r = await fetch(`${url}/health`, { signal: AbortSignal.timeout(4000) });
+      const j = (await r.json()) as { ok?: boolean };
+      sub.textContent = j.ok ? `She answers at ${url}.` : `Something answers at ${url}, but it is not her.`;
+    } catch {
+      sub.textContent = `Nothing answers at ${url}. Is the API running there, and are you on the same network?`;
+    }
+  });
+}
 $('#home-currency').addEventListener('change', (e) => { void saveSettings({ home: (e.target as HTMLSelectElement).value as Home }).then(paintHome); });
 $('#home-sounds').addEventListener('change', (e) => { void saveSettings({ sounds: (e.target as HTMLInputElement).checked }).then(() => { paintHome(); paintMute(); }); });
 $('#home-over').addEventListener('click', async () => {

@@ -142,6 +142,8 @@ Load the extension: `chrome://extensions`, Developer mode on, **Load unpacked**,
 
 Keys are optional. With none set the API runs on the local ledger cache, she speaks from the fixed line bank through `browser.tts`, and texts are off. With a Nessie key the bank is live. With an Anthropic key she reads carts she has never seen and writes lines from the situation. With an ElevenLabs key she has her voices.
 
+**Teammates and a second laptop.** `npm run update` pulls, installs and builds; then click Reload on the extension in `chrome://extensions`. Every push to `main` also publishes `mama-budget-extension-latest.zip` on the `latest` release. To share one Mama between two laptops (one ledger, one phone number), run the API on one of them and put its address, for example `http://10.0.0.12:8787`, in the popup's home screen under "Where she runs"; the other laptop's extension then talks to it. The API listens on every interface and trusts any extension origin.
+
 Useful during a judging session: **Start over** in the popup resets her memory and the bank. `POST /reset` does the same from the terminal. `npm run dev` runs the extension in watch mode and the API together.
 
 ## Where things are

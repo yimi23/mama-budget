@@ -1,11 +1,22 @@
 // The worker's door to our API. Retries once; after two failed calls in a row the badge hides until /health answers.
 // The failure count lives in storage.session because worker globals die after 30 seconds.
 
-export const API = 'http://localhost:8787';
+export const DEFAULT_API = 'http://localhost:8787';
 const TIMEOUT_MS = 4000;
 
+/** Where the API lives. localhost by default; a teammate's laptop on the hotspot, or a hosted one, from settings.apiUrl. */
+export async function apiBase(): Promise<string> {
+  try {
+    const { settings = {} } = await browser.storage.local.get('settings');
+    const url = String((settings as { apiUrl?: string }).apiUrl || '').trim().replace(/\/+$/, '');
+    return /^https?:\/\/[^\s/]+$/.test(url) ? url : DEFAULT_API;
+  } catch {
+    return DEFAULT_API;
+  }
+}
+
 async function once(path: string, init?: RequestInit): Promise<unknown> {
-  const res = await fetch(API + path, { ...init, signal: AbortSignal.timeout(TIMEOUT_MS) });
+  const res = await fetch((await apiBase()) + path, { ...init, signal: AbortSignal.timeout(TIMEOUT_MS) });
   if (!res.ok) throw new Error(`${path} ${res.status}`);
   return res.json();
 }

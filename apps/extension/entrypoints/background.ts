@@ -2,7 +2,7 @@
 
 import type { HandledLists, Message } from '@mama/shared/messages';
 import type { Answer, BuyReply, CartItem, CartRead, CurrencyCode, JudgeReply, Month, PlanReply, Week } from '@mama/shared/types';
-import { API, apiUp, call } from '../lib/api';
+import { apiBase, apiUp, call } from '../lib/api';
 import { weekKey } from '@mama/shared/week';
 import { regionHome } from '../lib/onboarding';
 import { quietHours } from '../lib/quiet';
@@ -191,7 +191,7 @@ async function speak(msg: Extract<Message, { type: 'SPEAK' }>): Promise<{ ok: bo
   if (st.sounds === false || (st.quietHours === true && quietHours())) return silent;
   if (!(await apiUp())) return silent;
   try {
-    const res = await fetch(`${API}/tts`, {
+    const res = await fetch(`${await apiBase()}/tts`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ text: msg.text, grandma: msg.grandma, mood: msg.mood ?? 'calm' }), signal: AbortSignal.timeout(8000),
     });
@@ -210,9 +210,10 @@ async function speak(msg: Extract<Message, { type: 'SPEAK' }>): Promise<{ ok: bo
 
 /** Onboarding 05: ask the API to generate (and cache) these lines now, so screen 06 speaks the moment it opens. */
 async function warm(msg: Extract<Message, { type: 'WARM' }>): Promise<{ ok: true }> {
+  const base = await apiBase();
   if (!(await apiUp())) return { ok: true };
   await Promise.all(msg.texts.filter(Boolean).map((text) =>
-    fetch(`${API}/tts`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text, grandma: msg.grandma }), signal: AbortSignal.timeout(12000) }).catch(() => null),
+    fetch(`${base}/tts`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text, grandma: msg.grandma }), signal: AbortSignal.timeout(12000) }).catch(() => null),
   ));
   return { ok: true };
 }
@@ -255,7 +256,7 @@ async function health() {
   if (!api) return { api, texts: false, voice: false };
   const [photon, voice] = await Promise.all([
     call<{ sender: string }>('/photon/health'),
-    fetch(`${API}/tts`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text: 'I am here.', grandma: await grandmaSetting() }), signal: AbortSignal.timeout(8000) })
+    fetch(`${await apiBase()}/tts`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text: 'I am here.', grandma: await grandmaSetting() }), signal: AbortSignal.timeout(8000) })
       .then((r) => r.ok && (r.headers.get('content-type') ?? '').startsWith('audio/')).catch(() => false),
   ]);
   return { api, texts: !!photon && photon.sender !== 'log', voice };

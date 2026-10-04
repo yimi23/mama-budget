@@ -216,4 +216,6 @@ export interface Settings {
   envelope?: number;
   ignoredWatches?: string[];
   onboarded?: boolean;
+  /** The API's address when it is not this machine (a teammate's laptop on the hotspot, or a hosted one). */
+  apiUrl?: string;
 }

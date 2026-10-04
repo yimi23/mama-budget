@@ -12,7 +12,8 @@
     "reseed": "node api/nessie/reseed.js",
     "score": "node scoring/score.js",
     "test": "node --test api/test/*.test.js && npm test -w @mama/extension",
-    "typecheck": "npm run typecheck -w @mama/extension"
+    "typecheck": "npm run typecheck -w @mama/extension",
+    "update": "git pull --rebase --autostash && npm install && npm run build:ext && echo \"Built. In chrome://extensions click Reload on Mama Budget.\""
   },
   "engines": {
     "node": ">=20"
