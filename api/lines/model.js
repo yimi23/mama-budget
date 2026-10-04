@@ -51,7 +51,8 @@ async function sayOnce({ system, prompt, k, key, mustInclude, maxLen, timeoutMs 
     if (process.env.MODEL_LOG_USAGE === '1') console.log('[model] usage', JSON.stringify(res.usage));
     const text = res.content.filter((b) => b.type === 'text').map((b) => b.text).join(' ').replace(/\s+/g, ' ').trim();
     if (!text || text.length > maxLen || /[—–]| - |[\u{1F300}-\u{1FAFF}]/u.test(text)) return null;
-    for (const m of mustInclude) if (!text.toLowerCase().includes(String(m).toLowerCase())) return null;
+    // Each entry must appear; an entry that is an array is satisfied by any of its words ("Apple AirPods Pro" is said as AirPods).
+    for (const m of mustInclude) { const alts = Array.isArray(m) ? m : [m]; if (!alts.some((a) => text.toLowerCase().includes(String(a).toLowerCase()))) return null; }
     if (key) lineCache.set(k, text);
     return text;
   } catch {

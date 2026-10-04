@@ -509,7 +509,8 @@ This week: $${Math.round(week.spent || 0)} of $${Math.round(week.budget || 0)} f
 ${bill ? `Bill coming: ${bill.nickname || bill.payee} $${bill.amount} in ${bill.daysUntil} day(s).` : 'No bills in the next week.'}
 Last 30 days habits: ${habits || 'not much'}.
 ${it.watched ? `This store is one she promised to watch: $${Math.round(it.watched.amount || 0)} spent here in the last 30 days. Say so.\n` : ''}What she remembers about this person's answers: ${remembered}.${reason ? `\nThe person just said this item is for: "${reason}".` : ''}${proposal ? `\nThe plan she may offer: take $${proposal.amount} from savings for this week (savings hold $${savings}); the week would then cover it.` : ''}`;
-  const must = kind === 'ask' ? [it.item.split(' ')[0]] : kind === 'react' || kind === 'bought' ? [String(Math.round(it.price || 0))] : kind === 'plan' && proposal ? [String(proposal.amount)] : [];
+  const nameWords = String(it.item).split(/\s+/).slice(0, 3).filter((wd) => wd.replace(/[^a-z0-9]/gi, '').length >= 3);
+  const must = kind === 'ask' ? [nameWords.length ? nameWords : [it.item.split(' ')[0]]] : kind === 'react' || kind === 'bought' ? [String(Math.round(it.price || 0))] : kind === 'plan' && proposal ? [String(proposal.amount)] : [];
   // A typed reason earns a few seconds for her answer; a card on a cart gets the short inline budget.
   const patient = kind === 'plan' || kind === 'funded';
   // A first sighting can wait a breath: the badge is already on screen, and a line that names the store and the
