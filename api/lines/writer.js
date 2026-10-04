@@ -528,8 +528,11 @@ async function fresh(who, line, { situation = '' } = {}) {
   const model = require('./model');
   if (!line || !model.ready()) return line;
   const numbers = (line.match(/\$?\d[\d,]*(?:\.\d+)?%?/g) || []).map((n) => n.replace(/[$,]/g, ''));
-  const prompt = `Say this in your own words, a different way than you usually would, in one or two short sentences under ${Math.max(90, line.length + 30)} characters. Keep every number and every product name exactly as written. Do not add advice.${situation ? ` Situation: ${situation}.` : ''}\nLine: "${line}"`;
-  const out = await model.say({ system: SYSTEM[who] + LINE_RULES, prompt, key: null, mustInclude: numbers, maxLen: Math.max(140, line.length + 40), timeoutMs: FRESH_TIMEOUT_MS }).catch(() => null);
+  // A number's meaning must survive with it: "$200 left" once came back as "$200 gone". The words that carry the
+  // meaning of a figure in the pool line have to appear in the rephrase too.
+  const meaning = ['left', 'gone', 'over', 'kept', 'saved', 'home', 'due', 'back'].filter((w) => new RegExp(`\\b${w}\\b`, 'i').test(line));
+  const prompt = `Say this in your own words, a different way than you usually would, in one or two short sentences under ${Math.max(90, line.length + 30)} characters. Keep every number and every product name exactly as written, and keep what each number means: money that is left stays "left", money gone stays "gone", money over the week stays "over". Do not add advice.${situation ? ` Situation: ${situation}.` : ''}\nLine: "${line}"`;
+  const out = await model.say({ system: SYSTEM[who] + LINE_RULES, prompt, key: null, mustInclude: [...numbers, ...meaning], maxLen: Math.max(140, line.length + 40), timeoutMs: FRESH_TIMEOUT_MS }).catch(() => null);
   return out || line;
 }
 

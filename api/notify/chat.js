@@ -124,11 +124,12 @@ async function handleIncoming(text, who = 'mama', from, messageId, { images = []
     who = cmd.who;
     return say(GRANDMA_HELLO[who].replace('${left}', `$${left}`), before.mood);
   }
-  if (cmd.intent === 'left') return say(await writer.fresh(who, writer.whatsLeft(before, who)), before.mood);
+  // Facts are said as written. Only her reactions get said fresh; a rephrased figure once changed its meaning.
+  if (cmd.intent === 'left') return say(writer.whatsLeft(before, who), before.mood);
   if (cmd.intent === 'bought' || cmd.intent === 'bills' || cmd.intent === 'savings') {
     const view = ledgerView();
     const line = cmd.intent === 'bought' ? boughtLine(view, cmd.about, before, who) : cmd.intent === 'bills' ? billsLine(view, who) : savingsLine(view, before);
-    return say(await writer.fresh(who, line, { situation: 'they asked about their own ledger; every number must stay' }), before.mood);
+    return say(line, before.mood);
   }
   if (cmd.intent === 'save' || cmd.intent === 'home') {
     if (!(cmd.amount > 0)) return say(textLine('nothing', { who }), 'calm');
