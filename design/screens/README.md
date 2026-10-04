@@ -12,7 +12,7 @@ Numbered in build order. PNG is how it looks (2x). HTML next to it is the exact 
   She talks you through it and does things while you watch: the voice and action script per screen is docs/ONBOARDING.md. Green bars mark where she is speaking in the frame; the speaker mark top right is mute.
 10 to 15: Mama on a cart page, every state.
 16 to 19: Nana, the states that differ.
-20 to 23: mamabudget.com desktop, one page in four sections.
-24 to 27: mamabudget.com phone.
+20 to 23: mamabudget.com desktop, one page in four sections. Rebuilt Oct 4, 7:40am with everything learned: the real cart with her badge and Ask card as the hero image, the three How beats in her own voice (I read every item, I ask first, I speak when it matters), Kept not spent as the hero number with the Sunday text and the naira line, all four grandmas on the pick section with the loudness tiers, honesty line in the footer. These eight PNGs were rendered with the real Bricolage Grotesque.
+24 to 27: mamabudget.com phone, same four sections.
 
 Not yet drawn: home panel after setup, settings, paused on this site, weekly statement on iMessage, two way text, the score slide. Specs for those are in docs/PLAN.md.
