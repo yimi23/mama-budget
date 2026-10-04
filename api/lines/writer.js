@@ -6,13 +6,13 @@
 const MAMA = {
   calm: ['Ehen. Carry on.', 'I see you. Good.'],
   watching: ['I dey watch you o.', 'Seventy five percent. I am counting.'],
+  // Loud lines name the plan, not the pantry: the price, the item, what is left in the week. Scold the receipt.
+  // Picked by the breach, not by chance: [0] the item beats what is left, [1] the item alone beats the whole week.
   shocked: [
-    '{price} dollars. For {item}. The one you have, is it not working?',
-    'Ehn ehn. Put it back. We will talk when you get home.',
+    '{price} dollars, with {left} dollars left this week. You are sure?',
+    'We said {budget} dollars for the week. {item} alone is {price}.',
   ],
-  // Screen 13. Leads whenever a protected item shares the cart: the contrast is the whole point.
-  shockedContrast: ['You came to {merchant} for {contrast}. How did {item} enter the cart?'],
-  down: ['Is it me you are doing this to?', 'Okay. I have heard.'],
+  down: ['That is the week gone. {over} dollars over, on {item}.', 'Okay. I have heard. {over} dollars past the week.'],
   proud: ['My pikin. Come and hug me.', 'You see? Good child. I knew it.'],
   ask: ['{item}? Tell me the story first.', 'Before I talk, explain {item} to me.'],
   ackNeed: ['Okay. I will remember.'],
@@ -28,11 +28,10 @@ const NANA = {
   calm: ['Looks good, hon.', 'Okay.'],
   watching: ['Honey. I’m looking.', 'Three quarters gone. Just so you know.'],
   shocked: [
-    '{price} dollars. For {item}. Honey.',
-    'Well. That’s a lot of money for {item}.',
+    '{price} dollars for {item}, hon. You had {left} left this week.',
+    '{price} dollars, hon. That is more than the whole week. Just so you know.',
   ],
-  shockedContrast: ['You came for {contrast}, hon. How did {item} get in there?'],
-  down: ['Okay. I’m not going to say anything.'],
+  down: ['Okay. {over} over for the week. I’m not going to say anything.'],
   proud: ['Oh good. I knew you would.', 'Well look at you. Good for you, hon.'],
   ask: ['Hold on a sec, hon. What’s {item} for?'],
   ackNeed: ['Okay. Noted.'],
@@ -57,11 +56,16 @@ function shopName(merchant) {
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
-function fill(t, it) {
+// week gives the plan numbers: {left} before this purchase, {budget}, and {over} once the week is past it.
+function fill(t, it, week = {}) {
+  const budget = Math.round(week.budget || 0);
+  const spent = Math.round(week.spent || 0);
   const line = t
     .replace('{item}', (it.item || 'this').replace(/,.*$/, '').trim())
-    .replace('{contrast}', (it.contrast || 'the essentials').replace(/,.*$/, '').trim().toLowerCase())
     .replace('{price}', Math.round(it.price || 0))
+    .replace('{left}', Math.max(0, budget - spent))
+    .replace('{budget}', budget)
+    .replace('{over}', Math.max(0, spent - budget))
     .replace('{merchant}', shopName(it.merchant));
   return line.charAt(0).toUpperCase() + line.slice(1);
 }
@@ -77,9 +81,10 @@ function lineFor(verdict, it, month, who = 'mama') {
   let key = verdict.mood;
   if (verdict.label === 'ask') key = 'ask';
   if (verdict.tags && verdict.tags.includes('family')) key = 'family';
-  let pool = bank[key] || bank.calm;
-  if (key === 'shocked' && it.contrast && bank.shockedContrast) pool = bank.shockedContrast;
-  const base = fill(pool[(it.item || '').length % pool.length], it);
+  const pool = bank[key] || bank.calm;
+  // Shocked lines are chosen by the breach; the rest vary by the item so repeats do not sound canned.
+  const pick = key === 'shocked' ? (Number(it.price || 0) > Number(month.budget || 0) ? 1 : 0) : (it.item || '').length % pool.length;
+  const base = fill(pool[Math.min(pick, pool.length - 1)], it, month);
   // Mama adds the naira, unless the store already priced it in naira.
   if (who === 'mama' && verdict.react && it.price && it.currency !== 'NGN') {
     return `${base} That is ${Math.round(it.price * NGN).toLocaleString()} naira.`;
@@ -102,7 +107,7 @@ function ackLine(verdict, it, who = 'mama') {
 function buyLine(week, it, who = 'mama') {
   const bank = who === 'nana' ? NANA : MAMA;
   if ((week.ratio || 0) >= 1) {
-    const base = fill(bank.down[(it.item || '').length % bank.down.length], it);
+    const base = fill(bank.down[(it.item || '').length % bank.down.length], it, week);
     return who === 'mama' && it.price && it.currency !== 'NGN' ? `${base} That is ${Math.round(it.price * NGN).toLocaleString()} naira.` : base;
   }
   return fill(bank.bought[0], it);

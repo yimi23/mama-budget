@@ -90,11 +90,8 @@ const routes = {
     const items = (body.items || []).map((it) => ({ item: String(it.name || ''), price: Number(it.unitPrice || 0) * Number(it.qty || 1), merchant: it.store || '', currency: body.currency || 'USD' }));
     // The rules judge the full title (the protected word is often at the end: "...Fragrant Rice"); her line gets the short name.
     const judged = items.map((item) => ({ item, v: v2.judge(item, w, memory) }));
-    // Screen 13: when a protected item shares the cart, the shocked line names it ("You came for rice").
-    const protectedItem = judged.find(({ v }) => v.tags.includes('protected'));
-    const contrast = protectedItem ? essentialWord(protectedItem.item.item) : null;
     const verdicts = judged.map(({ item, v }) => {
-      const spoken = { ...item, item: shortName(item.item), contrast };
+      const spoken = { ...item, item: shortName(item.item) };
       return { name: item.item, short: spoken.item, price: item.price, ...v, line: lineFor(v, spoken, w, who), ack: ackLine(v, spoken, who), sub: subLine(w) };
     });
     const loud = verdicts.find((v) => v.react) || verdicts.find((v) => v.label === 'ask');
@@ -226,13 +223,6 @@ function shortName(name) {
   const words = head.split(/\s+/).slice(0, 6);
   while (words.length > 1 && FILLER.has(words[words.length - 1].toLowerCase())) words.pop();
   return words.join(' ');
-}
-
-// The one word she would say for a protected item: "Iberia Jasmine Long Grain Fragrant Rice, 18 Pound" -> "rice".
-function essentialWord(name) {
-  const n = String(name || '').toLowerCase();
-  const hit = v2.PROTECTED.filter((w) => n.includes(w)).sort((a, b) => b.length - a.length)[0];
-  return hit || shortName(name).toLowerCase();
 }
 
 function rank(mood) { return ['calm', 'proud', 'watching', 'shocked', 'down'].indexOf(mood); }

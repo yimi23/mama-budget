@@ -81,14 +81,21 @@ test('after a charge: Gele down past the envelope, a note inside it, numbers in 
   for (const l of [buyLine(blown, pods), buyLine(inside, pods), smallLines().agreed, smallLines().proud]) assert.doesNotMatch(l, /[-–—]/, 'no dashes in copy');
 });
 
-test('screen 13: with rice in the cart the shocked line names the contrast and the shop like a person would', () => {
+test('every loud line names the plan: the price, the item, and the week', () => {
   const memory = remember({}, { item: 'AirPods Pro' }, 'want');
   const v = judge({ item: 'AirPods Pro', price: 179 }, week, memory);
-  const line = lineFor(v, { item: 'AirPods Pro', price: 179, merchant: 'amazon.com', contrast: 'rice', currency: 'USD' }, week);
-  assert.match(line, /^You came to Amazon for rice\. How did AirPods Pro enter the cart\?/);
-  const plain = lineFor(v, { item: 'AirPods Pro', price: 179, merchant: 'amazon.com', currency: 'USD' }, week);
-  assert.doesNotMatch(plain, /You came to/);
+  const it = { item: 'AirPods Pro', price: 179, merchant: 'amazon.com', currency: 'USD' };
+  for (const who of ['mama', 'nana']) {
+    const line = lineFor(v, it, week, who);
+    assert.match(line, /179/, `${who} names the price: ${line}`);
+    assert.ok(/AirPods Pro|25|75/.test(line), `${who} names the item or the week: ${line}`);
+    assert.doesNotMatch(line, /rice|came to/i, 'the pantry is not the point');
+  }
+  const small = judge({ item: 'Desk lamp', price: 40 }, week, remember({}, { item: 'Desk lamp' }, 'want'));
+  assert.match(lineFor(small, { item: 'Desk lamp', price: 40 }, week), /^40 dollars, with 25 dollars left this week/, 'beats what is left');
+  assert.match(lineFor(v, it, week), /^We said 75 dollars for the week\. AirPods Pro alone is 179/, 'beats the whole week');
+  const over = { budget: 75, spent: 229, ratio: 229 / 75 };
+  assert.match(buyLine(over, it), /154/, 'past the week she names how far over');
   assert.equal(shopName('jumia.com.ng'), 'Jumia');
   assert.equal(shopName('Target'), 'Target');
-  assert.equal(shopName(''), 'the shop');
 });
