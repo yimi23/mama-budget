@@ -122,6 +122,7 @@ const routes = {
     const habits = (nessie.month().topWants || []).slice(0, 3).map((t) => `$${t.amount} at ${t.merchant}`).join(', ');
     const known = (item) => memory[v2.keyOf(item)] != null;
     const monthNow = nessie.month();
+    const deadline = Date.now() + 2800; // the whole judgement, classification and her line, inside this
     const spokenOf = (item) => ({ ...item, item: item.period ? `${shortName(item.item)} at $${Math.round(item.price)} a ${item.period}` : shortName(item.item) });
     // Her ask line starts now, in parallel with classification: an unknown item past the lowest ask line is an ask more
     // often than not, and lines are cached by situation, so the real call a few seconds on finds it written or in flight.
@@ -158,7 +159,7 @@ const routes = {
       const isCard = v.label === 'ask' || v.react;
       if (isCard && budgetLeft-- > 0) {
         const kind = v.react ? 'react' : 'ask';
-        const written = await contextLine({ kind, who, verdict: v, it: spoken, week: w, month: monthNow, memory, reasons: saidReasons, store }).catch(() => null);
+        const written = await contextLine({ kind, who, verdict: v, it: spoken, week: w, month: monthNow, memory, reasons: saidReasons, store, deadline }).catch(() => null);
         if (written) line = v.react ? written + backHome(item.price, item) : written;
       }
       if (v.label === 'ask') {

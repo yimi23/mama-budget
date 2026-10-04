@@ -493,7 +493,7 @@ Quote a remembered reason when it is relevant ("you said the chair was for your 
  * Her line written from the whole situation: the verdict the rules reached, the week, the month's habits, the bills, what
  * she remembers, the store. The rules decided; this only words it. Returns null on any failure so the fixed pools take over.
  */
-async function contextLine({ kind, who = 'mama', verdict, it, week, month, memory, store, warm = false, reason = null, reasons = null, proposal = null, savings = null }) {
+async function contextLine({ kind, who = 'mama', verdict, it, week, month, memory, store, warm = false, reason = null, reasons = null, proposal = null, savings = null, deadline = null }) {
   const model = require('./model');
   // The cache key is the situation, not the prompt: the same item, price, week and store gives the same line whether
   // it was written ahead of time (while the ask was on screen) or at the moment of the card.
@@ -515,7 +515,9 @@ ${it.watched ? `This store is one she promised to watch: $${Math.round(it.watche
   const patient = kind === 'plan' || kind === 'funded';
   // A first sighting can wait a breath: the badge is already on screen, and a line that names the store and the
   // cart beats a pool line that could be said about any item.
-  const budget = warm ? model.WARM_TIMEOUT_MS : patient ? 4500 : kind === 'ask' ? 2400 : undefined;
+  // A card's budget is measured from when the cart was read, not from when this call started: the line was already
+  // in flight while the item was classified, so the wait left is the deadline minus what has already passed.
+  const budget = warm ? model.WARM_TIMEOUT_MS : patient ? 4500 : deadline ? Math.max(300, deadline - Date.now()) : kind === 'ask' ? 2400 : undefined;
   return model.say({ system: SYSTEM[who] + LINE_RULES, prompt, key: situation, mustInclude: must, maxLen: kind === 'ack' ? 160 : 260, timeoutMs: budget });
 }
 
