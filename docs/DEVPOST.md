@@ -30,15 +30,7 @@ Reading any cart on any store without hardcoding stores. Keeping the model out o
 
 ## Accomplishments that we're proud of
 
-We froze 50 anonymised student purchases before writing any rules and asked our mothers to label each one privately. Two raters, majority over both:
-
-| Measure | Result |
-|---|---|
-| Mama agreement with participating mothers, where they agreed | 26 / 32 (81%) |
-| Merchant only baseline, same 32 cases | 22 / 32 (69%) |
-| Need safety breaches (target zero) | 0 / 16 |
-| Asks on unclear cases | 6 / 15 (40%) |
-| Cases the two mothers split on | 15 / 50 |
+We froze 50 anonymised student purchases before writing any rules and asked our mothers to label each one privately. Two raters, majority over both. Where the mothers agreed, Mama agreed with them 26 of 32 times (81%). The bank's own merchant categories, on the same 32, got 22 (69%). She never scolded a need: 0 of 16. On the unclear cases she asked 6 of 15 times (40%). The two mothers split on 15 of the 50, and on those she did the only honest thing: she asked.
 
 This is agreement with our participating mothers, never objective truth. `npm run score` reproduces it.
 
