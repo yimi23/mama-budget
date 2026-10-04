@@ -35,6 +35,17 @@ function readField(scope: Element | Document, f: Field): string {
   return v.replace(/\s+/g, ' ').trim();
 }
 
+const near = (a: number, b: number) => Math.abs(a - b) < 0.01;
+
+/** Stores differ on whether the row price is per unit or the line total. The page's own subtotal settles it. */
+function reconcile(items: CartItem[], subtotal: number | null): CartItem[] {
+  if (subtotal == null || !items.some((i) => i.qty > 1)) return items;
+  const asUnit = items.reduce((s, i) => s + i.unitPrice * i.qty, 0);
+  const asLine = items.reduce((s, i) => s + i.unitPrice, 0);
+  if (near(asUnit, subtotal) || !near(asLine, subtotal)) return items;
+  return items.map((i) => ({ ...i, unitPrice: Math.round((i.unitPrice / i.qty) * 100) / 100 }));
+}
+
 export function runAdapter(spec: AdapterSpec, doc: Document): CartRead | null {
   const root = doc.querySelector(spec.root);
   if (!root) return null;
@@ -50,9 +61,10 @@ export function runAdapter(spec: AdapterSpec, doc: Document): CartRead | null {
     priceText ||= rawPrice;
   }
   const subtotalText = spec.subtotal ? readField(doc, spec.subtotal) : '';
+  const subtotal = subtotalText ? parsePrice(subtotalText) : null;
   return {
-    items,
-    subtotal: subtotalText ? parsePrice(subtotalText) : null,
+    items: reconcile(items, subtotal),
+    subtotal,
     // Attribute prices carry no symbol; the subtotal text usually does.
     currency: currencyOf(subtotalText || priceText),
     source: 'adapter',

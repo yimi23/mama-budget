@@ -7,8 +7,9 @@ import { storeKey } from '@mama/shared/store-key';
 import { readPlatform } from './platform';
 import { runAdapter, type AdapterSpec } from './adapter';
 import { amazon } from './sites/amazon';
+import { target } from './sites/target';
 
-const HAND_WRITTEN: AdapterSpec[] = [amazon];
+const HAND_WRITTEN: AdapterSpec[] = [amazon, target];
 
 export async function readCart(doc: Document, url: string): Promise<CartRead | null> {
   const platform = await readPlatform(doc);
