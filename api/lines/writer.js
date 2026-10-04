@@ -29,7 +29,7 @@ const NANA = {
   watching: ['Honey. I’m looking.', 'Three quarters gone. Just so you know.'],
   shocked: [
     '{price} dollars for {item}, hon. You had {left} left this week.',
-    '{price} dollars, hon. That is more than the whole week. Just so you know.',
+    '{price} dollars for {item}, hon. That is more than the whole week.',
   ],
   down: ['Okay. {over} over for the week. I’m not going to say anything.'],
   proud: ['Oh good. I knew you would.', 'Well look at you. Good for you, hon.'],
