@@ -16,7 +16,7 @@ Everything below was verified against the code at `2f239da` on Saturday night. T
 
 ## The demo, about 90 seconds
 
-Open: "Budget apps tell you after the money is gone. We built someone who says something before."
+Open: "You set your fun money for the week. Budget apps tell you after it is gone. We built someone who holds you to it in the cart, before you pay."
 
 1. **Rice and soap.** Judge opens amazon.com/cart with rice and soap. Badge slides in bottom right, calm face, meter two thirds, green. Nothing else. Say: "Rice. Soap. She reads the item, not the store."
 2. **Tap her face.** The panel: Kept this week $40, "$25 left. 1 day. Rent in 4 days.", the week's bar. Tap again to close. Say nothing.

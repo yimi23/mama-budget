@@ -1,6 +1,6 @@
 # Mama Budget
 
-**Mama lives in your browser. She reads your cart item by item and stops the waste before you pay.**
+**You set the fun money for the week. She holds you to it, in your cart, before you pay, not after.**
 
 Budget apps sort your money by store, so a Target run is just "shopping," and they tell you after the money is gone. Mama is a Chrome extension that sits in the corner like a spell checker. Add rice, nothing happens. Add AirPods, her gele rises and she speaks up before checkout. Money sent home to family never sets her off.
 

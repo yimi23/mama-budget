@@ -82,7 +82,7 @@ export const COPY: Record<Grandma, Copy> = {
   mama: {
     name: 'Mama',
     welcomeTitle: 'I’m Mama.',
-    welcome: 'I sit in your cart while you shop. You add rice, I say nothing. You add AirPods, I ask what they’re for. One question, before the money leaves.',
+    welcome: 'You set the fun money for the week. I hold you to it. I sit in your cart and I speak before you pay, not after. The things you need, I never touch.',
     welcomeSub: 'Two questions from you now. The rest I’ll see for myself.',
     preview: 'Rice is at home.',
     bank: 'I only read. The bank never hears from me.',
@@ -94,7 +94,7 @@ export const COPY: Record<Grandma, Copy> = {
   nana: {
     name: 'Nana',
     welcomeTitle: 'I’m Nana.',
-    welcome: 'I’ll be in your cart. Rice, I won’t say a word. AirPods, I’ll ask what for. One question, before you pay.',
+    welcome: 'You pick a number for the week. I keep you to it. I’m in your cart before you pay, not after. What you need is none of my business.',
     welcomeSub: 'Two questions from you now. The rest I’ll see for myself.',
     preview: 'Well. Let’s have a look.',
     bank: 'I just look. I don’t touch.',

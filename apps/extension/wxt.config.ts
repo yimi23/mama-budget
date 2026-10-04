@@ -7,7 +7,7 @@ export default defineConfig({
   webExt: { disabled: true },
   manifest: {
     name: 'Mama Budget',
-    description: 'Mama sits in your cart. Rice, she says nothing. AirPods, she asks what for.',
+    description: 'Your weekly fun money, with someone in your cart who speaks before you pay, not after.',
     permissions: ['storage', 'offscreen'],
     host_permissions: ['http://localhost:8787/*'],
     // Her faces load as <img> inside the shadow root on store pages.
