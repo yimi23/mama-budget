@@ -1,6 +1,6 @@
 // Runs on every page but does nothing until the gate fires: an add to cart click, or a cart page by two signals.
 
-import { clickLabel, isAddToCartLabel, isConfirmationPage, liveCartSignalCount, orderIdFrom, readSignals } from '../lib/detect';
+import { clickLabel, isAddToCartLabel, isConfirmationPage, liveCartSignalCount, orderIdFrom, orderTotalFrom, readSignals } from '../lib/detect';
 import { storeKey } from '@mama/shared/store-key';
 
 // Carts built by script after load (Target) show one signal at idle and the rest a moment later.
@@ -64,7 +64,7 @@ export default defineContentScript({
       if (confirmed.has(orderId)) return;
       confirmed.add(orderId);
       console.info(`[mama] order confirmed on ${location.hostname}`);
-      browser.runtime.sendMessage({ type: 'CONFIRM', store: storeKey(location.href), orderId }).catch(() => {});
+      browser.runtime.sendMessage({ type: 'CONFIRM', store: storeKey(location.href), orderId, total: orderTotalFrom(signals.text) }).catch(() => {});
     };
 
     // A merchant she promised to watch (screen 06b): she says so on arrival, before any cart. One message per page.

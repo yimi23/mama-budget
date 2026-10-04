@@ -83,6 +83,25 @@ export function orderIdFrom(text: string, url: string): string {
   return url.split('#')[0]!;
 }
 
+const TOTAL_LINE = /\b(order total|grand total|total charged|amount charged|total paid|you paid|total)\b(?:\s*\([^)]{0,30}\))?[^$£€₦\d]{0,30}((?:US\$|CA\$|C\$|[$£€₦])\s?\d[\d,]*(?:\.\d{1,2})?)/gi;
+
+/**
+ * Pure: what the confirmation page says the order cost. "Order total", "grand total" and "amount charged" beat a
+ * bare "total"; the last one wins within a rank (a page lists each shipment, then the order). Null when the page
+ * shows no total, and the worker falls back to the cart it last read.
+ */
+export function orderTotalFrom(text: string): number | null {
+  let best: { rank: number; n: number } | null = null;
+  TOTAL_LINE.lastIndex = 0;
+  for (let m = TOTAL_LINE.exec(text); m; m = TOTAL_LINE.exec(text)) {
+    const rank = m[1]!.toLowerCase() === 'total' ? 1 : 2;
+    const n = Number(m[2]!.replace(/[^\d.]/g, ''));
+    if (!(n > 0)) continue;
+    if (!best || rank >= best.rank) best = { rank, n };
+  }
+  return best?.n ?? null;
+}
+
 /** Pure: does this clicked label read as add to cart or buy now. */
 export function isAddToCartLabel(label: string): boolean {
   const l = label.replace(/\s+/g, ' ').trim();

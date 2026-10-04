@@ -30,3 +30,8 @@ test('the page states the subtotal and the count; the check uses those, not the 
   // One line called "Amazon Cart (4 items)" is not four items.
   assert.equal(verified({ items: [{ name: 'Amazon Cart (4 items)', unitPrice: 321.54, qty: 1 }], subtotal: 321.54, confidence: 0.9 }, pageFacts('Subtotal (4 items): $321.54')), false);
 });
+
+test('a placeholder name is never a verified item', () => {
+  assert.equal(verified({ items: [{ name: 'Item in cart', unitPrice: 20, qty: 1 }], subtotal: 20, confidence: 0.95 }, pageFacts('Subtotal $20')), false);
+  assert.equal(verified({ items: [{ name: 'Rice 20 lb', unitPrice: 20, qty: 1 }], subtotal: 20, confidence: 0.95 }, pageFacts('Subtotal $20')), true);
+});

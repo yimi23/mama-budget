@@ -103,6 +103,8 @@ function pageFacts(text) {
 }
 
 const NOT_AN_ITEM = /\b(sub-?total|total|cart|bag|basket|checkout|order summary)\b|\(\d+ items?\)/i;
+/** Names a model gives when it could not see the item. A "$1 Amazon Grocery" promo line is a name; "item in cart" is not. */
+const GENERIC_NAME = /^(items?|products?|cart( items?)?|items? in (your |the )?(cart|bag|basket)|your (items?|order)|order|purchase)$/i;
 
 /**
  * The items add up to the page's own subtotal (never the model's: a wrong read invents the subtotal that fits it)
@@ -111,7 +113,7 @@ const NOT_AN_ITEM = /\b(sub-?total|total|cart|bag|basket|checkout|order summary)
  */
 function verified(out, facts = {}) {
   if (!out || !Array.isArray(out.items) || !out.items.length) return false;
-  if (out.items.some((i) => NOT_AN_ITEM.test(String(i.name || '')))) return false;
+  if (out.items.some((i) => NOT_AN_ITEM.test(String(i.name || '')) || GENERIC_NAME.test(String(i.name || '').trim()))) return false;
   const sum = out.items.reduce((s, i) => s + Number(i.unitPrice || 0) * Number(i.qty || 1), 0);
   const qty = out.items.reduce((s, i) => s + Number(i.qty || 1), 0);
   if (facts.count != null && qty !== facts.count && out.items.length !== facts.count) return false;
@@ -128,9 +130,14 @@ function verified(out, facts = {}) {
  */
 async function extractItems(text, images = []) {
   if (!ready()) return null;
+  const facts = pageFacts(text);
   const fast = await extractWith(FAST_MODEL, text, images, true).catch(() => null);
-  if (verified(fast, pageFacts(text))) return fast;
-  return extractWith(MODEL, text, images, false);
+  if (verified(fast, facts)) return fast;
+  const out = await extractWith(MODEL, text, images, false);
+  // The main model is the fallback, not an oracle: when the page states a subtotal and its lines do not add up to
+  // it, or it named a placeholder, the read is unsure and she asks instead of asserting.
+  if (out && facts.subtotal != null && !verified(out, facts)) out.confidence = Math.min(Number(out.confidence) || 0, 0.5);
+  return out;
 }
 
 async function extractWith(model, text, images, plain) {

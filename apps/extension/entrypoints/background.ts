@@ -6,6 +6,7 @@ import { apiBase, apiUp, call } from '../lib/api';
 import { weekKey } from '@mama/shared/week';
 import { regionHome } from '../lib/onboarding';
 import { quietHours } from '../lib/quiet';
+import { confirmPlan } from '../lib/confirm';
 
 const LAST_CART_TTL_MS = 30 * 60 * 1000;
 
@@ -144,24 +145,27 @@ async function buyItem(msg: Extract<Message, { type: 'BUY' }>) {
   return { ok: true as const, ...reply };
 }
 
-/** A real order went through: charge what was in that store's cart, skipping anything the card already posted. */
+/**
+ * A real order went through: charge what was paid. lib/confirm.ts decides the lines from the page's order total and
+ * the store's last cart read; a cart that does not explain the total becomes one line at the total, never a guess.
+ */
 async function confirmOrder(msg: Extract<Message, { type: 'CONFIRM' }>) {
   const { lastCart = {} } = await browser.storage.session.get('lastCart');
   const entry = (lastCart as Record<string, { read: CartRead }>)[msg.store];
-  if (!entry || !(await apiUp())) return { ok: true as const, posted: 0 };
+  if (!(await apiUp())) return { ok: true as const, posted: 0 };
   const [posted, { memory = {} }, grandma] = await Promise.all([postedThisWeek(), browser.storage.local.get('memory'), grandmaSetting()]);
+  const charges = confirmPlan(entry?.read, msg.total, posted, msg.store, postedKey);
   let n = 0;
-  for (const item of entry.read.items) {
-    if (posted.has(postedKey(item.name))) continue;
+  for (const c of charges) {
     const reply = await call<BuyReply>('/v2/buy', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        name: item.name, price: item.unitPrice * item.qty, store: msg.store, currency: entry.read.currency, memory, grandma,
-        requestId: `order:${msg.orderId}:${postedKey(item.name)}`,
+        name: c.name, price: c.price, store: msg.store, currency: entry?.read.currency ?? 'USD', memory, grandma,
+        requestId: `order:${msg.orderId}:${c.key ?? 'total'}`,
       }),
     });
-    if (reply) { n++; await markPosted(item.name); }
+    if (reply) { n++; if (c.key) await markPosted(c.name); }
   }
   return { ok: true as const, posted: n };
 }

@@ -22,8 +22,8 @@ export type Message =
   | { type: 'MARK'; kind: 'asked' | 'reacted'; key: string }
   /** Buy anyway on the card: the admitted want is charged now. */
   | { type: 'BUY'; store: string; currency: CurrencyCode; item: { name: string; short: string; price: number; storePrice?: number } }
-  /** A real order confirmation page: charge the store's last cart, minus anything already posted. */
-  | { type: 'CONFIRM'; store: string; orderId: string }
+  /** A real order confirmation page: charge what was paid. The page's order total when it shows one, else the store's last cart, minus anything already posted. */
+  | { type: 'CONFIRM'; store: string; orderId: string; total: number | null }
   /** The item you agreed to put back left the cart: the money stays in the week, Kept goes up. */
   | { type: 'PUT_BACK'; name: string; price: number }
   | { type: 'START_OVER' }
