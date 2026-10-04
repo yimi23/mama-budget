@@ -7,7 +7,7 @@ import { mountBadge, type Badge, type Grandma } from './ui/badge';
 import { mountCard, type Card } from './ui/card';
 import { mountBubble, type Bubble } from './ui/bubble';
 import { mountPanel, type Panel } from './ui/panel';
-import { ackSub, nextCard, wantLabel, type Handled } from './flow';
+import { ackSub, crossedIntoWatching, nextCard, wantLabel, type Handled } from './flow';
 import { storeKey } from '@mama/shared/store-key';
 import { toUSD } from '@mama/shared/currency';
 import { readCart, readKey } from './readers';
@@ -48,7 +48,7 @@ let talking = false;
 let discussing: string | null = null;
 let lastLog = '';
 let lastShown = '';
-let lines: JudgeReply['lines'] = { agreed: 'Good.', proud: 'Good.' };
+let lines: JudgeReply['lines'] = { agreed: 'Good.', proud: 'Good.', watching: 'I am watching.' };
 /** Items the person agreed to put back: when one leaves the cart, she is proud, once. */
 const putBack = new Map<string, number>();
 // Mirrors the worker's per browser session lists (storage.session) on every judgement, so Start over in the
@@ -95,6 +95,10 @@ function showWeek(g: Grandma, week: Week, mood: Mood = week.mood) {
       if (card!.open || !lastWeek) return; // a question on screen comes first
       panel!.toggle({ week: lastWeek, said });
     });
+  }
+  if (crossedIntoWatching(lastWeek, week)) {
+    remember(lines.watching);
+    bubble!.say(lines.watching, `$${Math.round(week.spent)} of $${Math.round(week.budget)} gone this week. $${Math.round(week.left)} left.`);
   }
   lastWeek = week;
   badge.update({ grandma: g, mood, ratio: week.ratio, left: week.left, daysLeft: week.daysLeft });

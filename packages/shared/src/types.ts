@@ -64,7 +64,7 @@ export interface JudgeReply {
   mood: Mood;
   verdicts: Verdict[];
   /** Small lines the card needs on hand: after "You're right", and when the item leaves the cart. */
-  lines: { agreed: string; proud: string };
+  lines: { agreed: string; proud: string; watching: string };
 }
 
 /** POST /v2/buy: the charge landed (or was already recorded under that requestId). */

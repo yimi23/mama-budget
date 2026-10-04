@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { MAX_ASKS, ackSub, nextCard, wantLabel } from '../lib/flow.ts';
+import { MAX_ASKS, ackSub, crossedIntoWatching, nextCard, wantLabel } from '../lib/flow.ts';
 import type { Verdict } from '@mama/shared/types';
 
 const v = (key: string, label: Verdict['label'], react = false): Verdict => ({
@@ -48,4 +48,15 @@ test('the acknowledgement names the number and what it did to the meter', () => 
   assert.equal(ackSub({ ...v('lamp', 'want'), price: 20, tags: ['remembered', 'fits'] }, week), '$20 against $25 left this week. It fits.');
   assert.equal(ackSub({ ...v('pods', 'want', true), price: 179, tags: ['remembered', 'blown'] }, week), null);
   assert.equal(ackSub({ ...v('rice', 'need'), price: 25, tags: ['protected'] }, week), null);
+});
+
+test('she says she is watching once, when the week crosses 75% on the way up', () => {
+  const base = { budget: 75, kept: 40, daysLeft: 2, bills: [] as never[] };
+  const calm = { ...base, spent: 50, left: 25, ratio: 50 / 75, mood: 'calm' as const };
+  const watching = { ...base, spent: 60, left: 15, ratio: 60 / 75, mood: 'watching' as const };
+  assert.equal(crossedIntoWatching(undefined, watching), true, 'a page that opens already at 75% hears it once');
+  assert.equal(crossedIntoWatching(calm, watching), true);
+  assert.equal(crossedIntoWatching(watching, watching), false, 'never twice');
+  assert.equal(crossedIntoWatching({ ...watching, ratio: 1.2, mood: 'down' }, watching), false, 'not on the way back down');
+  assert.equal(crossedIntoWatching(undefined, calm), false);
 });

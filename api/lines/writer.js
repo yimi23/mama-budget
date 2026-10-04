@@ -102,7 +102,7 @@ function buyText(week, it, who = 'mama') {
 // Small acknowledgements the card needs on hand: "You're right, Mama", and the item leaving the cart.
 function smallLines(who = 'mama') {
   const bank = who === 'nana' ? NANA : MAMA;
-  return { agreed: bank.agreed[0], proud: bank.proud[0] };
+  return { agreed: bank.agreed[0], proud: bank.proud[0], watching: bank.watching[0] };
 }
 
 // The sub line under her quote. Numbers, not character.

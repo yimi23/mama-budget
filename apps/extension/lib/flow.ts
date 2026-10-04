@@ -33,3 +33,8 @@ export function ackSub(v: Verdict, week: Week): string | null {
   if (v.label === 'want' && v.tags.includes('fits')) return `$${price} against $${Math.round(week.left)} left this week. It fits.`;
   return null;
 }
+
+/** Screen 11: the first time the week turns to watching on a page, she says so, once. Not on the way back down. */
+export function crossedIntoWatching(prev: Week | undefined, next: Week): boolean {
+  return next.mood === 'watching' && prev?.mood !== 'watching' && (prev == null || prev.ratio < next.ratio);
+}
