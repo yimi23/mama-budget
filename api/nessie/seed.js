@@ -61,6 +61,12 @@ const DEPOSITS = [
 const TRANSFERS = [
   { day: 19, to: 'family',  amount: 50, item: 'Sent home' },
   { day: 3,  to: 'savings', amount: 40, item: 'Moved to savings' },
+  // Older savings, outside the 30 day read, so this week's and this month's numbers do not move. They give the
+  // student something to plan from: an occasion that beats the week can be funded from here ($640 in all).
+  { day: 45, to: 'savings', amount: 150, item: 'Moved to savings' },
+  { day: 75, to: 'savings', amount: 150, item: 'Moved to savings' },
+  { day: 105, to: 'savings', amount: 150, item: 'Moved to savings' },
+  { day: 135, to: 'savings', amount: 150, item: 'Moved to savings' },
 ];
 const BILL = { payee: 'Landlord', nickname: 'Rent', amount: 650, dueInDays: 4, recurringDay: 1 };
 
