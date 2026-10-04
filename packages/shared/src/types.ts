@@ -54,6 +54,8 @@ export interface Verdict {
   reason: string;
   tags: string[];
   line: string;
+  /** What she says right after you answer, when the answer earns a bubble rather than a card. */
+  ack: string | null;
   sub: string;
 }
 

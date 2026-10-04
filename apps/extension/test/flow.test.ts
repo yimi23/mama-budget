@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { MAX_ASKS, nextCard, wantLabel } from '../lib/flow.ts';
+import { MAX_ASKS, ackSub, nextCard, wantLabel } from '../lib/flow.ts';
 import type { Verdict } from '@mama/shared/types';
 
 const v = (key: string, label: Verdict['label'], react = false): Verdict => ({
-  name: key, short: key, price: 0, key, label, react, mood: react ? 'shocked' : 'calm', reason: '', tags: [], line: '', sub: '',
+  name: key, short: key, price: 0, key, label, react, mood: react ? 'shocked' : 'calm', reason: '', tags: [], line: '', ack: null, sub: '',
 });
 const fresh = () => ({ asked: new Set<string>(), reacted: new Set<string>() });
 
@@ -40,4 +40,12 @@ test('the want button fits the item', () => {
   assert.equal(wantLabel('AirPods'), 'I just want them');
   assert.equal(wantLabel('Fujifilm Instax Mini 99'), 'I just want it');
   assert.equal(wantLabel('Signet Rings'), 'I just want them');
+});
+
+test('the acknowledgement names the number and what it did to the meter', () => {
+  const week = { budget: 75, spent: 50, left: 25, kept: 40, ratio: 0.67, mood: 'calm' as const, daysLeft: 2, bills: [] };
+  assert.equal(ackSub({ ...v('lens', 'need'), price: 1260.65, tags: ['remembered'] }, week), '$1261. Needs stay off the meter.');
+  assert.equal(ackSub({ ...v('lamp', 'want'), price: 20, tags: ['remembered', 'fits'] }, week), '$20 against $25 left this week. It fits.');
+  assert.equal(ackSub({ ...v('pods', 'want', true), price: 179, tags: ['remembered', 'blown'] }, week), null);
+  assert.equal(ackSub({ ...v('rice', 'need'), price: 25, tags: ['protected'] }, week), null);
 });

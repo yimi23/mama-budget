@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const { judge, remember } = require('../judge/rules_v2');
-const { lineFor } = require('../lines/writer');
+const { lineFor, ackLine } = require('../lines/writer');
 
 const week = { budget: 75, spent: 50 }; // the demo seed: $25 left
 
@@ -56,4 +56,15 @@ test('Mama adds the naira, except on a store already in naira', () => {
   assert.match(lineFor(v, { item: 'AirPods Pro', price: 179, currency: 'USD' }, week), /naira/);
   assert.doesNotMatch(lineFor(v, { item: 'AirPods Pro', price: 179, currency: 'NGN' }, week), /naira/);
   assert.doesNotMatch(lineFor(v, { item: 'AirPods Pro', price: 179 }, week, 'nana'), /naira/);
+});
+
+test('every answer gets an acknowledgement; a declared need gets no comment on its price', () => {
+  const need = judge({ item: 'Tamron lens', price: 1260 }, week, remember({}, { item: 'Tamron lens' }, 'need'));
+  assert.equal(ackLine(need, { item: 'Tamron lens', price: 1260 }), 'Okay. I will remember.');
+  assert.equal(ackLine(need, { item: 'Tamron lens', price: 1260 }, 'nana'), 'Okay. Noted.');
+  const fits = judge({ item: 'Desk lamp', price: 20 }, week, remember({}, { item: 'Desk lamp' }, 'want'));
+  assert.match(ackLine(fits, { item: 'Desk lamp', price: 20 }), /Carry on|fits/);
+  const blown = judge({ item: 'AirPods Pro', price: 179 }, week, remember({}, { item: 'AirPods Pro' }, 'want'));
+  assert.equal(ackLine(blown, { item: 'AirPods Pro', price: 179 }), null, 'a blown want gets the card, not a bubble');
+  assert.equal(ackLine(judge({ item: 'Rice', price: 20 }, week), { item: 'Rice' }), null, 'protected needs were never asked');
 });

@@ -5,7 +5,8 @@ import type { CartRead, JudgeReply, Mood, Verdict, Week } from '@mama/shared/typ
 import type { HandledLists, Message } from '@mama/shared/messages';
 import { mountBadge, type Badge, type Grandma } from './ui/badge';
 import { mountCard, type Card } from './ui/card';
-import { nextCard, wantLabel, type Handled } from './flow';
+import { mountBubble, type Bubble } from './ui/bubble';
+import { ackSub, nextCard, wantLabel, type Handled } from './flow';
 import { storeKey } from '@mama/shared/store-key';
 import { toUSD } from '@mama/shared/currency';
 import { readCart, readKey } from './readers';
@@ -33,6 +34,9 @@ let lastItemsAt = 0;
 
 let badge: Badge | undefined;
 let card: Card | undefined;
+let bubble: Bubble | undefined;
+/** The key just answered on a card, so the next judgement can acknowledge it. */
+let justAnswered: string | null = null;
 let lastRead: CartRead | null = null;
 let talking = false;
 /** The item name on the open card, so a card about something no longer in the cart can close. */
@@ -73,11 +77,13 @@ async function grandma(): Promise<Grandma> {
 function showWeek(g: Grandma, week: Week, mood: Mood = week.mood) {
   badge ??= mountBadge();
   card ??= mountCard(badge.root);
+  bubble ??= mountBubble(badge.root);
   badge.update({ grandma: g, mood, ratio: week.ratio, left: week.left, daysLeft: week.daysLeft });
 }
 
 function hideAll() {
   card?.close();
+  bubble?.hide();
   badge?.hide();
 }
 
@@ -111,6 +117,12 @@ async function talk() {
       handled.asked = new Set(reply.handled.asked);
       handled.reacted = new Set(reply.handled.reacted);
       showWeek(g, reply.week);
+      if (justAnswered) {
+        // She always answers an answer. A blown want gets its card below instead of a bubble.
+        const v = reply.verdicts.find((x) => x.key === justAnswered);
+        justAnswered = null;
+        if (v?.ack && !v.react) bubble!.say(v.ack, ackSub(v, reply.week) ?? '');
+      }
       if (lastRead !== read) continue; // the cart moved while she was thinking
       const next = nextCard(reply.verdicts, handled);
       if (!next) return;
@@ -156,6 +168,7 @@ async function ask(g: Grandma, week: Week, v: Verdict) {
   });
   if (choice === 'primary') await send({ type: 'ANSWER', key: v.key, answer: 'need' });
   else if (choice === 'secondary') await send({ type: 'ANSWER', key: v.key, answer: 'want' });
+  if (choice !== 'dismiss') justAnswered = v.key;
   showWeek(g, week);
 }
 

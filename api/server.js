@@ -15,7 +15,7 @@ const http = require('node:http');
 const { judge } = require('./judge/rules');
 const v2 = require('./judge/rules_v2');
 const nessie = require('./nessie/client');
-const { lineFor, subLine } = require('./lines/writer');
+const { lineFor, ackLine, subLine } = require('./lines/writer');
 const { speak } = require('./voice/elevenlabs');
 const { text } = require('./photon/text');
 
@@ -51,7 +51,7 @@ const routes = {
       const item = { item: String(it.name || ''), price: Number(it.unitPrice || 0) * Number(it.qty || 1), merchant: it.store || '', currency: body.currency || 'USD' };
       const v = v2.judge(item, w, memory);
       const spoken = { ...item, item: shortName(item.item) };
-      return { name: it.name, short: spoken.item, price: item.price, ...v, line: lineFor(v, spoken, w, who), sub: subLine(w) };
+      return { name: it.name, short: spoken.item, price: item.price, ...v, line: lineFor(v, spoken, w, who), ack: ackLine(v, spoken, who), sub: subLine(w) };
     });
     const loud = verdicts.find((v) => v.react) || verdicts.find((v) => v.label === 'ask');
     return { week: w, mood: loud ? loud.mood : w.mood, verdicts };

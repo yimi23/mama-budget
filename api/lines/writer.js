@@ -14,6 +14,8 @@ const MAMA = {
   down: ['Is it me you are doing this to?', 'Okay. I have heard.'],
   proud: ['My pikin. Come and hug me.', 'You see? Good child. I knew it.'],
   ask: ['{item}? Tell me the story first.', 'Before I talk, explain {item} to me.'],
+  ackNeed: ['Okay. I will remember.'],
+  ackFits: ['Ehen. Carry on.', 'Okay. It fits. Carry on.'],
   family: ['That one is not waste. Greet them for me.'],
   statementClose: ['Good week. Keep going.', 'Better than last week. I noticed.', 'We will do better. I am not angry.'],
 };
@@ -28,6 +30,8 @@ const NANA = {
   down: ['Okay. I’m not going to say anything.'],
   proud: ['Oh good. I knew you would.', 'Well look at you. Good for you, hon.'],
   ask: ['Hold on a sec, hon. What’s {item} for?'],
+  ackNeed: ['Okay. Noted.'],
+  ackFits: ['Okay, hon. That fits.'],
   family: ['That’s family. That doesn’t count.'],
   statementClose: ['Good week.', 'Better than last week. I noticed.', 'We’ll get there.'],
 };
@@ -62,6 +66,16 @@ function lineFor(verdict, it, month, who = 'mama') {
     return `${base} That is ${Math.round(it.price * NGN).toLocaleString()} naira.`;
   }
   return base;
+}
+
+// What she says right after you answer the card. She always acknowledges; silence after an answer reads as a
+// dropped call. A declared need gets no comment on its price, by the house rule: need never sets her off.
+function ackLine(verdict, it, who = 'mama') {
+  const bank = who === 'nana' ? NANA : MAMA;
+  const tags = verdict.tags || [];
+  if (verdict.label === 'need' && tags.includes('remembered')) return fill(bank.ackNeed[0], it);
+  if (verdict.label === 'want' && tags.includes('fits')) return fill(bank.ackFits[(it.item || '').length % bank.ackFits.length], it);
+  return null;
 }
 
 // The sub line under her quote. Numbers, not character.
@@ -149,4 +163,4 @@ async function modelLine(verdict, it, month, who = 'mama') {
   return j.content?.[0]?.text?.trim() || null;
 }
 
-module.exports = { lineFor, subLine, weeklyStatement, monthlyStatement, watchLines, whatsLeft, modelLine, MAMA, NANA };
+module.exports = { lineFor, ackLine, subLine, weeklyStatement, monthlyStatement, watchLines, whatsLeft, modelLine, MAMA, NANA };
