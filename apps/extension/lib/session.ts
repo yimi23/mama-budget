@@ -162,6 +162,11 @@ async function talk() {
     for (;;) {
       const read = lastRead;
       if (!read || !read.items.length) return hideAll();
+      if (!lastWeek) {
+        // First sight on this page: show her with the week at once; the judgement may take a few seconds of thought.
+        const wk = await send<{ ok: true; week: Week } | { ok: false }>({ type: 'GET_WEEK' });
+        if (wk?.ok) showWeek(g, wk.week);
+      }
       const reply = await judge(read);
       if (!reply?.ok) {
         console.info('[mama] API not answering, staying hidden');

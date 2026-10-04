@@ -24,7 +24,7 @@ WXT (Manifest V3, TypeScript) for the extension. Hono on Node 24 for the API. no
 - The content script owns exactly one host element on `document.documentElement` with an open shadow root and `all: initial`. It never mutates the host page's DOM. It never caches DOM references across MutationObserver ticks.
 - Audio plays from the offscreen document (`offscreen` permission, reason AUDIO_PLAYBACK). Content script `Audio` is a flagged fallback only.
 - The judge is a pure function in `packages/scoring`. Same input, same output. Rules are JSON, versioned (`rules/v1.json` frozen for the 50 case score, `rules/v2.json` is ask and remember). A rule change bumps the version and reruns goldens.
-- The model is used in exactly two places, both in `apps/api/src/providers/anthropic.ts`: turning cart page text into structured items (JSON schema output), and writing her line from a verdict. It never decides need or want.
+- The model lives in one file, `api/lines/model.js`, and does four things: turns cart text into items (JSON schema), says whether an unknown item is an obvious necessity from the item and the store, reads what a typed reason means, and writes her lines from the whole situation. The rules keep the promises and the math and are the fallback when the model is off or slow: money to family never scolded, a first sighting only asked, she reacts only to admitted wants, planned items never scolded, the week's numbers decide the volume. Rules v1 stays frozen for the 50 case score.
 - Secrets live only in `apps/api/.env`. The extension bundle is public.
 - Every mutating API call carries a client `requestId` and is idempotent.
 - `DEMO_MODE=1` serves recorded fixtures for extraction, scoring and TTS. The demo must run with WiFi off.

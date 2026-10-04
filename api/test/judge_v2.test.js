@@ -151,3 +151,12 @@ test('on a watched merchant she asks about anything over $5 and says why', () =>
   assert.match(line, /DoorDash again/);
   assert.match(line, /102/);
 });
+
+test('necessity comes from context when known; the word list is only the fallback', () => {
+  const bowl = { item: 'Chicken bowl', price: 12, merchant: 'doordash.com' };
+  assert.equal(judge(bowl, week).label, 'need', 'no context: the list sees chicken');
+  assert.equal(judge(bowl, week, {}, { necessity: false }).label, 'want', 'context says takeout: discretionary, a small want');
+  assert.equal(judge({ item: 'Fancy tote', price: 40 }, week, {}, { necessity: true }).label, 'need', 'context can also protect');
+  const r = judge(bowl, week, {}, { necessity: false, watched: { merchant: 'DoorDash', amount: 102 } });
+  assert.equal(r.label, 'ask', 'on a watched merchant the small want becomes a question');
+});

@@ -25,7 +25,9 @@ const ASK_LINE_FOR = { full: 15, mama: 25, gentle: 40 };
 // On a merchant she promised to watch (screen 06b) the ask line drops to $5: nothing new slips by there.
 const WATCHED_ASK_LINE = 5;
 
-function judge(it, month = { budget: 75, spent: 0 }, memory = {}, { loudness, now, watched } = {}) {
+// `necessity` comes from context (the model, given item and store) when available; the word list below is the fallback
+// for when it is not. The promises (family money, first sightings, admitted wants, planned) do not depend on either.
+function judge(it, month = { budget: 75, spent: 0 }, memory = {}, { loudness, now, watched, necessity } = {}) {
   void now;
   const askLine = watched ? Math.min(WATCHED_ASK_LINE, ASK_LINE_FOR[loudness] || ASK_LINE) : (ASK_LINE_FOR[loudness] || ASK_LINE);
   const k = key(it);
@@ -36,8 +38,9 @@ function judge(it, month = { budget: 75, spent: 0 }, memory = {}, { loudness, no
   // Family money is protected. Both mothers called it Depends or Want; we keep it protected and say so.
   if (has(it.merchant || '', FAMILY_MERCHANTS)) return out('need', false, base, 'Money to family. Protected.', ['family']);
 
-  // Layer 1: the obvious.
-  if (has(k, PROTECTED)) return out('need', false, base, 'Protected need. She never reacts.', ['protected']);
+  // Layer 1: the obvious. From context when it is known; from the word list only when it is not.
+  if (necessity === true) return out('need', false, base, 'A necessity, from what it is and where it is bought. She never reacts.', ['protected', 'context']);
+  if (necessity == null && has(k, PROTECTED)) return out('need', false, base, 'Protected need. She never reacts.', ['protected']);
 
   // Layer 2: what you told her.
   if (memory[k] === 'need') return out('need', false, base, 'You told her this is a need for you.', ['remembered']);
@@ -71,4 +74,4 @@ function once(it, label, month) {
   return judge(it, month, { [key(it)]: label });
 }
 
-module.exports = { judge, remember, once, PROTECTED, ASK_LINE };
+module.exports = { judge, remember, once, keyOf: key, PROTECTED, ASK_LINE };

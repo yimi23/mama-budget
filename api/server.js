@@ -113,7 +113,17 @@ const routes = {
     const store = (body.items || [])[0]?.store || '';
     const host = String(store).toLowerCase();
     const watched = (nessie.watches(nessie.month()) || []).find((wt) => { const t = String(wt.merchant || '').toLowerCase().replace(/[^a-z0-9]/g, ''); return t.length >= 4 && host.includes(t); }) || null;
-    const judged = items.map((item) => ({ item: { ...item, watched }, v: v2.judge(item, w, memory, { loudness: body.loudness, now: new Date(), watched }) }));
+    // Knowledge from context: for items she has no memory of, the model says whether it is an obvious necessity (item
+    // plus store plus habits). Confident answers decide; unsure or slow answers fall back to the rules' own list.
+    const habits = (nessie.month().topWants || []).slice(0, 3).map((t) => `$${t.amount} at ${t.merchant}`).join(', ');
+    const known = (item) => memory[v2.keyOf(item)] != null;
+    const kinds = await Promise.all(items.map(async (item) => {
+      if (known(item)) return undefined;
+      const c = await model.classifyItem({ name: item.item, price: item.price, store, habits }).catch(() => null);
+      if (!c || c.kind === 'unsure' || Number(c.confidence) < 0.7) return undefined;
+      return c.kind === 'necessity';
+    }));
+    const judged = items.map((item, i) => ({ item: { ...item, watched }, v: v2.judge(item, w, memory, { loudness: body.loudness, now: new Date(), watched, necessity: kinds[i] }) }));
     // Cards only (an ask or a reaction) get a line written from context, three at most per call, in parallel, each
     // falling back to the fixed pool on timeout. Low confidence reads (the text reader) ask rather than scold.
     const monthNow = nessie.month();
@@ -239,10 +249,15 @@ const routes = {
     if (!name || !(price > 0) || !reason) throw new Error('name, price and reason are required');
     setHome(body.home);
     const w = nessie.week();
-    const occasion = reasons.isJustWant(reason) ? null : reasons.occasionOf(reason);
     const left = Math.max(0, w.budget - w.spent);
     const savings = nessie.savingsBalance();
     const short = body.short || shortName(name);
+    // What the reason means, from the model; the word list only when it is off or unsure.
+    const c = await model.classifyReason({ reason, name: short, price }).catch(() => null);
+    let occasion = null;
+    // A need says the reason back ("For my photography class. Okay..."); an occasion says the occasion.
+    if (c && Number(c.confidence) >= 0.6) occasion = c.kind === 'occasion' ? (c.occasion || reasons.occasionOf(reason) || reason) : c.kind === 'need' ? reason : null;
+    else occasion = reasons.isJustWant(reason) ? null : reasons.occasionOf(reason);
     const need = Math.ceil(price - left);
     const proposal = occasion && price > left && savings >= need && need > 0 ? { kind: 'fund', amount: need } : null;
     const it = { item: short, price, merchant: body.store || '', currency: body.currency || 'USD', home: body.home || null, occasion: occasion || undefined };

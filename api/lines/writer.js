@@ -20,7 +20,7 @@ const MAMA = {
   ackFits: ['Ehen. Carry on.', 'Okay. It fits. Carry on.'],
   agreed: ['Good. I am watching the cart.'],
   bought: ['Noted. It is in the book.'],
-  plan: ['{occasion}. Okay. That one is a plan, not a want. It stays off the meter.'],
+  plan: ['{occasion}. Okay. That one is a plan, not a want. It stays off the meter.', 'Okay. A need, then. It stays off the meter.'],
   planFund: ['{occasion}. Okay. That is a plan, not a want. It is {price} against {left} dollars left this week. Take {fund} dollars from savings for the week, or keep the plan as it is?'],
   funded: ['Done. {fund} dollars came out of savings. The week is {budget} dollars now.'],
   askMany: ['{n} new things. What are they for?'],
@@ -44,7 +44,7 @@ const NANA = {
   ackFits: ['Okay, hon. That fits.'],
   agreed: ['Good call, hon.'],
   bought: ['Alright. Noted.'],
-  plan: ['{occasion}. Well, that is a plan, not a want. Off the meter it goes.'],
+  plan: ['{occasion}. Well, that is a plan, not a want. Off the meter it goes.', 'Alright, a need then. Off the meter it goes.'],
   planFund: ['{occasion}, hon. That is a plan, not a want. It is {price} with {left} dollars left this week. Take {fund} from savings for the week, or leave it be?'],
   funded: ['Done, hon. {fund} dollars out of savings. The week is {budget} now.'],
   askMany: ['{n} new things, hon. What are they for?'],
@@ -161,7 +161,9 @@ function buyText(week, it, who = 'mama') {
 /** The fixed plan line when the model is off. */
 function planLine(who, it, week, proposal) {
   const bank = who === 'nana' ? NANA : MAMA;
-  return fill(proposal ? bank.planFund[0] : bank.plan[0], { ...it, fund: proposal ? proposal.amount : 0 }, week);
+  const plain = !it.occasion || it.occasion === 'that';
+  if (plain && !proposal) return fill(bank.plan[1] || bank.plan[0], it, week);
+  return fill(proposal ? bank.planFund[0] : bank.plan[0], { ...it, fund: proposal ? proposal.amount : 0, occasion: plain ? 'That' : it.occasion }, week);
 }
 function fundedLine(who, amount, week) {
   const bank = who === 'nana' ? NANA : MAMA;
@@ -288,7 +290,9 @@ ${bill ? `Bill coming: ${bill.nickname || bill.payee} $${bill.amount} in ${bill.
 Last 30 days habits: ${habits || 'not much'}.
 ${it.watched ? `This store is one she promised to watch: $${Math.round(it.watched.amount || 0)} spent here in the last 30 days. Say so.\n` : ''}What she remembers about this person's answers: ${remembered}.${reason ? `\nThe person just said this item is for: "${reason}".` : ''}${proposal ? `\nThe plan she may offer: take $${proposal.amount} from savings for this week (savings hold $${savings}); the week would then cover it.` : ''}`;
   const must = kind === 'ask' ? [it.item.split(' ')[0]] : kind === 'react' || kind === 'bought' ? [String(Math.round(it.price || 0))] : kind === 'plan' && proposal ? [String(proposal.amount)] : [];
-  return model.say({ system: SYSTEM[who] + LINE_RULES, prompt, key: situation, mustInclude: must, maxLen: kind === 'ack' ? 160 : 240, timeoutMs: warm ? model.WARM_TIMEOUT_MS : undefined });
+  // A typed reason earns a few seconds for her answer; a card on a cart gets the short inline budget.
+  const patient = kind === 'plan' || kind === 'funded';
+  return model.say({ system: SYSTEM[who] + LINE_RULES, prompt, key: situation, mustInclude: must, maxLen: kind === 'ack' ? 160 : 260, timeoutMs: warm ? model.WARM_TIMEOUT_MS : patient ? 4500 : undefined });
 }
 
 async function modelLine(verdict, it, month, who = 'mama') {

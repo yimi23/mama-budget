@@ -89,4 +89,57 @@ async function extractItems(text) {
   }
 }
 
-module.exports = { say, extractItems, ready, MODEL, WARM_TIMEOUT_MS };
+const CLASSIFY_WAIT_MS = Number(process.env.MODEL_CLASSIFY_WAIT_MS || 3500);
+const classCache = new Map();
+const inFlight = new Map();
+
+// The caller waits CLASSIFY_WAIT_MS at most; the request itself keeps going and lands in the cache, so the next
+// judgement of the same cart (a change, an answer) is right and instant even when the first one had to fall back.
+async function classifyJSON({ system, prompt, schema, key, waitMs = CLASSIFY_WAIT_MS }) {
+  if (!ready()) return null;
+  const k = cacheKey([MODEL, 'classify', system, key || prompt]);
+  if (classCache.has(k)) return classCache.get(k);
+  if (!inFlight.has(k)) {
+    const run = client.messages.create(
+      { model: MODEL, max_tokens: 200, system, output_config: { effort: 'low', format: { type: 'json_schema', schema } }, messages: [{ role: 'user', content: prompt }] },
+      { timeout: 20000 },
+    ).then((res) => {
+      const out = JSON.parse(res.content.filter((b) => b.type === 'text').map((b) => b.text).join(''));
+      classCache.set(k, out);
+      return out;
+    }).catch(() => null).finally(() => inFlight.delete(k));
+    inFlight.set(k, run);
+  }
+  return Promise.race([inFlight.get(k), new Promise((r) => setTimeout(() => r(null), waitMs))]);
+}
+
+const ITEM_SYSTEM = `You help a budgeting companion decide whether a purchase is an obvious necessity for a student living on a fixed
+weekly fun money envelope, or discretionary. Necessities: groceries and staple food bought to cook, medicine and prescriptions,
+toiletries, rent and utilities and phone bills, tuition, required textbooks and school supplies, transit passes, laundry, money
+sent to family. Discretionary: restaurant and delivery food, coffee and drinks out, electronics, fashion, games, subscriptions
+for entertainment, decor, gifts to self. Judge by what the item is and where it is bought (takeout at DoorDash is not groceries).
+Return JSON only.`;
+const ITEM_SCHEMA = { type: 'object', additionalProperties: false, required: ['kind', 'confidence', 'why'],
+  properties: { kind: { type: 'string', enum: ['necessity', 'discretionary', 'unsure'] }, confidence: { type: 'number' }, why: { type: 'string' } } };
+
+/** Is this item an obvious necessity? { kind, confidence, why } or null when the model is off or slow. */
+async function classifyItem({ name, price, store, habits }) {
+  const prompt = `Item: ${name}. Price: $${Math.round(price || 0)}. Store: ${store || 'unknown'}.${habits ? ` This person's recent habits: ${habits}.` : ''}`;
+  return classifyJSON({ system: ITEM_SYSTEM, prompt, schema: ITEM_SCHEMA, key: `${name}|${store}` });
+}
+
+const REASON_SYSTEM = `You read the one line a person typed when asked what a purchase is for, and say what it means for their budget.
+occasion: a dated event or obligation (graduation, wedding, interview, a flight home, exams, a new job) that makes this a plan.
+need: a plain necessity (for school, for work, medicine, replacing something broken that they rely on).
+want: pleasure or impulse, however it is phrased ("because I want it", "treat myself", "it looks nice", "why not").
+unsure: too vague to tell. Return JSON only.`;
+const REASON_SCHEMA = { type: 'object', additionalProperties: false, required: ['kind', 'occasion', 'confidence'],
+  properties: { kind: { type: 'string', enum: ['occasion', 'need', 'want', 'unsure'] }, occasion: { type: ['string', 'null'] }, confidence: { type: 'number' } } };
+
+/** What a typed reason means. { kind, occasion, confidence } or null. */
+async function classifyReason({ reason, name, price }) {
+  const prompt = `They were asked what "${name}" ($${Math.round(price || 0)}) is for. They typed: "${reason}".`;
+  return classifyJSON({ system: REASON_SYSTEM, prompt, schema: REASON_SCHEMA, key: `${name}|${reason}` });
+}
+
+module.exports = { say, extractItems, classifyItem, classifyReason, ready, MODEL, WARM_TIMEOUT_MS };
