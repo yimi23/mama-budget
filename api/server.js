@@ -17,6 +17,7 @@
 //   POST /bank/charge { preset }                                 -> posts a preset purchase straight to Nessie (preset: airpods|groceries|latte)
 //   POST /bank/charge-last-cart                                  -> posts the most recent cart the extension reported, item by item
 //   GET  /schedule, POST /schedule { now, kind?, to?, grandma? } -> her weekly/monthly statement, see photon/schedule.js
+//   GET  /photon/health                                          -> which sender is live (log | photon | imessage) and whether the Mac kit can send and read
 //   GET  /health
 //
 // After-purchase notifications are NOT sent from /buy or /v2/buy: the bank watcher (notify/watch.js)
@@ -36,6 +37,7 @@ const { notify, getMessages, clearMessages } = require('./notify');
 const chat = require('./notify/chat');
 const watch = require('./notify/watch');
 const photon = require('./photon/spectrum');
+const kit = require('./photon/kit');
 const bankPage = require('./bank/page');
 const schedule = require('./photon/schedule');
 
@@ -175,10 +177,12 @@ const routes = {
   'GET /messages': async () => getMessages(),
 
   'POST /messages/incoming': async (body) => {
-    const { reply, mood } = await chat.handleIncoming(String(body.text || ''), 'mama', body.from);
-    await notify(body.from, reply, mood);
-    return { ok: true, reply };
+    const { reply, mood, intent } = await chat.handleIncoming(String(body.text || ''), 'mama', body.from, body.id);
+    const out = await notify(body.from, reply, mood, { prompted: true });
+    return { ok: true, reply, intent, texted: !!(out && out.sent) };
   },
+
+  'GET /photon/health': async () => ({ sender: require('./notify').senderName(), spectrum: !!photon.credentials(), imessage: await kit.status() }),
 
   'GET /bank': async () => {
     const cache = nessie.readCache();
@@ -265,8 +269,19 @@ photon.listen(async (text, fromId) => {
   if (reply) require('./notify/log').push({ to: fromId || 'them', text: reply, mood, sender: 'photon', sent: true, direction: 'out', at: Date.now() });
   return reply;
 });
+// The Mac kit listens the same way when it is the live sender: texts to this Mac's Messages, same
+// handleIncoming(), reply sent back by the kit and logged for GET /messages.
+if (!photon.credentials() && kit.available()) {
+  kit.listen(async (text, from) => {
+    const { reply, mood } = await chat.handleIncoming(text, 'mama', from);
+    if (reply) require('./notify/log').push({ to: from, text: reply, mood, sender: 'imessage', sent: true, direction: 'out', at: Date.now() });
+    return reply;
+  });
+}
 if (photon.credentials()) {
   photon.connected().then((ok) => console.log(ok ? '[photon] connected, listening for replies' : '[photon] credentials set but connection failed (see error above)'));
+} else if (kit.available()) {
+  kit.status().then((st) => console.log(`[imessage] Mac kit is the sender${process.env.PHOTON_DRY === '1' ? ' (dry run)' : ''}: texting ${st.to}, ${st.db ? 'listening for replies' : 'cannot read Messages (Full Disk Access?)'}`));
 } else {
-  console.log('[photon] no credentials in api/.env: using the log sender only');
+  console.log('[photon] no Spectrum credentials and no PHOTON_TO in api/.env: using the log sender only');
 }

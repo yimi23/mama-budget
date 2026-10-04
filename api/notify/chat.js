@@ -10,6 +10,8 @@
 
 const nessie = require('../nessie/client');
 const writer = require('../lines/writer');
+const { textLine } = require('../lines/texts');
+const { parse } = require('./parse');
 const memory = require('./memory');
 const notify = require('./index');
 const watch = require('./watch');
@@ -41,29 +43,27 @@ function fallbackReply(text, { week, who, apology, storedPromise }) {
   return bank.calm[0] + tail;
 }
 
-async function handleIncoming(text, who = 'mama', from) {
+async function handleIncoming(text, who = 'mama', from, messageId) {
   notify.logIncoming(from, text);
   const mem = memory.read();
   memory.addHistory(mem, 'user', text);
 
-  let m;
-  if ((m = /\bsend\s+\$?(\d+(?:\.\d+)?)\s+home\b/i.exec(text))) {
-    const amount = Number(m[1]);
-    const rec = await nessie.transferHome(amount);
+  // Commands first (notify/parse.js understands the shapes people actually type). A verb with no amount asks
+  // for the amount. Saving past what is left is refused with the number. Money home is never capped and never
+  // scolded. Every move carries the message id as requestId, so a redelivered text never moves money twice.
+  const cmd = parse(text);
+  const before = nessie.week();
+  const left = Math.max(0, before.budget - before.spent);
+  const requestId = messageId ? `imsg-${messageId}` : undefined;
+  const say = (reply, mood) => { memory.addHistory(mem, who, reply); memory.write(mem); return { reply, mood, intent: cmd.intent }; };
+  if (cmd.intent === 'left') return say(writer.whatsLeft(before, who), before.mood);
+  if (cmd.intent === 'save' || cmd.intent === 'home') {
+    if (!(cmd.amount > 0)) return say(textLine('nothing', { who }), 'calm');
+    if (cmd.intent === 'save' && cmd.amount > left) return say(textLine('tooMuch', { amount: cmd.amount, left, who }), 'watching');
+    const rec = cmd.intent === 'home' ? await nessie.transferHome(cmd.amount, requestId) : await nessie.moveToSavings(cmd.amount, requestId);
     if (rec.nessieId) watch.markSeen(rec.nessieId);
     const week = nessie.week();
-    const reply = writer.notifyText('proud', week, { item: 'Sent home', price: amount }, who);
-    memory.addHistory(mem, who, reply); memory.write(mem);
-    return { reply, mood: 'proud' };
-  }
-  if ((m = /\bmove\s+\$?(\d+(?:\.\d+)?)\s+to\s+savings\b/i.exec(text))) {
-    const amount = Number(m[1]);
-    const rec = await nessie.moveToSavings(amount);
-    if (rec.nessieId) watch.markSeen(rec.nessieId);
-    const week = nessie.week();
-    const reply = writer.notifyText('proud', week, { item: 'Moved to savings', price: amount }, who);
-    memory.addHistory(mem, who, reply); memory.write(mem);
-    return { reply, mood: 'proud' };
+    return say(writer.notifyText('proud', week, { item: cmd.intent === 'home' ? 'Sent home' : 'Moved to savings', price: cmd.amount }, who), 'proud');
   }
 
   const week = nessie.week();

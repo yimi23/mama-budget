@@ -82,7 +82,7 @@ async function send(kind, { now = new Date(), to, grandma: g } = {}) {
   if (g === 'mama' || g === 'nana') writeState({ grandma: g });
   const who = grandma();
   const body = kind === 'monthly' ? monthlyText(now, who) : weeklyText(now, who);
-  const result = await notify(to, body, 'calm');
+  const result = await notify(to, body, 'calm', { prompted: true }); // statements skip the gate: PLAN allows them on top of the daily text
   const sent = !!(result && result.sent);
   if (sent) writeState(kind === 'monthly' ? { monthlySentFor: monthKey(now), lastMonthlyAt: now.toISOString() } : { weeklySentFor: weekKey(now), lastWeeklyAt: now.toISOString() });
   return { ok: sent, texted: sent, kind, text: body, to: to || process.env.PHOTON_TO || null };
