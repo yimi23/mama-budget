@@ -10,5 +10,7 @@ export default defineConfig({
     description: 'Mama sits in your cart. Rice, she says nothing. AirPods, she asks what for.',
     permissions: ['storage'],
     host_permissions: ['http://localhost:8787/*'],
+    // Her faces load as <img> inside the shadow root on store pages.
+    web_accessible_resources: [{ resources: ['faces/*/*.svg'], matches: ['<all_urls>'] }],
   },
 });

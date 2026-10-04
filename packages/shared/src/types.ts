@@ -22,3 +22,17 @@ export interface CartRead {
   /** 1.0 platform and adapter, 0.9 JSON-LD, the model's own number for text */
   confidence: number;
 }
+
+export type Mood = 'calm' | 'watching' | 'shocked' | 'down' | 'proud';
+
+/** GET /week: this week's envelope, summed from the ledger. */
+export interface Week {
+  budget: number;
+  spent: number;
+  left: number;
+  kept: number;
+  ratio: number;
+  mood: Mood;
+  daysLeft: number;
+  bills: { payee: string; nickname?: string; amount: number; due: string; daysUntil: number }[];
+}
