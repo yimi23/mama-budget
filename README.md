@@ -4,7 +4,7 @@
 
 Every money app tells you after the money is gone. Mama Budget is a working Chrome extension (open source, 144 tests, built zip in Releases) that sits in the corner of your cart as a small face in a gold ring. It is not a blocker and not a guilt trip: she never shames, she asks once, she reacts only when you said something was a want and it blows the week, and Buy anyway is always there. Groceries, rent, medicine, money sent home: she says nothing. A new want above a few dollars: she asks what it is for, once, and remembers. A want that blows the week: she says the price, the item and what is left, out loud and in text, while the Buy button is still in front of you. Nothing is ever blocked. You can always buy anyway. Her number is **Kept**, what you did not spend, and it only goes up.
 
-Built at MHacks 2026 by **Praise Oyimi** and **Ugonna Emeka-Inegbu**. Site: [mamabudget.com](https://mamabudget.com). Tracks: FinTech, Judged by an LLM, Useless AI, Dumbest Idea. Sponsor APIs: Capital One Nessie, Photon, ElevenLabs. Model: Claude.
+Built at MHacks 2026 by **Praise Oyimi** and **Ugonna Emeka-Inegbu**. Site: [mamabudget.com](https://mamabudget.com), also at mamabudget.tech. Tracks: FinTech, Judged by an LLM, Useless AI, Dumbest Idea. Sponsor APIs: Capital One Nessie, Photon, ElevenLabs. Model: Claude.
 
 ## Who she is for
 

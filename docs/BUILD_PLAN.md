@@ -143,7 +143,7 @@ Admit one limit before they ask: a simulated bank, one envelope, and on stores s
 - [x] Nessie resources listed in README (customers, accounts, purchases, deposits, withdrawals, bills; transfers are deposit and withdrawal pairs).
 - [x] Photon two way, live over Spectrum: texts in, texts out, photos, the purchase breakdown text, the Sunday statement. A clip is still to be recorded.
 - [x] ElevenLabs credited; four voices.
-- [x] mamabudget.com live with the privacy page. Figma: faces and badges exported as SVG in `design/figma/`, no Figma file link. mamabudget.tech: not registered. Notability: not done.
+- [x] mamabudget.com live with the privacy page. Figma: faces and badges exported as SVG in `design/figma/`, no Figma file link. mamabudget.tech: registered, aliased to the same Netlify site, DNS pending at the registrar. Notability: not done.
 - [ ] Tracks ticked on Devpost: FinTech, Useless AI, Dumbest Idea, Judged by an LLM, Nessie, Photon, ElevenLabs.
 - [ ] Second laptop runs the demo (Ugonna: `npm run update`, keys in `api/.env`, or point "Where she runs" at the first laptop).
 - [ ] Submitted before 12:00pm.
