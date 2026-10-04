@@ -109,11 +109,14 @@ const routes = {
     setHome(body.home);
     const items = (body.items || []).map((it) => ({ item: String(it.name || ''), price: Number(it.unitPrice || 0) * Number(it.qty || 1), storePrice: it.storeUnitPrice != null ? Number(it.storeUnitPrice) * Number(it.qty || 1) : null, merchant: it.store || '', currency: body.currency || 'USD', home: body.home || null, period: ['week', 'month', 'year'].includes(it.period) ? it.period : null }));
     // The rules judge the full title (the protected word is often at the end: "...Fragrant Rice"); her line gets the short name.
-    const judged = items.map((item) => ({ item, v: v2.judge(item, w, memory, { loudness: body.loudness, now: new Date() }) }));
+    // A merchant she promised to watch (the month's top wants) by host token: "doordash" in doordash.com.
+    const store = (body.items || [])[0]?.store || '';
+    const host = String(store).toLowerCase();
+    const watched = (nessie.watches(nessie.month()) || []).find((wt) => { const t = String(wt.merchant || '').toLowerCase().replace(/[^a-z0-9]/g, ''); return t.length >= 4 && host.includes(t); }) || null;
+    const judged = items.map((item) => ({ item: { ...item, watched }, v: v2.judge(item, w, memory, { loudness: body.loudness, now: new Date(), watched }) }));
     // Cards only (an ask or a reaction) get a line written from context, three at most per call, in parallel, each
     // falling back to the fixed pool on timeout. Low confidence reads (the text reader) ask rather than scold.
     const monthNow = nessie.month();
-    const store = (body.items || [])[0]?.store || '';
     let budgetLeft = 3;
     const verdicts = await Promise.all(judged.map(async ({ item, v }) => {
       if (body.confidence != null && Number(body.confidence) < 0.7 && v.react) { v = { ...v, react: false, label: 'ask', mood: 'watching', reason: 'Read from page text, so she asks rather than scolds.', tags: [...v.tags, 'lowconfidence'] }; }

@@ -22,9 +22,12 @@ const has = (t, words) => words.some((w) => String(t).toLowerCase().includes(w))
 // $40. `now` is injected (not read) so the judge stays pure; it is here for the quiet hours rule when that ships.
 const ASK_LINE_FOR = { full: 15, mama: 25, gentle: 40 };
 
-function judge(it, month = { budget: 75, spent: 0 }, memory = {}, { loudness, now } = {}) {
+// On a merchant she promised to watch (screen 06b) the ask line drops to $5: nothing new slips by there.
+const WATCHED_ASK_LINE = 5;
+
+function judge(it, month = { budget: 75, spent: 0 }, memory = {}, { loudness, now, watched } = {}) {
   void now;
-  const askLine = ASK_LINE_FOR[loudness] || ASK_LINE;
+  const askLine = watched ? Math.min(WATCHED_ASK_LINE, ASK_LINE_FOR[loudness] || ASK_LINE) : (ASK_LINE_FOR[loudness] || ASK_LINE);
   const k = key(it);
   const ratio = month.budget ? month.spent / month.budget : 0;
   const base = ratio >= 0.75 ? 'watching' : 'calm';
@@ -53,7 +56,7 @@ function judge(it, month = { budget: 75, spent: 0 }, memory = {}, { loudness, no
 
   // Unknown item. Small: a nod. Otherwise: ask, neutral face, nothing moves.
   if (price < askLine) return out('want', false, base, 'Small. A nod, nothing more.', ['small']);
-  return out('ask', false, 'watching', 'First time. She asks, she does not scold.', ['ask']);
+  return out('ask', false, 'watching', watched ? 'A merchant she watches. She asks about everything here.' : 'First time. She asks, she does not scold.', watched ? ['ask', 'watched'] : ['ask']);
 }
 
 // Called when the user answers the card. Returns the updated memory.

@@ -141,3 +141,13 @@ test('a reason that names an occasion makes a plan; a dressed up want does not',
   const v = judge({ item: 'Checked wool suit', price: 476 }, week, memory);
   assert.deepEqual([v.label, v.react], ['need', false], 'planned is never scolded');
 });
+
+test('on a watched merchant she asks about anything over $5 and says why', () => {
+  const r = judge({ item: 'Bubble tea', price: 12, merchant: 'doordash.com' }, week, {}, { watched: { merchant: 'DoorDash', amount: 102 } });
+  assert.deepEqual([r.label, r.tags.includes('watched')], ['ask', true]);
+  assert.equal(judge({ item: 'Bubble tea', price: 12, merchant: 'doordash.com' }, week).label, 'want', 'elsewhere $12 is a nod');
+  const v = judge({ item: 'Bubble tea', price: 12 }, week, {}, { watched: { merchant: 'DoorDash', amount: 102 } });
+  const line = lineFor(v, { item: 'Bubble tea', price: 12, merchant: 'doordash.com', watched: { merchant: 'DoorDash', amount: 102 } }, week);
+  assert.match(line, /DoorDash again/);
+  assert.match(line, /102/);
+});

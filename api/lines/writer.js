@@ -15,6 +15,7 @@ const MAMA = {
   down: ['That is the week gone. {over} dollars over, on {item}.', 'Okay. I have heard. {over} dollars past the week.'],
   proud: ['My pikin. Come and hug me.', 'You see? Good child. I knew it.'],
   ask: ['{item}? Tell me the story first.', 'Before I talk, explain {item} to me.'],
+  askWatched: ['{item}? {watchedMerchant} again. {habit} dollars here last month.'],
   ackNeed: ['Okay. I will remember.'],
   ackFits: ['Ehen. Carry on.', 'Okay. It fits. Carry on.'],
   agreed: ['Good. I am watching the cart.'],
@@ -38,6 +39,7 @@ const NANA = {
   down: ['That is {over} dollars over the week, hon. I’m not going to say anything. You already know.'],
   proud: ['Oh good. I knew you would.', 'Well look at you. Good for you, hon.'],
   ask: ['Hold on a sec, hon. What’s {item} for?'],
+  askWatched: ['{item}, hon? {watchedMerchant} again. {habit} dollars here last month.'],
   ackNeed: ['Okay. Noted.'],
   ackFits: ['Okay, hon. That fits.'],
   agreed: ['Good call, hon.'],
@@ -103,6 +105,8 @@ function fill(t, it, week = {}) {
     .replace('{over}', Math.max(0, spent - budget))
     .replace('{merchant}', shopName(it.merchant))
     .replace('{occasion}', cap(String(it.occasion || 'that')))
+    .replace('{watchedMerchant}', it.watched ? it.watched.merchant : 'This place')
+    .replace('{habit}', it.watched ? Math.round(it.watched.amount || 0) : 0)
     .replace('{fund}', Math.round(it.fund || 0));
   return line.charAt(0).toUpperCase() + line.slice(1);
 }
@@ -116,7 +120,7 @@ function fill(t, it, week = {}) {
 function lineFor(verdict, it, month, who = 'mama') {
   const bank = who === 'nana' ? NANA : MAMA;
   let key = verdict.mood;
-  if (verdict.label === 'ask') key = 'ask';
+  if (verdict.label === 'ask') key = it.watched && bank.askWatched ? 'askWatched' : 'ask';
   if (verdict.tags && verdict.tags.includes('family')) key = 'family';
   const pool = bank[key] || bank.calm;
   // Shocked lines are chosen by the breach; the rest vary by the item so repeats do not sound canned.
@@ -282,7 +286,7 @@ Verdict from the rules: ${verdict.label}${verdict.react ? ', she reacts' : ''}${
 This week: $${Math.round(week.spent || 0)} of $${Math.round(week.budget || 0)} fun money spent, $${left} left, ${week.daysLeft ?? '?'} day(s) to go${week.ratio >= 1 ? `, the week is already over by $${Math.round(week.spent - week.budget)}` : ''}.
 ${bill ? `Bill coming: ${bill.nickname || bill.payee} $${bill.amount} in ${bill.daysUntil} day(s).` : 'No bills in the next week.'}
 Last 30 days habits: ${habits || 'not much'}.
-What she remembers about this person's answers: ${remembered}.${reason ? `\nThe person just said this item is for: "${reason}".` : ''}${proposal ? `\nThe plan she may offer: take $${proposal.amount} from savings for this week (savings hold $${savings}); the week would then cover it.` : ''}`;
+${it.watched ? `This store is one she promised to watch: $${Math.round(it.watched.amount || 0)} spent here in the last 30 days. Say so.\n` : ''}What she remembers about this person's answers: ${remembered}.${reason ? `\nThe person just said this item is for: "${reason}".` : ''}${proposal ? `\nThe plan she may offer: take $${proposal.amount} from savings for this week (savings hold $${savings}); the week would then cover it.` : ''}`;
   const must = kind === 'ask' ? [it.item.split(' ')[0]] : kind === 'react' || kind === 'bought' ? [String(Math.round(it.price || 0))] : kind === 'plan' && proposal ? [String(proposal.amount)] : [];
   return model.say({ system: SYSTEM[who] + LINE_RULES, prompt, key: situation, mustInclude: must, maxLen: kind === 'ack' ? 160 : 240, timeoutMs: warm ? model.WARM_TIMEOUT_MS : undefined });
 }
