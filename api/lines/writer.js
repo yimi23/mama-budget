@@ -497,7 +497,8 @@ async function contextLine({ kind, who = 'mama', verdict, it, week, month, memor
   const model = require('./model');
   // The cache key is the situation, not the prompt: the same item, price, week and store gives the same line whether
   // it was written ahead of time (while the ask was on screen) or at the moment of the card.
-  const situation = [kind, who, it.item, Math.round(it.price || 0), Math.round(week.spent || 0), Math.round(week.budget || 0), shopName(store || it.merchant), verdict.react ? 1 : 0, reason || '', proposal ? proposal.amount : ''].join('|');
+  // The count of earlier sightings is part of the situation: the third time an item comes up is a different moment.
+  const situation = [kind, who, it.item, Math.round(it.price || 0), Math.round(week.spent || 0), Math.round(week.budget || 0), shopName(store || it.merchant), verdict.react ? 1 : 0, reason || '', proposal ? proposal.amount : '', seen && seen.count ? `seen${seen.count}` : ''].join('|');
   const left = Math.max(0, Math.round((week.budget || 0) - (week.spent || 0)));
   const habits = (month && month.topWants ? month.topWants : []).slice(0, 3).map((w) => `$${w.amount} at ${w.merchant} (${w.category})`).join(', ');
   const bill = (week.bills || [])[0];
