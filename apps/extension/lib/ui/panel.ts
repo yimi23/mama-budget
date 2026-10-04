@@ -12,18 +12,18 @@ export interface PanelState {
 
 const CSS = `
 .panel {
-  position: fixed; right: 24px; bottom: 112px; z-index: 2147483647; width: 360px; box-sizing: border-box;
-  padding: 20px; border-radius: 20px; background: #FBF7EF; color: #22172A; box-shadow: 0 16px 48px rgba(20, 16, 22, 0.3);
+  position: fixed; right: 24px; bottom: calc(112px + var(--mb-lift, 0px)); z-index: 2147483647; width: 360px; box-sizing: border-box;
+  padding: 20px; border-radius: 20px; background: #FBF7EF; color: #22172A; box-shadow: 0 1px 6px rgba(34, 23, 42, 0.06), 0 2px 32px rgba(34, 23, 42, 0.16);
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 14px; line-height: 1.45;
-  font-variant-numeric: tabular-nums; animation: panel-in 280ms cubic-bezier(0.05, 0.7, 0.1, 1) both;
+  font-variant-numeric: tabular-nums; animation: panel-in 240ms cubic-bezier(0, 0, 0.2, 1) both;
 }
 .panel[hidden] { display: none; }
-.panel.out { animation: panel-out 200ms cubic-bezier(0.3, 0, 0.8, 0.15) both; }
+.panel.out { animation: panel-out 160ms cubic-bezier(0.4, 0, 1, 1) both; }
 .kicker { margin: 0; font-size: 13px; color: #5E566B; }
 .hero { margin: 2px 0 0; font-size: 40px; font-weight: 800; line-height: 1.1; letter-spacing: -0.01em; }
 .status { margin: 6px 0 0; font-size: 14px; color: #22172A; }
 .bar { margin: 16px 0 6px; height: 6px; border-radius: 3px; background: rgba(20, 16, 22, 0.12); overflow: hidden; }
-.bar > div { height: 100%; border-radius: 3px; transition: width 600ms cubic-bezier(0.05, 0.7, 0.1, 1); }
+.bar > div { height: 100%; border-radius: 3px; transition: width 400ms cubic-bezier(0, 0, 0.2, 1); }
 .barlabel { margin: 0; font-size: 13px; color: #5E566B; }
 .said { margin: 16px 0 0; padding: 0; list-style: none; border: 1px solid #EADFCB; border-radius: 12px; overflow: hidden; }
 .said li { padding: 10px 14px; font-size: 14px; }
@@ -35,8 +35,8 @@ const CSS = `
 }
 .close:hover { background: rgba(20, 16, 22, 0.06); }
 .close:focus-visible { outline: 3px solid #22172A; outline-offset: 2px; }
-@keyframes panel-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
-@keyframes panel-out { from { opacity: 1; } to { opacity: 0; transform: translateY(8px); } }
+@keyframes panel-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes panel-out { from { opacity: 1; } to { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .panel, .panel.out { animation: none; } .bar > div { transition: none; } }
 `;
 

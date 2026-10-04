@@ -39,14 +39,14 @@ export interface AskManyContent {
 
 const CSS = `
 .card {
-  position: fixed; right: 24px; bottom: 112px; z-index: 2147483647; width: 360px; box-sizing: border-box;
+  position: fixed; right: 24px; bottom: calc(112px + var(--mb-lift, 0px)); z-index: 2147483647; width: 360px; box-sizing: border-box;
   display: flex; gap: 14px; padding: 16px; border-radius: 20px;
-  background: #FBF7EF; color: #141016; box-shadow: 0 16px 48px rgba(20, 16, 22, 0.3);
+  background: #FBF7EF; color: #141016; box-shadow: 0 1px 6px rgba(34, 23, 42, 0.06), 0 2px 32px rgba(34, 23, 42, 0.16);
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 14px; line-height: 1.45;
-  animation: card-in 280ms cubic-bezier(0.05, 0.7, 0.1, 1) both;
+  animation: card-in 240ms cubic-bezier(0, 0, 0.2, 1) both;
 }
 .card[hidden] { display: none; }
-.card.out { animation: card-out 200ms cubic-bezier(0.3, 0, 0.8, 0.15) both; }
+.card.out { animation: card-out 160ms cubic-bezier(0.4, 0, 1, 1) both; }
 .tile {
   width: 96px; height: 110px; flex-shrink: 0; border-radius: 14px; overflow: hidden;
   display: flex; align-items: flex-end; justify-content: center; background: #DDF1E8;
@@ -84,8 +84,8 @@ const CSS = `
 .row .done { font-size: 13px; color: #5E566B; min-height: 40px; display: flex; align-items: center; }
 .notnow { all: unset; align-self: flex-start; margin-top: 2px; font-size: 13px; color: #5E566B; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 .notnow:focus-visible { outline: 3px solid #22172A; outline-offset: 2px; border-radius: 4px; }
-@keyframes card-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
-@keyframes card-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(8px); } }
+@keyframes card-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes card-out { from { opacity: 1; } to { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .card, .card.out { animation: none; } .actions button { transition: none; } }
 `;
 

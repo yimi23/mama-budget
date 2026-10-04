@@ -3,14 +3,14 @@
 
 const CSS = `
 .bubble {
-  position: fixed; right: 112px; bottom: 36px; z-index: 2147483647; max-width: 300px; box-sizing: border-box;
+  position: fixed; right: 112px; bottom: calc(36px + var(--mb-lift, 0px)); z-index: 2147483647; max-width: 300px; box-sizing: border-box;
   padding: 12px 16px; border-radius: 16px 16px 4px 16px;
-  background: #FBF7EF; color: #141016; box-shadow: 0 8px 24px rgba(20, 16, 22, 0.2);
+  background: #FBF7EF; color: #141016; box-shadow: 0 1px 6px rgba(34, 23, 42, 0.06), 0 2px 24px rgba(34, 23, 42, 0.14);
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-  animation: bubble-in 250ms cubic-bezier(0.05, 0.7, 0.1, 1) both;
+  animation: bubble-in 180ms cubic-bezier(0, 0, 0.2, 1) both;
 }
 .bubble[hidden] { display: none; }
-.bubble.out { animation: bubble-out 200ms cubic-bezier(0.3, 0, 0.8, 0.15) both; }
+.bubble.out { animation: bubble-out 120ms cubic-bezier(0.4, 0, 1, 1) both; }
 .bubble .say { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.3; }
 .bubble .num { margin: 4px 0 0; font-size: 13px; color: #5E566B; line-height: 1.4; font-variant-numeric: tabular-nums; }
 .bubble .num:empty { display: none; }
