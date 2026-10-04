@@ -9,7 +9,7 @@ WXT (Manifest V3, TypeScript) for the extension. Hono on Node 24 for the API. no
 - `npm run dev` runs the extension and the api together. There is no fake shop. Test on amazon.com, target.com and one Shopify store (allbirds.com; gymshark.com is headless and has no /cart.js), logged in, with saved carts.
 - `npm test` runs the rules engine tests. `npm run test:update` regenerates goldens (review the diff).
 - `npm run typecheck`.
-- Load unpacked from `apps/extension/.output/chrome-mv3`. After reloading the extension, hard refresh the Amazon tab (old content scripts are orphaned).
+- Load unpacked from `apps/extension/build/chrome-mv3`. After reloading the extension, hard refresh the Amazon tab (old content scripts are orphaned).
 
 ## Architecture rules
 - The service worker is stateless. Every piece of state lives in `chrome.storage` through `packages/store`. Globals die after 30 seconds.
