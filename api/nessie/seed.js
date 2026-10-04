@@ -94,16 +94,15 @@ async function main() {
     c.customerId = cid; c.accountId = chk.objectCreated._id; c.savingsId = sav.objectCreated._id; c.familyAccountId = famAcct.objectCreated._id;
 
     c.merchantIds = {};
-    for (const [name, m] of Object.entries(MERCHANTS)) {
+    // Nessie accepts these in parallel; posted one at a time the seed took 4 s, longer than the worker gives a call.
+    await Promise.all(Object.entries(MERCHANTS).map(async ([name, m]) => {
       const r = await call('POST', '/merchants', { name, category: m.category, address: { street_number: '1', street_name: 'Main St', city: 'Ann Arbor', state: 'MI', zip: '48104' }, geocode: { lat: 42.28, lng: -83.74 } });
       c.merchantIds[name] = r.objectCreated._id;
-    }
-    for (const p of [...c.purchases].sort((a, b) => a.date.localeCompare(b.date))) {
+    }));
+    await Promise.all([...c.purchases].sort((a, b) => a.date.localeCompare(b.date)).map(async (p) => {
       await call('POST', `/accounts/${c.accountId}/purchases`, { merchant_id: c.merchantIds[p.merchant], medium: 'balance', purchase_date: p.date, amount: p.amount, status: 'completed', description: `${p.tag} | ${p.item}` });
-    }
-    for (const d of c.deposits) {
-      await call('POST', `/accounts/${c.accountId}/deposits`, { medium: 'balance', transaction_date: d.date, status: 'completed', amount: d.amount, description: `income | ${d.item}` });
-    }
+    }));
+    await Promise.all(c.deposits.map((d) => call('POST', `/accounts/${c.accountId}/deposits`, { medium: 'balance', transaction_date: d.date, status: 'completed', amount: d.amount, description: `income | ${d.item}` })));
     for (const t of c.transfers) {
       const destId = t.to === 'family' ? c.familyAccountId : c.savingsId;
       const description = `${t.tag} | ${t.item}`;

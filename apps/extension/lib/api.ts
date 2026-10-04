@@ -3,6 +3,7 @@
 
 export const DEFAULT_API = 'http://localhost:8787';
 const TIMEOUT_MS = 4000;
+const SLOW_TIMEOUT_MS = 20000;
 
 /** Where the API lives. localhost by default; a teammate's laptop on the hotspot, or a hosted one, from settings.apiUrl. */
 export async function apiBase(): Promise<string> {
@@ -15,8 +16,8 @@ export async function apiBase(): Promise<string> {
   }
 }
 
-async function once(path: string, init?: RequestInit): Promise<unknown> {
-  const res = await fetch((await apiBase()) + path, { ...init, signal: AbortSignal.timeout(TIMEOUT_MS) });
+async function once(path: string, init?: RequestInit, timeoutMs = TIMEOUT_MS): Promise<unknown> {
+  const res = await fetch((await apiBase()) + path, { ...init, signal: AbortSignal.timeout(timeoutMs) });
   if (!res.ok) throw new Error(`${path} ${res.status}`);
   return res.json();
 }
@@ -26,11 +27,16 @@ async function fails(): Promise<number> {
   return apiFails as number;
 }
 
-/** Returns the parsed body, or null once the API has failed twice in a row. Never throws. */
-export async function call<T>(path: string, init?: RequestInit): Promise<T | null> {
-  for (let attempt = 0; attempt < 2; attempt++) {
+/**
+ * Returns the parsed body, or null once the API has failed twice in a row. Never throws. `slow` is for the one call
+ * that legitimately takes seconds (the bank reseed on /reset): a longer timeout and a single attempt, so a slow
+ * answer is never counted as the API being down and never runs twice.
+ */
+export async function call<T>(path: string, init?: RequestInit, slow = false): Promise<T | null> {
+  const attempts = slow ? 1 : 2;
+  for (let attempt = 0; attempt < attempts; attempt++) {
     try {
-      const body = (await once(path, init)) as T;
+      const body = (await once(path, init, slow ? SLOW_TIMEOUT_MS : TIMEOUT_MS)) as T;
       await browser.storage.session.set({ apiFails: 0 });
       return body;
     } catch {

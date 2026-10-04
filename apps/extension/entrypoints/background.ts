@@ -339,7 +339,7 @@ async function startOver() {
   // And a fresh week in the bank (the seed: $75, $50 spent), so the next judge never inherits the last one's
   // Buy anyway. About three seconds; the popup is already on Welcome, and onboarding takes longer than that to
   // reach the bank screen. If the API is down the extension is reset anyway.
-  if (await apiUp()) void call('/reset', { method: 'POST' });
+  if (await apiUp()) void call('/reset', { method: 'POST' }, true);
 }
 
 /** Her memory of your answers. Durable, keyed by the rules' own item key, shared across every store. */
