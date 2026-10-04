@@ -464,7 +464,9 @@ function daysLeftInWeek(now = new Date()) {
 
 // Optional: let the model write the line in character. It voices the verdict, never changes it.
 const character = require('./character');
-const SYSTEM = { get mama() { return character.brief('mama'); }, get nana() { return character.brief('nana'); } };
+// The brief for whoever is speaking. Every grandma in the registry, Mama for anyone unknown: Abuela and Wong were
+// briefly reaching a two entry map here and speaking with no brief at all.
+const SYSTEM = new Proxy({}, { get: (_, who) => character.brief(typeof who === 'string' ? who : 'mama') });
 
 async function callModel(system, userContent, timeoutMs = 6000) {
   return require('./model').say({ system, prompt: userContent, maxLen: 400, timeoutMs });

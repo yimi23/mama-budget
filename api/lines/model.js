@@ -27,10 +27,13 @@ async function say({ system, prompt, key, mustInclude = [], maxLen = 220, timeou
   const k = cacheKey([MODEL, system, typeof key === 'string' ? key : prompt]);
   if (key && lineCache.has(k)) return lineCache.get(k);
   try {
+    // The brief is the same for every line she speaks, so it is cached at the API: after the first call, the system
+    // block costs a fraction and the request starts faster. Below the cache minimum the flag is simply ignored.
     const res = await client.messages.create(
-      { model: MODEL, max_tokens: 300, system, output_config: { effort: 'low' }, messages: [{ role: 'user', content: prompt }] },
+      { model: MODEL, max_tokens: 300, system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }], output_config: { effort: 'low' }, messages: [{ role: 'user', content: prompt }] },
       { timeout: timeoutMs },
     );
+    if (process.env.MODEL_LOG_USAGE === '1') console.log('[model] usage', JSON.stringify(res.usage));
     const text = res.content.filter((b) => b.type === 'text').map((b) => b.text).join(' ').replace(/\s+/g, ' ').trim();
     if (!text || text.length > maxLen || /[—–]| - |[\u{1F300}-\u{1FAFF}]/u.test(text)) return null;
     for (const m of mustInclude) if (!text.toLowerCase().includes(String(m).toLowerCase())) return null;
