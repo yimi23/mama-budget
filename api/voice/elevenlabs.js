@@ -10,7 +10,9 @@ async function speak(line, who = 'mama') {
   const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}?output_format=mp3_44100_64`, {
     method: 'POST',
     headers: { 'xi-api-key': key, 'content-type': 'application/json' },
-    body: JSON.stringify({ text: line, model_id: 'eleven_multilingual_v2', voice_settings: { stability: 0.35, similarity_boost: 0.8, style: 0.6 } }),
+    // docs/ONBOARDING.md: stability high, style low, a touch slower than natural. She talks like someone in a kitchen,
+    // not someone on stage. speed is 0.7 to 1.2 on multilingual v2.
+    body: JSON.stringify({ text: line, model_id: 'eleven_multilingual_v2', voice_settings: { stability: 0.6, similarity_boost: 0.8, style: 0.25, speed: 0.9 } }),
   });
   if (!r.ok) throw new Error(`elevenlabs ${r.status}`);
   const buf = Buffer.from(await r.arrayBuffer());

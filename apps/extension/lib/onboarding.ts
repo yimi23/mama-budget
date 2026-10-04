@@ -94,7 +94,7 @@ export const COPY: Record<Grandma, Copy> = {
   nana: {
     name: 'Nana',
     welcomeTitle: 'I’m Nana.',
-    welcome: 'You pick a number for the week. I keep you to it. I’m in your cart before you pay, not after. What you need is none of my business.',
+    welcome: 'You pick a number for the week. I keep you to it. I’m in your cart before you pay, not after. What you need, I leave alone.',
     welcomeSub: 'Two questions from you now. The rest I’ll see for myself.',
     preview: 'Well. Let’s have a look.',
     bank: 'I just look at what you spent. I don’t touch your money.',
@@ -143,7 +143,8 @@ export function naira(usd: number, perUsd = 1600): string {
 /** How long she will be speaking, when the player did not say: about 2.4 words a second plus a breath. */
 export function speechSeconds(text: string): number {
   const n = text.trim().split(/\s+/).filter(Boolean).length;
-  return Math.max(1, Math.round((n / 2.4 + 0.4) * 10) / 10);
+  // About 2.1 words a second at speed 0.9, plus a breath, so the text never lands before she says it.
+  return Math.max(1, Math.round((n / 2.1 + 0.5) * 10) / 10);
 }
 
 /** Decelerating count from 0 to `to` over `ms`, sampled at `t` ms. Screen 09's kept number. */
