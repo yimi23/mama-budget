@@ -360,8 +360,12 @@ SHOW.home = () => { homeNote.textContent = ''; paintHome(); };
 for (const b of document.querySelectorAll<HTMLButtonElement>('#home-grandma button')) b.addEventListener('click', async () => { await saveSettings({ grandma: b.dataset.v as Grandma }); paintHome(); });
 $('#home-sounds').addEventListener('change', (e) => { void saveSettings({ sounds: (e.target as HTMLInputElement).checked }).then(() => { paintHome(); paintMute(); }); });
 $('#home-over').addEventListener('click', async () => {
+  // Start over is a fresh install: the worker clears every store, and this popup goes straight back to Welcome.
   const r = await send({ type: 'START_OVER' });
-  homeNote.textContent = r ? 'Done. Reload the cart and she will ask again.' : 'That did not work. Reload the extension and try again.';
+  if (!r) { homeNote.textContent = 'That did not work. Reload the extension and try again.'; return; }
+  settings = {};
+  flow = { step: 'welcome', bank: false, texted: false };
+  await show('welcome');
 });
 $('#home-tour').addEventListener('click', async () => {
   await saveSettings({ onboarded: false });

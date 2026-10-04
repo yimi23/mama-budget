@@ -236,8 +236,8 @@ async function setEnvelope(msg: Extract<Message, { type: 'SET_ENVELOPE' }>) {
 
 /** The popup's Start over: she forgets every answer and asks again, as on a fresh install. */
 async function startOver() {
-  await browser.storage.local.remove(['memory', 'reacted', 'posted', 'said']);
-  await browser.storage.session.remove('asked');
+  // A fresh install: no grandma, no onboarding progress, no memory, no marks. Onboarding starts at Welcome.
+  await Promise.all([browser.storage.local.clear(), browser.storage.session.clear()]);
 }
 
 /** Her memory of your answers. Durable, keyed by the rules' own item key, shared across every store. */
