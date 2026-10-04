@@ -8,12 +8,14 @@
 //   GET  /week                                                  -> this week's envelope: budget, spent, left, kept, mood, bills
 //   GET  /month                                                 -> the 30 day read for onboarding: true line, watches, proposed envelope
 //   GET  /month?history=30                                      -> same
+//   POST /v2/judge  { items:[{name,qty,unitPrice,store}], memory, grandma } -> v2 verdict per item (ask, remember), lines, week
 //   GET  /health
 
 const http = require('node:http');
 const { judge } = require('./judge/rules');
+const v2 = require('./judge/rules_v2');
 const nessie = require('./nessie/client');
-const { lineFor } = require('./lines/writer');
+const { lineFor, subLine } = require('./lines/writer');
 const { speak } = require('./voice/elevenlabs');
 const { text } = require('./photon/text');
 
@@ -38,6 +40,23 @@ const routes = {
     return { items, month: m, mood: worst.mood, line: worst.line || '' , audioUrl: worst.react ? await speak(worst.line).catch(() => null) : null };
   },
 
+  // v2 for the extension: protect the obvious, ask once, remember. Memory lives in the extension and comes with each call;
+  // verdict.key is what the extension stores the answer under, so the key logic stays in rules_v2 only.
+  'POST /v2/judge': async (body) => {
+    const w = nessie.week();
+    const who = body.grandma === 'nana' ? 'nana' : 'mama';
+    const memory = body.memory && typeof body.memory === 'object' ? body.memory : {};
+    const verdicts = (body.items || []).map((it) => {
+      // The rules judge the full title (the protected word is often at the end: "...Fragrant Rice"); her line gets the short name.
+      const item = { item: String(it.name || ''), price: Number(it.unitPrice || 0) * Number(it.qty || 1), merchant: it.store || '' };
+      const v = v2.judge(item, w, memory);
+      const spoken = { ...item, item: shortName(item.item) };
+      return { name: it.name, short: spoken.item, price: item.price, ...v, line: lineFor(v, spoken, w, who), sub: subLine(w) };
+    });
+    const loud = verdicts.find((v) => v.react) || verdicts.find((v) => v.label === 'ask');
+    return { week: w, mood: loud ? loud.mood : w.mood, verdicts };
+  },
+
   'POST /buy': async (body) => {
     await nessie.purchase(body);
     const m = await month();
@@ -56,6 +75,13 @@ const routes = {
     return { month: await month(), mood: 'proud', line: lineFor({ label: 'need', mood: 'proud', tags: ['saved'] }, { item: 'savings' }, await month()) };
   },
 };
+
+// "Fujifilm Instax Mini 99 Instant Camera Vintage Black. + Value Pack (40 Sheets)..." -> "Fujifilm Instax Mini 99".
+// Store titles run long; her lines need the noun a person would say.
+function shortName(name) {
+  const head = String(name || '').split(/\s[|(\[–-]\s?|[,|(\[.]\s/)[0].replace(/^\[[^\]]*\]-?/, '').trim();
+  return head.split(/\s+/).slice(0, 4).join(' ');
+}
 
 function rank(mood) { return ['calm', 'proud', 'watching', 'shocked', 'down'].indexOf(mood); }
 
