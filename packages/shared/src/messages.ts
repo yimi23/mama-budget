@@ -19,6 +19,8 @@ export type Message =
   /** A real order confirmation page: charge the store's last cart, minus anything already posted. */
   | { type: 'CONFIRM'; store: string; orderId: string }
   | { type: 'START_OVER' }
+  /** Her voice for one line. Fire and forget: the card never waits on audio. */
+  | { type: 'SPEAK'; text: string; grandma: 'mama' | 'nana' }
   | { type: 'PING' };
 
 export type Reply<M extends Message> =
@@ -29,6 +31,7 @@ export type Reply<M extends Message> =
   M extends { type: 'BUY' } ? ({ ok: true } & BuyReply) | { ok: false } :
   M extends { type: 'CONFIRM' } ? { ok: true; posted: number } :
   M extends { type: 'START_OVER' } ? { ok: true } :
+  M extends { type: 'SPEAK' } ? { ok: boolean } :
   M extends { type: 'ANSWER' } ? { ok: true } :
   M extends { type: 'PING' } ? { ok: true; at: number } :
   never;

@@ -2,7 +2,7 @@
 
 import type { HandledLists, Message } from '@mama/shared/messages';
 import type { Answer, BuyReply, CartItem, CartRead, CurrencyCode, JudgeReply, Week } from '@mama/shared/types';
-import { apiUp, call } from '../lib/api';
+import { API, apiUp, call } from '../lib/api';
 import { weekKey } from '@mama/shared/week';
 
 const LAST_CART_TTL_MS = 30 * 60 * 1000;
@@ -122,6 +122,56 @@ async function confirmOrder(msg: Extract<Message, { type: 'CONFIRM' }>) {
   return { ok: true as const, posted: n };
 }
 
+// Loudness tiers scale her volume (ONBOARDING.md): Gentle Auntie 0.6, Mama 0.8, Full Nigerian Mother 1.0.
+export function volumeFor(loudness: unknown): number {
+  return loudness === 'gentle' ? 0.6 : loudness === 'full' ? 1 : 0.8;
+}
+
+const OFFSCREEN_URL = 'offscreen.html';
+
+async function offscreenReady(): Promise<boolean> {
+  try {
+    const contexts = await browser.runtime.getContexts({ contextTypes: [browser.runtime.ContextType.OFFSCREEN_DOCUMENT] });
+    if (contexts.length) return true;
+    await browser.offscreen.createDocument({
+      url: OFFSCREEN_URL,
+      reasons: [browser.offscreen.Reason.AUDIO_PLAYBACK],
+      justification: 'Plays her spoken line when a purchase blows the weekly envelope.',
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function toDataUrl(buf: ArrayBuffer): string {
+  let bin = '';
+  const bytes = new Uint8Array(buf);
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return `data:audio/mpeg;base64,${btoa(bin)}`;
+}
+
+/** Fetches her line as mp3 from /tts and plays it in the offscreen document. Silent on any failure. */
+async function speak(msg: Extract<Message, { type: 'SPEAK' }>): Promise<{ ok: boolean }> {
+  const { settings = {} } = await browser.storage.local.get('settings');
+  const st = settings as { sounds?: boolean; loudness?: string };
+  if (st.sounds === false) return { ok: false };
+  if (!(await apiUp())) return { ok: false };
+  try {
+    const res = await fetch(`${API}/tts`, {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ text: msg.text, grandma: msg.grandma }), signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok || !(res.headers.get('content-type') ?? '').startsWith('audio/')) return { ok: false };
+    const dataUrl = toDataUrl(await res.arrayBuffer());
+    if (!(await offscreenReady())) return { ok: false };
+    const reply = (await browser.runtime.sendMessage({ type: 'PLAY', dataUrl, volume: volumeFor(st.loudness) })) as { ok?: boolean } | undefined;
+    return { ok: !!reply?.ok };
+  } catch {
+    return { ok: false };
+  }
+}
+
 /** The popup's Start over: she forgets every answer and asks again, as on a fresh install. */
 async function startOver() {
   await browser.storage.local.remove(['memory', 'reacted', 'posted']);
@@ -137,6 +187,8 @@ async function remember(key: string, answer: Answer) {
 export default defineBackground(() => {
   browser.runtime.onMessage.addListener((msg: Message, _sender, sendResponse) => {
     switch (msg.type) {
+      default:
+        return false; // PLAY and anything else is not for the worker
       case 'PING':
         sendResponse({ ok: true, at: Date.now() });
         return false;
@@ -157,6 +209,9 @@ export default defineBackground(() => {
         return true;
       case 'CONFIRM':
         confirmOrder(msg).then(sendResponse, () => sendResponse({ ok: true, posted: 0 }));
+        return true;
+      case 'SPEAK':
+        speak(msg).then(sendResponse, () => sendResponse({ ok: false }));
         return true;
       case 'START_OVER':
         startOver().then(() => sendResponse({ ok: true }), () => sendResponse({ ok: true }));

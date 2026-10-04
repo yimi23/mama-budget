@@ -24,6 +24,9 @@
 // (our own routes, the /bank terminal, or straight to Nessie) produces exactly one text.
 
 const http = require('node:http');
+const fs = require('node:fs');
+const path = require('node:path');
+const crypto = require('node:crypto');
 const { judge } = require('./judge/rules');
 const v2 = require('./judge/rules_v2');
 const nessie = require('./nessie/client');
@@ -119,6 +122,28 @@ const routes = {
     // The bank watcher (notify/watch.js) picks this purchase up on its next tick and texts if it
     // warrants one -- not here, so a purchase from any source only ever produces one text.
     return { week: w, mood: w.mood, line, sub, texted: false, tag };
+  },
+
+  // Her voice, on the Shocked card and Gele down only. Cached mp3 per line so the demo never waits twice; with no
+  // ElevenLabs key the reply is JSON {audio:false} and the card shows text alone. The card never waits on audio.
+  'POST /tts': async (body) => {
+    const text = String(body.text || '').trim();
+    if (!text) throw new Error('text is required');
+    const voice = process.env.ELEVEN_VOICE_ID || 'default';
+    const dir = path.join(__dirname, '.cache', 'tts');
+    const file = path.join(dir, `${crypto.createHash('sha1').update(`${voice}\n${text}`).digest('hex')}.mp3`);
+    let mp3 = null;
+    if (fs.existsSync(file)) mp3 = fs.readFileSync(file);
+    else {
+      const url = await speak(text).catch(() => null);
+      if (url) {
+        mp3 = Buffer.from(url.slice(url.indexOf(',') + 1), 'base64');
+        fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(file, mp3);
+      }
+    }
+    if (!mp3) return { audio: false };
+    return { __raw: true, contentType: 'audio/mpeg', body: mp3 };
   },
 
   'POST /buy': async (body) => {
