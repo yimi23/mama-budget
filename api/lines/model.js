@@ -92,7 +92,7 @@ async function extractItems(text, images = []) {
     ];
     const res = await client.messages.create(
       {
-        model: MODEL, max_tokens: 2000, system: EXTRACT_SYSTEM, output_config: { effort: 'low', format: { type: 'json_schema', schema: ITEMS_SCHEMA } },
+        model: MODEL, max_tokens: 2000, system: [{ type: 'text', text: EXTRACT_SYSTEM, cache_control: { type: 'ephemeral' } }], output_config: { effort: 'low', format: { type: 'json_schema', schema: ITEMS_SCHEMA } },
         messages: [{ role: 'user', content }],
       },
       { timeout: images.length ? EXTRACT_TIMEOUT_MS * 2 : EXTRACT_TIMEOUT_MS },
@@ -120,7 +120,7 @@ async function classifyJSON({ system, prompt, schema, key, waitMs = CLASSIFY_WAI
   if (classCache.has(k)) return classCache.get(k);
   if (!inFlight.has(k)) {
     const run = client.messages.create(
-      { model: MODEL, max_tokens: 200, system, output_config: { effort: 'low', format: { type: 'json_schema', schema } }, messages: [{ role: 'user', content: prompt }] },
+      { model: MODEL, max_tokens: 200, system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }], output_config: { effort: 'low', format: { type: 'json_schema', schema } }, messages: [{ role: 'user', content: prompt }] },
       { timeout: 20000 },
     ).then((res) => {
       const out = JSON.parse(res.content.filter((b) => b.type === 'text').map((b) => b.text).join(''));
