@@ -68,14 +68,17 @@ async function judge(read: CartRead): Promise<JudgeResult | null> {
   return send<JudgeResult>({ type: 'JUDGE', store: storeKey(location.href), currency: read.currency, items });
 }
 
-async function grandma(): Promise<Grandma> {
+/** The chosen grandma, or null until the person has picked one in the popup. Never defaulted (PLAN: "never defaults either"). */
+async function grandma(): Promise<Grandma | null> {
   try {
     const { settings } = await browser.storage.local.get('settings');
-    return (settings as { grandma?: Grandma } | undefined)?.grandma === 'nana' ? 'nana' : 'mama';
+    const g = (settings as { grandma?: string } | undefined)?.grandma;
+    return g === 'nana' || g === 'mama' ? g : null;
   } catch {
-    return 'mama';
+    return null;
   }
 }
+let saidPick = false;
 
 function showWeek(g: Grandma, week: Week, mood: Mood = week.mood) {
   badge ??= mountBadge();
@@ -108,6 +111,11 @@ async function talk() {
   talking = true;
   try {
     const g = await grandma();
+    if (!g) {
+      if (!saidPick) console.info('[mama] no grandma chosen yet: pick one in the popup and she starts');
+      saidPick = true;
+      return hideAll();
+    }
     for (;;) {
       const read = lastRead;
       if (!read || !read.items.length) return hideAll();
@@ -263,8 +271,17 @@ function sleep() {
 }
 
 /** Called by content.ts when the gate opens, on navigation, and on an add to cart click. Safe to call again. */
+let listening = false;
+
 export function start(ctx: Ctx, reason: 'cart' | 'add') {
   lastItemsAt ||= Date.now();
+  if (!listening) {
+    listening = true;
+    // Picking or changing the grandma in the popup applies on the open cart at once: faces, lines, naira.
+    browser.storage.onChanged.addListener((changes, area) => {
+      if (area === 'local' && changes.settings) { lastKey = '(changed)'; schedule(0); }
+    });
+  }
   if (!observer) {
     lastItemsAt = Date.now();
     observer = new MutationObserver(() => schedule());

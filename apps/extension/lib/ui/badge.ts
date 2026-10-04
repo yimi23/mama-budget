@@ -42,18 +42,21 @@ const CSS = `
   width: 64px; height: 64px; border-radius: 50%; border: 3px solid ${GOLD};
   background: #FBF7EF; overflow: hidden; box-shadow: 0 8px 24px rgba(20, 16, 22, 0.25);
   display: flex; align-items: flex-end; justify-content: center;
-  transition: transform 150ms cubic-bezier(0.05, 0.7, 0.1, 1);
+  transition: filter 150ms cubic-bezier(0.05, 0.7, 0.1, 1);
 }
-.badge:hover { transform: scale(1.04); }
+.badge:hover { filter: brightness(1.04); }
+/* She breathes while watching: 2px over 4s. Still when calm. Mood change and user action are the only motion. */
+.badge[data-mood="watching"] { animation: breathe 4s ease-in-out infinite; }
 .badge:focus-visible { outline: 3px solid #22172A; outline-offset: 3px; }
 .face { width: 100%; height: 100%; display: block; pointer-events: none; }
 .badge.shake { animation: shake 300ms cubic-bezier(0.3, 0, 0.8, 0.15); }
+@keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
 @keyframes shake { 0%, 100% { transform: none; } 20% { transform: rotate(-8deg); } 40% { transform: rotate(7deg); } 60% { transform: rotate(-5deg); } 80% { transform: rotate(3deg); } }
 @keyframes enter { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) {
   .wrap { animation: none; }
   .fill, .badge { transition: none; }
-  .badge.shake { animation: none; }
+  .badge.shake, .badge[data-mood="watching"] { animation: none; }
 }
 `;
 
@@ -138,6 +141,7 @@ export function mountBadge(): Badge {
         faceKey = key;
         face.src = browser.runtime.getURL(`/faces/${key}.svg` as `/faces/mama/calm.svg`);
       }
+      badge.dataset.mood = s.mood;
       fill.style.height = `${meterHeight(s.ratio)}px`;
       fill.style.backgroundColor = meterColor(s.ratio);
       badge.setAttribute('aria-label', describe(s));
