@@ -28,7 +28,7 @@ const NANA = {
   saved: ['${amount} moved to savings. Well look at you, hon.', 'Okay. ${amount} is in savings.', '${amount} put away. A penny saved.', 'There you go. ${amount} to savings.'],
   home: ['${amount} sent home. That is family. That never counts.', '${amount} home. Family is family. Good.', '${amount} home, sent. Tell them hi from me.'],
   nothing: ['Say the amount, hon. Like "send 50 home".', 'How much? "Send 50 home" and I’ll do it.'],
-  tooMuch: ['${amount}? You have ${left} left this week, hon. Try a smaller number.', 'Ope. ${amount} with ${left} left in the week. Smaller.'],
+  tooMuch: ['${amount}? You have ${left} left this week, hon. Try a smaller number.', 'Ope. ${amount}? With ${left} left in the week. Smaller.'],
   unknown: ['I just do the money, hon. Ask me what is left, or say "move 20 to savings".', 'Money only. What’s left, or "send 50 home".'],
   hello: ['Hi hon. ${left} left this week.', '${left} left this week. What do you need?', 'Well hi. ${left} left for the week.', 'You betcha. ${left} left. Go ahead.'],
   thanks: ['Any time, hon.', 'You bet.', 'Okay then.', 'That’ll do. Go on now.'],

@@ -6,7 +6,13 @@
 const SETTINGS = {
   mama: { stability: 0.5, similarity_boost: 0.8, style: 0.4, speed: 1.0 },
   nana: { stability: 0.6, similarity_boost: 0.8, style: 0.3, speed: 0.97 },
+  abuela: { stability: 0.5, similarity_boost: 0.8, style: 0.45, speed: 1.0 },
 };
+
+/** The voice id for a grandma: ELEVEN_VOICE_ID_<WHO>, Mama's id (ELEVEN_VOICE_ID) when hers is unset. */
+function voiceIdFor(who) {
+  return process.env[`ELEVEN_VOICE_ID_${String(who || 'mama').toUpperCase()}`] || process.env.ELEVEN_VOICE_ID;
+}
 
 // Shocked and Gele down get more expression and a touch more speed; a nod or an ask stays level.
 const LOUD = { shocked: { style: +0.25, stability: -0.15, speed: +0.04 }, down: { style: +0.2, stability: -0.1, speed: +0.02 } };
@@ -20,7 +26,7 @@ function settingsFor(who, mood) {
 
 async function speak(line, who = 'mama', mood = 'calm') {
   const key = process.env.ELEVEN_API_KEY;
-  const voice = who === 'nana' ? (process.env.ELEVEN_VOICE_ID_NANA || process.env.ELEVEN_VOICE_ID) : process.env.ELEVEN_VOICE_ID;
+  const voice = voiceIdFor(who);
   if (!key || !voice || !line) return null;
   const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}?output_format=mp3_44100_64`, {
     method: 'POST',
@@ -34,4 +40,4 @@ async function speak(line, who = 'mama', mood = 'calm') {
   return `data:audio/mpeg;base64,${buf.toString('base64')}`;
 }
 
-module.exports = { speak };
+module.exports = { speak, voiceIdFor };

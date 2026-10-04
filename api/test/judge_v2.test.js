@@ -69,7 +69,9 @@ test('every answer gets an acknowledgement; a declared need gets no comment on i
   assert.doesNotMatch(m, /1260/, 'no comment on the price of a need');
   assert.ok(NANA.ackNeed.includes(ackLine(need, { item: 'Tamron lens', price: 1260 }, 'nana')));
   const fits = judge({ item: 'Desk lamp', price: 20 }, week, remember({}, { item: 'Desk lamp' }, 'want'));
-  assert.match(ackLine(fits, { item: 'Desk lamp', price: 20 }), /Carry on|fits/);
+  const f = ackLine(fits, { item: 'Desk lamp', price: 20 });
+  assert.ok(MAMA.ackFits.includes(f), `from the ackFits pool: ${f}`);
+  assert.doesNotMatch(f, /\b0 dollars\b/, 'never a number she was not given');
   const blown = judge({ item: 'AirPods Pro', price: 179 }, week, remember({}, { item: 'AirPods Pro' }, 'want'));
   assert.equal(ackLine(blown, { item: 'AirPods Pro', price: 179 }), null, 'a blown want gets the card, not a bubble');
   assert.equal(ackLine(judge({ item: 'Rice', price: 20 }, week), { item: 'Rice' }), null, 'protected needs were never asked');

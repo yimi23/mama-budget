@@ -95,9 +95,17 @@ function fallbackReply(text, { week, who, apology, storedPromise, intent }) {
   return bank.calm[0] + tail;
 }
 
+const GRANDMA_HELLO = {
+  mama: 'Ehen. It is Mama now. ${left} left this week.',
+  nana: 'Alright, hon. Nana here. ${left} left this week.',
+  abuela: 'Ay, mija. Abuela is here. ${left} left this week.',
+};
+
 async function handleIncoming(text, who = 'mama', from, messageId, { images = [] } = {}) {
   notify.logIncoming(from, images.length ? `${text || ''} [photo]`.trim() : text);
   const mem = memory.read();
+  // The grandma they chose by text outranks the one the caller assumed; she stays until they change her.
+  if (mem.grandma) who = mem.grandma;
   memory.addHistory(mem, 'user', text);
   mem.lastInboundAt = Date.now(); // the two week silence rule in photon/schedule.js reads this
   schedule.heardFrom();
@@ -110,6 +118,11 @@ async function handleIncoming(text, who = 'mama', from, messageId, { images = []
   const left = Math.max(0, before.budget - before.spent);
   const requestId = messageId ? `imsg-${messageId}` : undefined;
   const say = (reply, mood) => { memory.addHistory(mem, who, reply); memory.write(mem); return { reply, mood, intent: cmd.intent }; };
+  if (cmd.intent === 'grandma') {
+    mem.grandma = cmd.who;
+    who = cmd.who;
+    return say(GRANDMA_HELLO[who].replace('${left}', `$${left}`), before.mood);
+  }
   if (cmd.intent === 'left') return say(await writer.fresh(who, writer.whatsLeft(before, who)), before.mood);
   if (cmd.intent === 'bought' || cmd.intent === 'bills' || cmd.intent === 'savings') {
     const view = ledgerView();

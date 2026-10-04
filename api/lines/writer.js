@@ -33,7 +33,7 @@ const MAMA = {
   // shocked: the item beats what is left. shockedBig: the item alone beats the whole week.
   shocked: [
     'Ehn ehn. {price}, with {left} dollars left this week. You are sure?',
-    '{price} for {item}? Shebi we said {budget} dollars for the whole week.',
+    '{price} for {item}? Shebi we said {budget} dollars for the whole week. {left} dollars left.',
     'Haba. {price} on {item} when {left} dollars is what remains.',
     '{item}, {price}. The week has {left} dollars in it. Do the mathematics.',
     'Chai. {price} for {item}. That is more than the {left} dollars you have left, my dear.',
@@ -89,7 +89,7 @@ const MAMA = {
     'Ehen. {watchedMerchant} again. I said I would say something. {habit} dollars last month. What is this one for?',
   ],
   ackNeed: ['Okay. I will remember.', 'Noted. A need. I will not ask again.', 'Fine. That one is yours. Carry on.', 'Okay o. It is a need. Shikena.'],
-  ackFits: ['Okay. It fits. Carry on.', 'It fits the week. Enjoy it small.', 'Fine. {left} dollars after it. Go on.', 'Ehen. Within the week. No wahala.', 'That one fits. I will not disturb you.'],
+  ackFits: ['Okay. It fits. Carry on.', 'It fits the week. Enjoy it small.', 'Fine. It fits. Go on.', 'Ehen. Within the week. No wahala.', 'That one fits. I will not disturb you.'],
   agreed: ['Good. I am watching the cart.', 'Ehen. That is my child.', 'Good. We will see it leave the cart.', 'Okay. I am watching to see it go.', 'Thank you. Take it out and I will say something nice.'],
   bought: ['Noted. It is in the book.', 'Okay. I have written it down.', 'It is done. In the book.', 'Noted o. We continue.'],
   plan: ['{occasion}. Okay. That one is a plan, not a want. It stays off the meter.', 'Okay. A need, then. It stays off the meter.'],
@@ -151,7 +151,7 @@ const NANA = {
   ask: ['Hold on a sec, hon. What’s {item} for?', '{item}? What’s that for?', '{item}, {price}. What’s the occasion?', 'Okay, {item}. Tell me what it’s for first.', 'Before I say anything. {item}. What for?'],
   askWatched: ['{item}, hon? {watchedMerchant} again. {habit} dollars here last month.', '{watchedMerchant} again. {habit} dollars last month. What’s {item} for?'],
   ackNeed: ['Okay. Noted.', 'Alright. A need. I won’t ask again.', 'Fine by me. Yours.'],
-  ackFits: ['Okay, hon. That fits.', 'That fits. {left} dollars after. Go on.', 'Yep. Inside the week. Enjoy it.', 'That’ll do. Fits.'],
+  ackFits: ['Okay, hon. That fits.', 'That fits. Go on.', 'Yep. Inside the week. Enjoy it.', 'That’ll do. Fits.'],
   agreed: ['Good call, hon.', 'Atta kid.', 'Good. I’ll watch it leave.', 'Well alright then.'],
   bought: ['Alright. Noted.', 'Okay. It’s in the book.', 'Noted. Moving on.'],
   plan: ['{occasion}. Well, that is a plan, not a want. Off the meter it goes.', 'Alright, a need then. Off the meter it goes.'],

@@ -10,13 +10,13 @@ const FILE = path.join(__dirname, '..', '..', 'data', 'mama-memory.json');
 const MAX_HISTORY = 40;
 
 function empty() {
-  return { history: [], promises: [], commented: [], lastInboundAt: null, items: {}, reasons: {}, pending: null };
+  return { history: [], promises: [], commented: [], lastInboundAt: null, items: {}, reasons: {}, pending: null, grandma: null };
 }
 
 function read() {
   try {
     const m = JSON.parse(fs.readFileSync(FILE, 'utf8'));
-    return { history: m.history || [], promises: m.promises || [], commented: m.commented || [], lastInboundAt: m.lastInboundAt || null, items: m.items || {}, reasons: m.reasons || {}, pending: m.pending || null };
+    return { history: m.history || [], promises: m.promises || [], commented: m.commented || [], lastInboundAt: m.lastInboundAt || null, items: m.items || {}, reasons: m.reasons || {}, pending: m.pending || null, grandma: m.grandma || null };
   } catch {
     return empty();
   }

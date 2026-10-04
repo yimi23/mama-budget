@@ -75,12 +75,12 @@ function monthlyText(now = new Date(), who = grandma()) {
   return monthlyStatement({ month, needsTotal, sentHome, lastMonthSpent: lastMonthSpent || null, who });
 }
 
-function grandma() { return readState().grandma === 'nana' ? 'nana' : 'mama'; }
+function grandma() { const g = readState().grandma; return g && require('../lines/character').GRANDMAS[g] ? g : 'mama'; }
 
 // Send one statement now. notify() decides photon vs log and logs either way (see GET /messages);
 // "texted" only means an actual send happened, same contract as every other notification in the app.
 async function send(kind, { now = new Date(), to, grandma: g } = {}) {
-  if (g === 'mama' || g === 'nana') writeState({ grandma: g });
+  if (g && require('../lines/character').GRANDMAS[g]) writeState({ grandma: g });
   if (to) writeState({ to }); // the number from onboarding screen 07 is where the Sunday statements go from now on
   const who = grandma();
   const body = kind === 'monthly' ? monthlyText(now, who) : weeklyText(now, who);

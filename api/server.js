@@ -26,6 +26,9 @@
 // (our own routes, the /bank terminal, or straight to Nessie) produces exactly one text.
 
 const http = require('node:http');
+
+// Any grandma in the family (api/lines/character.js); Mama when unknown.
+const whoOf = (g) => (g && require('./lines/character').GRANDMAS[g] ? g : 'mama');
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
@@ -63,7 +66,7 @@ async function month() { return nessie.week(); }
 // The 30 day read for onboarding. ?grandma=nana changes the wording of her lines, nothing else. firstName is the one
 // time her name is used (screen 06); null when Nessie is unreachable, and the screen simply leaves it out.
 async function reading(query = {}) {
-  const who = query.grandma === 'nana' ? 'nana' : 'mama';
+  const who = whoOf(query.grandma);
   const m = nessie.month();
   const tl = nessie.trueLine(m);
   const watches = nessie.watches(m);
@@ -103,7 +106,7 @@ const routes = {
   // verdict.key is what the extension stores the answer under, so the key logic stays in rules_v2 only.
   'POST /v2/judge': async (body) => {
     const w = nessie.week();
-    const who = body.grandma === 'nana' ? 'nana' : 'mama';
+    const who = whoOf(body.grandma);
     const memory = body.memory && typeof body.memory === 'object' ? body.memory : {};
     const saidReasons = body.reasons && typeof body.reasons === 'object' ? body.reasons : null;
     setHome(body.home);
@@ -164,7 +167,7 @@ const routes = {
   // reload of a confirmation page or a double tap never posts twice. The tag comes from the caller (an admitted
   // want from the card) or from the rules over the caller's memory (a confirmation page lists needs too).
   'POST /v2/buy': async (body) => {
-    const who = body.grandma === 'nana' ? 'nana' : 'mama';
+    const who = whoOf(body.grandma);
     const name = String(body.name || '');
     const short = body.short || shortName(name);
     const price = Number(body.price || 0);
@@ -196,7 +199,7 @@ const routes = {
     const text = String(body.text || '').trim();
     if (!text) throw new Error('text is required');
     const mood = ['shocked', 'down'].includes(body.mood) ? body.mood : 'calm';
-    const who = body.grandma === 'nana' ? 'nana' : 'mama';
+    const who = whoOf(body.grandma);
     const voice = (who === 'nana' ? process.env.ELEVEN_VOICE_ID_NANA : null) || process.env.ELEVEN_VOICE_ID || 'default';
     const dir = path.join(__dirname, '.cache', 'tts');
     const file = path.join(dir, `${crypto.createHash('sha1').update(`${voice}\n${who}\n${mood}\n${text}`).digest('hex')}.mp3`);
@@ -242,7 +245,7 @@ const routes = {
   // The reason behind an answer, on any store. An occasion makes the item a plan (rules v2: planned, never scolded);
   // if it beats what is left and savings can cover it, she offers to fund the week from savings. Nothing moves here.
   'POST /v2/plan': async (body) => {
-    const who = body.grandma === 'nana' ? 'nana' : 'mama';
+    const who = whoOf(body.grandma);
     const name = String(body.name || '');
     const price = Number(body.price || 0);
     const reason = String(body.reason || '').trim();
@@ -271,7 +274,7 @@ const routes = {
 
   // "From savings": the money moves in Nessie and this week's envelope grows by that much. Idempotent by requestId.
   'POST /v2/fund': async (body) => {
-    const who = body.grandma === 'nana' ? 'nana' : 'mama';
+    const who = whoOf(body.grandma);
     const amount = Math.round(Number(body.amount || 0));
     if (!(amount > 0) || !body.requestId) throw new Error('amount and requestId are required');
     await nessie.fundFromSavings(amount, String(body.name || 'this week'), String(body.requestId));
