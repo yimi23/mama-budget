@@ -1,10 +1,11 @@
 // Her voice. ElevenLabs text to speech. Returns a data URL the extension can play.
-// Pick a warm older female voice in the ElevenLabs library and put its id in ELEVEN_VOICE_ID.
+// Two voices from the ElevenLabs library, Praise's picks: ELEVEN_VOICE_ID is Mama (Amarachi, mid age
+// Nigerian), ELEVEN_VOICE_ID_NANA is Nana (Mother, US Midwest). Nana falls back to Mama's id if hers is unset.
 // No key: returns null and the card shows the line as text. Demo still works.
 
-async function speak(line) {
+async function speak(line, who = 'mama') {
   const key = process.env.ELEVEN_API_KEY;
-  const voice = process.env.ELEVEN_VOICE_ID;
+  const voice = who === 'nana' ? (process.env.ELEVEN_VOICE_ID_NANA || process.env.ELEVEN_VOICE_ID) : process.env.ELEVEN_VOICE_ID;
   if (!key || !voice || !line) return null;
   const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}?output_format=mp3_44100_64`, {
     method: 'POST',
