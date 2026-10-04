@@ -567,7 +567,9 @@ function notifyText(level, week, it, who = 'mama', cartItemNames) {
   const billPart = bill && bill.daysUntil <= 3 ? ` ${bill.nickname || bill.payee} in ${bill.daysUntil} day${bill.daysUntil === 1 ? '' : 's'}.` : '';
   const nairaPart = level === 'over' ? backHome(it.price, it) : '';
   const what = it.item || it.merchant || 'this';
-  const others = cartItemNames ? cartItemNames.filter((n) => n && n !== what).length : 0;
+  // The cart keeps full titles; her line keeps the short name. The same thing is not an "other thing".
+  const same = (n) => { const a = String(n).toLowerCase(); const b = String(what).toLowerCase(); return a === b || a.startsWith(b) || b.startsWith(a); };
+  const others = cartItemNames ? cartItemNames.filter((n) => n && !same(n)).length : 0;
   const cartPart = others > 0 ? ` With ${others} other thing${others === 1 ? '' : 's'} in the cart.` : '';
   // A transfer is not a thing you bought: "$50 sent home." not "$50 on Sent home."
   const moved = level === 'proud' && /^(sent home|moved to savings)$/i.test(what);
