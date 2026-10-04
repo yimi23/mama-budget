@@ -16,12 +16,23 @@
       <!-- 02 Welcome: she arrives, then speaks. Text appears with the voice, not before. -->
       <section data-step="welcome" hidden>
         <div class="welcome">
-          <div class="speak-row"><h1 id="welcome-title"></h1><span class="speaking" id="welcome-speaking" hidden><i></i><i></i><i></i><i></i><i></i>Speaking</span></div>
-          <p class="body" id="welcome-body"></p>
-          <p class="lead" id="welcome-sub"></p>
+          <div class="speak-row"><h1 id="welcome-title">Welcome to Mama Budget.</h1></div>
+          <p class="body" id="welcome-body">You set the fun money for the week. A grandmother sits in the corner of your cart and holds you to it, before you pay, not after. What you need, she never touches.</p>
+          <p class="lead" id="welcome-sub">Pick who checks on you, then two questions. The rest she reads for herself.</p>
         </div>
         <button type="button" class="pill" data-go="next">Let’s start</button>
-        <div class="arrival" id="arrival"><img id="welcome-face" alt="" src="/faces/mama/calm.svg" /></div>
+        <div class="arrival" id="arrival"><img id="welcome-face" alt="" src="/icon/mark.svg" /></div>
+      </section>
+
+      <!-- 03b She introduces herself, in her own voice, now that you have picked her. -->
+      <section data-step="hello" hidden>
+        <div class="welcome">
+          <div class="speak-row"><h1 id="hello-title"></h1><span class="speaking" id="hello-speaking" hidden><i></i><i></i><i></i><i></i><i></i>Speaking</span></div>
+          <p class="body" id="hello-body"></p>
+          <p class="lead" id="hello-sub"></p>
+        </div>
+        <button type="button" class="pill" data-go="next">Okay</button>
+        <div class="arrival" id="hello-arrival"><img id="hello-face" alt="" src="/faces/mama/calm.svg" /></div>
       </section>
 
       <!-- 03 Who is checking on you. Neither speaks first. -->

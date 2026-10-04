@@ -103,20 +103,26 @@ for (const b of document.querySelectorAll<HTMLButtonElement>('[data-go="skip"]')
 
 // ---------- 02 welcome ----------
 SHOW.welcome = async () => {
+  // The product says hello before anyone is picked; nobody speaks yet, she is not chosen.
+  const arrival = $('#arrival');
+  arrival.classList.remove('in'); void arrival.offsetWidth; arrival.classList.add('in');
+  cue('arrive');
+};
+SHOW.hello = async () => {
   const g = grandma();
   const copy = COPY[g];
-  $('#welcome-title').textContent = copy.welcomeTitle;
-  $('#welcome-body').textContent = copy.welcome;
-  $('#welcome-sub').textContent = copy.welcomeSub;
-  ($('#welcome-face') as HTMLImageElement).src = `/faces/${g}/calm.svg`;
-  const reveal = [$('#welcome-title'), $('#welcome-body'), $('#welcome-sub')];
+  $('#hello-title').textContent = copy.welcomeTitle;
+  $('#hello-body').textContent = copy.welcome;
+  $('#hello-sub').textContent = copy.welcomeSub;
+  ($('#hello-face') as HTMLImageElement).src = `/faces/${g}/calm.svg`;
+  const reveal = [$('#hello-title'), $('#hello-body'), $('#hello-sub')];
   for (const el of reveal) { el.classList.add('reveal'); el.classList.remove('on'); }
-  const arrival = $('#arrival');
+  const arrival = $('#hello-arrival');
   arrival.classList.remove('in'); void arrival.offsetWidth; arrival.classList.add('in');
   cue('arrive');
   await sleep(600);
   // Text appears with the voice, not before. With sound off or the API down, it simply appears.
-  await speak(`${copy.welcomeTitle} ${copy.welcome}`, $('#welcome-speaking'));
+  await speak(`${copy.welcomeTitle} ${copy.welcome}`, $('#hello-speaking'));
   for (const el of reveal) el.classList.add('on');
 };
 

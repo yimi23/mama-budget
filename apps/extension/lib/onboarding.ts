@@ -4,12 +4,12 @@
 
 import type { Grandma } from './ui/badge';
 
-export type Step = 'welcome' | 'grandma' | 'bank' | 'reading' | 'saw' | 'watch' | 'phone' | 'check' | 'loud' | 'go';
+export type Step = 'welcome' | 'grandma' | 'hello' | 'bank' | 'reading' | 'saw' | 'watch' | 'phone' | 'check' | 'loud' | 'go';
 export type Loudness = 'gentle' | 'mama' | 'full';
 
-export const ORDER: readonly Step[] = ['welcome', 'grandma', 'bank', 'reading', 'saw', 'watch', 'phone', 'check', 'loud', 'go'];
+export const ORDER: readonly Step[] = ['welcome', 'grandma', 'hello', 'bank', 'reading', 'saw', 'watch', 'phone', 'check', 'loud', 'go'];
 /** The dots at the top, from screen 03 on. "Check your phone" shares the phone dot (design 07 and 07b). */
-export const DOTS: readonly Step[] = ['grandma', 'bank', 'reading', 'saw', 'watch', 'phone', 'loud', 'go'];
+export const DOTS: readonly Step[] = ['grandma', 'hello', 'bank', 'reading', 'saw', 'watch', 'phone', 'loud', 'go'];
 
 export function dotIndex(step: Step): number {
   return DOTS.indexOf(step === 'check' ? 'phone' : step);
@@ -28,7 +28,8 @@ export interface Progress {
 export function next(step: Step, p: Progress): Step | 'done' {
   switch (step) {
     case 'welcome': return 'grandma';
-    case 'grandma': return 'bank';
+    case 'grandma': return 'hello';
+    case 'hello': return 'bank';
     case 'bank': return p.bank ? 'reading' : 'phone';
     case 'reading': return p.hasMonth === false ? 'phone' : 'saw';
     case 'saw': return 'watch';

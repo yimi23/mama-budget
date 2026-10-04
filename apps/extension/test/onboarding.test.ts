@@ -7,7 +7,7 @@ test('the happy path visits every screen in the planned order', () => {
   const seen: string[] = [];
   let s: ReturnType<typeof next> = 'welcome';
   while (s !== 'done') { seen.push(s); s = next(s, p); }
-  assert.deepEqual(seen, ['welcome', 'grandma', 'bank', 'reading', 'saw', 'watch', 'phone', 'check', 'loud', 'go']);
+  assert.deepEqual(seen, ['welcome', 'grandma', 'hello', 'bank', 'reading', 'saw', 'watch', 'phone', 'check', 'loud', 'go']);
 });
 
 test('skipping the bank skips the three screens that read the month', () => {
@@ -29,12 +29,12 @@ test('only the bank and the phone can be skipped', () => {
   for (const s of ['welcome', 'grandma', 'reading', 'saw', 'watch', 'check', 'loud', 'go'] as const) assert.equal(skip(s), null, s);
 });
 
-test('eight dots; check shares the phone dot; welcome has none', () => {
-  assert.equal(DOTS.length, 8);
+test('nine dots; check shares the phone dot; welcome has none', () => {
+  assert.equal(DOTS.length, 9);
   assert.equal(dotIndex('welcome'), -1);
   assert.equal(dotIndex('grandma'), 0);
   assert.equal(dotIndex('check'), dotIndex('phone'));
-  assert.equal(dotIndex('go'), 7);
+  assert.equal(dotIndex('go'), 8);
 });
 
 test('three tiers per grandma under her own names, same keys', () => {
