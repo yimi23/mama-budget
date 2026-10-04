@@ -57,3 +57,11 @@ test('one word picks the grandma for the thread; garbage picks nobody', () => {
   const { GRANDMAS } = require('../lines/character');
   assert.deepEqual(Object.keys(GRANDMAS), ['mama', 'nana', 'abuela', 'wong']);
 });
+
+test('the week can be set by text, and only by a clear ask', () => {
+  assert.deepEqual(parse('set my budget to 100'), { intent: 'envelope', amount: 100 });
+  assert.deepEqual(parse('budget 120'), { intent: 'envelope', amount: 120 });
+  assert.deepEqual(parse('make it 90 a week'), { intent: 'envelope', amount: 90 });
+  assert.notEqual(parse('how much budget is left').intent, 'envelope');
+  assert.notEqual(parse('send 50 home').intent, 'envelope');
+});

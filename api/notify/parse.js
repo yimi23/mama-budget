@@ -15,6 +15,9 @@ function parse(raw) {
   // Who is talking to them. One word does it: "abuela", "nana", "mama", or "switch to nana".
   const g = /^(?:(?:switch|change) to |be |give me |i want )?(mama|nana|abuela|wong|grandma wong|po po)\b[.!]?$/.exec(t);
   if (g) return { intent: 'grandma', who: /wong|po po/.test(g[1]) ? 'wong' : g[1] };
+  // The week's fun money, set by text: "set my budget to 100", "budget 120", "make it 90 a week", "fun money 150".
+  const env = /\b(?:set (?:my )?(?:budget|fun money|envelope)(?: to)?|(?:budget|fun money|envelope)(?: is| to|:)?|make (?:it|the week))\s*\$?\s*(\d{2,3})\b/.exec(t);
+  if (env && !/\b(left|spent|gone|home|savings?)\b/.test(t)) return { intent: 'envelope', amount: Number(env[1]) };
   // Questions about the ledger, before the commands: none of them carries an amount.
   if (/\b(what|wetin|which|how much)\b.*\b(buy|bought|spent|spend|spending|purchases?|get|got)\b/.test(t) && !/\bleft\b/.test(t)) {
     const on = /\b(?:on|at|from)\s+([a-z][a-z0-9' ]{1,30})\s*\??$/.exec(t);

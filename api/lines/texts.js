@@ -21,6 +21,7 @@ const MAMA = {
   isThisIt: ['${item}, ${price}${store}. That is the one?', 'I see ${item}, ${price}${store}. Shebi that is it?'],
   wrongOne: ['Okay. Tell me the item and the price.', 'No wahala. Type the item and the price for me.'],
   cannotSee: ['I cannot see a price in that. Tell me what it is and how much.', 'My eyes cannot find the price there. What is it, and how much?'],
+  envelope: ['Okay. ${amount} a week it is. ${left} left for this one.', 'Noted. The week is ${amount} dollars now. ${left} left.'],
   cheaper: ['${shop} has the same ${item} for ${price} today. That is ${left} back in the week.', 'Shine your eye: ${shop}, same ${item}, ${price} today. ${left} stays in the week.', '${price} at ${shop} for the same ${item}, today. ${left} back in your pocket.'],
 };
 
@@ -41,6 +42,7 @@ const NANA = {
   isThisIt: ['${item}, ${price}${store}. Is that the one?', 'I see ${item}, ${price}${store}. That it?'],
   wrongOne: ['Okay, hon. Tell me the item and the price.', 'Alright. Type the item and the price.'],
   cannotSee: ['I cannot make out a price there, hon. What is it and how much?', 'Can’t see a price in that. What is it, and how much?'],
+  envelope: ['Okay, hon. ${amount} a week. ${left} left for this one.', 'Alright. The week is ${amount} now. ${left} left.'],
   cheaper: ['${shop} has the same ${item} for ${price} today, hon. That is ${left} back in the week.', 'Same ${item} at ${shop}, ${price} today. ${left} stays in the week.', '${price} at ${shop}, same ${item}, today. ${left} back in your pocket.'],
 };
 
@@ -61,6 +63,7 @@ const ABUELA = {
   isThisIt: ['${item}, ${price}${store}. That is the one, mija?', 'I see ${item}, ${price}${store}. Is that it?'],
   wrongOne: ['Okay, mija. Tell me the item and the price.', 'Ándale. Type the item and the price for me.'],
   cannotSee: ['I cannot see a price in that, mija. What is it and how much?', 'My eyes cannot find the price there, mi cielo. What is it, and how much?'],
+  envelope: ['Okay, mija. ${amount} a week. ${left} left for this one.', 'Ándale. The week is ${amount} dollars now. ${left} left.'],
   cheaper: ['${shop} has the same ${item} for ${price} today, mija. That is ${left} back in the week.', 'Same ${item} at ${shop}, ${price} today. ${left} stays in the week. Cuida el centavo.', '${price} at ${shop} for the same ${item}, today. ${left} back in your pocket, mi cielo.'],
 };
 
@@ -81,6 +84,7 @@ const WONG = {
   isThisIt: ['${item}, ${price}${store}. That one?', 'I see ${item}, ${price}${store}. Is that it?'],
   wrongOne: ['Okay. The item and the price.', 'Tell me the item and the price.'],
   cannotSee: ['I cannot see a price there. What is it and how much?', 'No price in that. What is it, and how much?'],
+  envelope: ['Okay. ${amount} a week. ${left} left for this one.', 'Noted. ${amount} a week. ${left} left.'],
   cheaper: ['${shop} has the same ${item} for ${price} today. That is ${left} back in the week.', 'Same ${item}, ${shop}, ${price} today. ${left} stays in the week. Peng di, cheaper somewhere else, always.'],
 };
 

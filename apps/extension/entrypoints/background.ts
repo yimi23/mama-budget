@@ -20,10 +20,23 @@ async function rememberCart(msg: Extract<Message, { type: 'CART_READ' }>) {
   await browser.storage.session.set({ lastCart: fresh });
 }
 
-async function getWeek() {
+async function getWeekRaw() {
   if (!(await apiUp())) return { ok: false as const };
   const week = await call<Week>('/week');
   return week ? { ok: true as const, week } : { ok: false as const };
+}
+
+/** The ledger's week is the one truth for the envelope. If the popup's stored number differs (a reset, or a change by
+ *  text), the stored number follows the ledger, so the cart, the popup and the texts never disagree. */
+async function getWeek() {
+  const out = await getWeekRaw();
+  const budget = (out as { ok?: boolean; week?: { budget?: number } })?.week?.budget;
+  if (budget) {
+    const { settings = {} } = await browser.storage.local.get('settings');
+    const st = settings as { envelope?: number };
+    if (st.envelope && st.envelope !== budget) await browser.storage.local.set({ settings: { ...st, envelope: budget } });
+  }
+  return out;
 }
 
 /** Reader 4. The text already went through the page's own gate; only the cart region's text leaves the page, never the URL beyond the host. */

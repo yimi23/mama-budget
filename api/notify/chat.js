@@ -126,6 +126,11 @@ async function handleIncoming(text, who = 'mama', from, messageId, { images = []
     return say(GRANDMA_HELLO[who].replace('${left}', `$${left}`), before.mood);
   }
   // Facts are said as written. Only her reactions get said fresh; a rephrased figure once changed its meaning.
+  if (cmd.intent === 'envelope') {
+    const n = nessie.setEnvelope(cmd.amount);
+    const wk = nessie.week();
+    return say(textLine('envelope', { amount: n, left: Math.max(0, wk.budget - wk.spent), who }), wk.mood);
+  }
   if (cmd.intent === 'left') return say(writer.whatsLeft(before, who), before.mood);
   if (cmd.intent === 'bought' || cmd.intent === 'bills' || cmd.intent === 'savings') {
     const view = ledgerView();
