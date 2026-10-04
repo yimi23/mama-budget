@@ -209,7 +209,7 @@ async function ask(g: Grandma, week: Week, v: Verdict) {
   remember(v.line);
   const choice = await card!.ask({
     grandma: g, mood: 'watching', tone: 'ask', line: v.line,
-    sub: 'She asks once and remembers your answer.',
+    sub: 'I ask once and remember your answer.',
     primary: 'It’s for something', secondary: wantLabel(v.short),
   });
   if (choice === 'primary') await send({ type: 'ANSWER', key: v.key, answer: 'need' });

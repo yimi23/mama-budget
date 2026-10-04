@@ -33,6 +33,18 @@ Misses, in full:
 | 49 | Money sent home | depends | need |
 | 50 | Sibling school fees | depends | need |
 
-## Rater 2 and 3
+## Two raters, Oct 4 2026 (`npm run score`, rules v1 frozen)
+
+Second mother's labels in `data/labels/labels.json`. Majority over the two; a split is a case they disagreed on.
+
+- Mama agreement with participating mothers, where they agreed: 26/32 (81%)
+- Merchant only baseline, same 32 cases: 22/32 (69%)
+- Need safety breaches (target zero): 0/16 (0%)
+- Asks on unclear cases: 6/15 (40%)
+- Rater split cases out of 50: 15
+
+Said on stage as "agreement with our participating mothers," never "objectively correct." The pick screen line and the Devpost quote these numbers and no others.
+
+## Rater 3
 
 Pending.

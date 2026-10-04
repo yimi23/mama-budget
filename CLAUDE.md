@@ -6,10 +6,10 @@ Read docs/PLAN.md (what we are building and why), docs/DESIGN.md (every size, co
 WXT (Manifest V3, TypeScript) for the extension. Hono on Node 24 for the API. node:test for tests. npm workspaces. No other frameworks without saying why.
 
 ## Commands
-- `npm run dev` runs the extension and the api together. There is no fake shop. Test on amazon.com, target.com and one Shopify store (allbirds.com; gymshark.com is headless and has no /cart.js), logged in, with saved carts.
+- `npm run dev` runs the extension and the api together. There is no fake shop. Test on amazon.com, target.com and one Shopify store (gymshark.com), logged in, with saved carts.
 - `npm test` runs the rules engine tests. `npm run test:update` regenerates goldens (review the diff).
 - `npm run typecheck`.
-- Load unpacked from `apps/extension/build/chrome-mv3`. After reloading the extension, hard refresh the Amazon tab (old content scripts are orphaned).
+- Load unpacked from `apps/extension/.output/chrome-mv3`. After reloading the extension, hard refresh the Amazon tab (old content scripts are orphaned).
 
 ## Architecture rules
 - The service worker is stateless. Every piece of state lives in `chrome.storage` through `packages/store`. Globals die after 30 seconds.
@@ -34,7 +34,7 @@ WXT (Manifest V3, TypeScript) for the extension. Hono on Node 24 for the API. no
 - A new item above $15 gets one neutral Ask: Watching face, meter still, no voice. Two answers: "It's for something" (remembered as need forever) and "I just want them" (remembered as want; she may now react).
 - She only scolds wants the user admitted, or remembered wants. Never a first sighting.
 - The envelope decides volume: a want that fits gets a nod, a want that blows the week gets Gele down. The envelope is weekly, Monday to Sunday, closed by the Sunday 7pm statement.
-- Max one reaction per item, three asks per session, one card at a time (queue the rest), quiet 11pm to 7am (badge state only). Buy anyway always works. Nothing is ever blocked. No store button is ever clicked by us.
+- Max one reaction per item, three asks per session, one card at a time (queue the rest), quiet 11pm to 7am is opt in for the hackathon (settings.quietHours, PHOTON_QUIET=1; the product default once shipped). Buy anyway always works. Nothing is ever blocked. No store button is ever clicked by us.
 - `week.spent` is want tagged purchases this week only. Needs never move the meter. `month()` is the 30 day read used once, in onboarding.
 - Loudness scales thresholds in the judge (1.0, 0.6, 0.3). Same three tiers for Nana under her own names.
 - Store currency first, USD after, from `packages/shared/currency.ts`. Mama adds naira unless the store is already in naira.
@@ -43,7 +43,7 @@ WXT (Manifest V3, TypeScript) for the extension. Hono on Node 24 for the API. no
 - Every loud line names the amount and the item. Nothing about the person. One cultural marker per line at most. Lines live in `apps/api/src/lines/`.
 - Mama gets the naira line. Nana does not.
 - Onboarding asks two questions (grandma, loudness) and reads everything else from the ledger. Never ask the name; Nessie has it, use it once on "Here is what I saw." Never introduce her twice. Never show a sent or done state that did not happen. Every step after grandma has a one line skip that never argues.
-- Six sounds, each under 1.2s: arrive, ask, surprised, proud, text received, kept ticked. One toggle. None in quiet hours. No music.
+- Six sounds, each under 1.2s: arrive, ask, surprised, proud, text received, kept ticked. Synthesised in the offscreen document. One toggle. None in quiet hours when quiet hours are on. No music.
 
 ## Design rules (from docs/DESIGN.md, the short version)
 Popup 400 by 560. Card 360 wide, 20px from bottom and right. Badge 64 circle, gold ring, gele meter bar on the left. Cream ground, ink buttons, color only on her. System font for UI, Bricolage Grotesque 800 for headlines only. Radius 8 inputs, 12 lists, pill buttons. Tabular digits on money. Sentence case. One primary button per screen. Motion 150 to 300ms, decelerate in, accelerate out, no bounce, only on user action or mood change. She is never on the bank screen.
@@ -52,4 +52,5 @@ Popup 400 by 560. Card 360 wide, 20px from bottom and right. Badge 64 circle, go
 No `innerHTML` with page data. No `async` message listeners. No listeners inside async code. No cross origin fetch from content scripts. No `setTimeout` over 30 seconds in the worker (use alarms). Nothing runs on `<all_urls>` before `detect.ts` says yes. No secrets outside the api. No new dependencies without a reason in the commit. No editing fixtures to make tests pass. No emoji as icons. No gradients. No dashes in any copy.
 
 ## Verify
-After any change in `packages/scoring`: `npm test`. After any change in `apps/extension`: `npm run typecheck`, reload the extension, refresh amazon.com/cart, add rice then AirPods and confirm: rice quiet, AirPods asks, "I just want them" reacts. Then open allbirds.com, add anything, confirm she appears with the right item and price from `/cart.js`. Then a test order on the dev store moves the Nessie meter from the confirmation page.
+- After each block in docs/BUILD_PLAN.md, run the review in docs/REVIEW.md (review only, no changes) and fix the top ranked fails first.
+After any change in `packages/scoring`: `npm test`. After any change in `apps/extension`: `npm run typecheck`, reload the extension, refresh amazon.com/cart, add rice then AirPods and confirm: rice quiet, AirPods asks, "I just want them" reacts. Then open gymshark.com, add anything, confirm she appears with the right item and price from `/cart.js`. Then a test order on the dev store moves the Nessie meter from the confirmation page.

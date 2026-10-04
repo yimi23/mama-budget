@@ -54,12 +54,12 @@ export const TIERS: Record<Grandma, readonly Tier[]> = {
   mama: [
     { key: 'gentle', name: 'Gentle Auntie', desc: 'Text only. Speaks up on the big ones.', line: 'Okay.' },
     { key: 'mama', name: 'Mama', desc: 'Her voice on. Speaks up when it matters.', line: 'Okay. I’ll say something when it matters.' },
-    { key: 'full', name: 'Full Nigerian Mother', desc: 'Everything. She texts your phone too.', line: 'Good. Now we’re talking.' },
+    { key: 'full', name: 'Full Nigerian Mother', desc: 'Everything. I text your phone too.', line: 'Good. Now we’re talking.' },
   ],
   nana: [
     { key: 'gentle', name: 'Church Friend', desc: 'Text only. Speaks up on the big ones.', line: 'Alright.' },
     { key: 'mama', name: 'Nana', desc: 'Her voice on. Speaks up when it matters.', line: 'Alright then.' },
-    { key: 'full', name: 'Nana Before Coffee', desc: 'Everything. She texts your phone too.', line: 'Finally.' },
+    { key: 'full', name: 'Nana Before Coffee', desc: 'Everything. I text your phone too.', line: 'Finally.' },
   ],
 };
 
@@ -85,9 +85,9 @@ export const COPY: Record<Grandma, Copy> = {
     welcome: 'You set the fun money for the week. I hold you to it. I sit in your cart and I speak before you pay, not after. The things you need, I never touch.',
     welcomeSub: 'Two questions from you now. The rest I’ll see for myself.',
     preview: 'Rice is at home.',
-    bank: 'I only read. The bank never hears from me.',
+    bank: 'I only read what you spent. I never move your money.',
     reading: 'Give me a second.',
-    phone: 'I text. A short one every Sunday at seven, and one when something big happens.',
+    phone: 'Sunday at seven you get your week in one text. And one more the moment a purchase blows it.',
     go: (k) => `${k} dollars kept this week. Let’s make it grow. Try me on a practice cart first.`,
     goText: (k) => `$${k} kept this week. Let’s make it grow.`,
   },
@@ -97,16 +97,16 @@ export const COPY: Record<Grandma, Copy> = {
     welcome: 'You pick a number for the week. I keep you to it. I’m in your cart before you pay, not after. What you need is none of my business.',
     welcomeSub: 'Two questions from you now. The rest I’ll see for myself.',
     preview: 'Well. Let’s have a look.',
-    bank: 'I just look. I don’t touch.',
+    bank: 'I just look at what you spent. I don’t touch your money.',
     reading: 'Hang on a sec.',
-    phone: 'I text. Sundays at seven, and when something’s up.',
+    phone: 'Sundays at seven you get your week in a text. And one when something’s up.',
     go: (k) => `${k} kept this week. Not bad. Try me first.`,
     goText: (k) => `$${k} kept this week. Not bad.`,
   },
 };
 
-/** The one line on screen 03 about the test. From docs/RESULTS.md, one rater so far. Update when raters 2 and 3 land. */
-export const MOTHERS_LINE = 'Checked against a real mother, 50 purchases. She agreed with her 75% of the time. Your bank’s categories managed 70%.';
+/** The one line on screen 03 about the test. The numbers are docs/RESULTS.md, two raters; in her voice. */
+export const MOTHERS_LINE = 'Checked against two real mothers, 50 purchases. Where they agreed, I agreed with them 81% of the time. Your bank’s categories managed 69%.';
 
 const ONES = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
 const TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];

@@ -4,9 +4,10 @@ Built from how Grammarly, Monzo, Cash App, Copilot, Monarch, YNAB, Duolingo and 
 
 ## Sizes
 - Popup: 400 x 560. Chrome hard cap is 800 x 600; the good ones sit at 360 to 400 wide. Width set on body, min height not height, no vh or vw.
-- In page card: 360 wide, max height 480, position fixed, 20px from bottom and right, inside a shadow root with `all: initial` on the host, z index 2147483647.
-- Badge on the page: 64px circle, 3px gold ring, the gele meter as a 6px bar to its left.
+- In page card: 360 wide, max height 480, position fixed, 24px from the right and 112px from the bottom (above the badge, as screens 12 to 15 draw it), inside a shadow root with `all: initial` on the host, z index 2147483647. Card buttons are radius 10, as the screens draw them.
+- Badge on the page: 64px circle, 3px gold ring, the gele meter as a 6px bar to its left, 24px from the right and bottom (screens 10 and 11).
 - Icons: our own, inline stroke SVG. 16, 32, 48, 128 for the extension icon.
+- The product mark (toolbar, Web Store, Devpost) is the ring and the meter on the cream tile (`apps/extension/public/icon/mark.svg`): her presence in the corner, not her face and not a letter. Decided Oct 4 after an M read as Gmail.
 
 ## Type
 - Brand font for brand moments only: Bricolage Grotesque 800. Headlines in the popup, the wordmark, the pitch.
