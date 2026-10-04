@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- Mama Budget mark C: a heavy M whose last stem is the gele meter. -->
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="#FBF8F3"/>
+  <rect x="4.75" y="4.75" width="118.5" height="118.5" rx="27.5" fill="none" stroke="#22172A" stroke-opacity="0.12" stroke-width="1.5"/>
+  <path d="M26 98 V34 L58 72 L90 34 V62" fill="none" stroke="#22172A" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="82" y="30" width="16" height="68" rx="8" fill="#22172A" fill-opacity="0.12"/>
+  <rect x="82" y="52.7" width="16" height="45.3" rx="8" fill="#0F7B5A"/>
+  <circle cx="90" cy="30" r="7" fill="#E2A12A"/>
+</svg>
