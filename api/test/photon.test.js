@@ -123,3 +123,56 @@ test('statement and text helpers in the writer still name every amount', () => {
   assert.match(s, /\$50 of \$75/); assert.match(s, /\$40/); assert.match(s, /Latte, \$6/); assert.match(s, /Better than last week/);
   assert.match(whatsLeft({ budget: 75, spent: 50, daysLeft: 2 }, 'mama'), /^\$25\. 2 days\. That is \$12 a day/);
 });
+
+// Which ledger events earn a text, and which texts may never be swallowed.
+const { levelFor } = require('../notify/watch');
+const { notifyText } = require('../lines/writer');
+const { silence, goodbyeLine } = require('../photon/schedule');
+
+test('a need never earns a text; family and savings are proud', () => {
+  assert.equal(levelFor('need', 0.9), null);
+  assert.equal(levelFor('family', 0.2), 'proud');
+  assert.equal(levelFor('saved', 1.2), 'proud');
+});
+
+test('a want is a note inside the week, a warning only when it carries the week across 75%, over past the envelope', () => {
+  assert.equal(levelFor('want', 0.5, 0.4), 'note');
+  assert.equal(levelFor('want', 0.8, 0.6), 'warning');
+  assert.equal(levelFor('want', 0.85, 0.8), 'note', 'already past 75%: no second warning on every coffee');
+  assert.equal(levelFor('want', 1.1, 0.9), 'over');
+});
+
+test('Gele down and proud skip the daily cap, never quiet hours or the gap', () => {
+  const now = at('2026-10-04T12:00:00');
+  const capped = { sent: { '+1': { at: '2026-10-04T08:00:00', day: '2026-10-4', count: 1 } } };
+  assert.equal(gate({ to: '+1', state: capped, now }), 'daily');
+  assert.equal(gate({ to: '+1', important: true, state: capped, now }), null);
+  assert.equal(gate({ to: '+1', important: true, state: capped, now: at('2026-10-04T23:30:00') }), 'quiet');
+  const justSent = { sent: { '+1': { at: '2026-10-04T11:59:00', day: '2026-10-4', count: 1 } } };
+  assert.equal(gate({ to: '+1', important: true, state: justSent, now }), 'gap');
+});
+
+test('a transfer text reads as a transfer, not a purchase, and skips the naira', () => {
+  const week = { budget: 75, spent: 50, bills: [] };
+  const home = notifyText('proud', week, { item: 'Sent home', price: 50 }, 'mama');
+  assert.match(home, /\n\$50 sent home\. \$25 left this week\./);
+  assert.doesNotMatch(home, /naira|on Sent home/);
+  const bought = notifyText('note', week, { item: 'Latte', price: 6 }, 'mama');
+  assert.match(bought, /\$6 on Latte\. \$25 left this week\./);
+  assert.match(bought, /naira/);
+});
+
+test('two weeks of silence earns one goodbye line, then nothing until they text again', () => {
+  const now = at('2026-10-20T12:00:00');
+  assert.equal(silence(now, {}, {}), null, 'never texted, no statement yet: nothing to measure');
+  assert.equal(silence(now, { firstStatementAt: '2026-10-19T19:00:00' }, {}), null);
+  assert.equal(silence(now, { firstStatementAt: '2026-10-04T19:00:00' }, {}), 'say goodbye');
+  assert.equal(silence(now, { firstStatementAt: '2026-10-04T19:00:00', wentQuietAt: '2026-10-19T19:00:00' }, {}), 'quiet');
+  assert.equal(silence(now, { firstStatementAt: '2026-10-04T19:00:00', wentQuietAt: '2026-10-19T19:00:00' }, { lastInboundAt: at('2026-10-19T20:00:00').getTime() }), null, 'they texted: back to normal');
+  assert.doesNotMatch(goodbyeLine('mama'), /[—–-]/, 'no dashes in copy');
+});
+
+test('no dashes or emoji in any of her Messages copy', () => {
+  const samples = [textLine('home', { amount: 50 }), textLine('saved', { amount: 40, who: 'nana' }), textLine('nothing'), textLine('tooMuch', { amount: 90, left: 25 }), textLine('other'), textLine('hello', { left: 25 }), goodbyeLine('nana'), weeklyText(new Date(), 'nana')];
+  for (const t of samples) { assert.doesNotMatch(t, /[—–]| - |\p{Extended_Pictographic}/u, t); }
+});

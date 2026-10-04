@@ -264,18 +264,18 @@ schedule.startScheduler();
 // PHOTON_ prefixed fallback) are set -- a no-op otherwise, so this is always safe to call.
 // spectrum.js sends the reply itself (same space, continuing the thread), so this just logs that leg
 // for GET /messages. handleIncoming() is the exact same function POST /messages/incoming calls.
-photon.listen(async (text, fromId) => {
-  const { reply, mood } = await chat.handleIncoming(text, 'mama', fromId);
+photon.listen(async (text, fromId, messageId) => {
+  const { reply, mood } = await chat.handleIncoming(text, 'mama', fromId, messageId);
   if (reply) require('./notify/log').push({ to: fromId || 'them', text: reply, mood, sender: 'photon', sent: true, direction: 'out', at: Date.now() });
   return reply;
 });
-// The Mac kit listens the same way when it is the live sender: texts to this Mac's Messages, same
-// handleIncoming(), reply sent back by the kit and logged for GET /messages.
+// The Mac kit listens the same way when it is the live sender: texts to this Mac's Messages, the same
+// handleIncoming(), and the reply goes back through notify() (prompted: replies skip the gate), so it is
+// sent and logged exactly like every other text.
 if (!photon.credentials() && kit.available()) {
-  kit.listen(async (text, from) => {
-    const { reply, mood } = await chat.handleIncoming(text, 'mama', from);
-    if (reply) require('./notify/log').push({ to: from, text: reply, mood, sender: 'imessage', sent: true, direction: 'out', at: Date.now() });
-    return reply;
+  kit.listen(async (text, from, messageId) => {
+    const { reply, mood } = await chat.handleIncoming(text, 'mama', from, messageId);
+    if (reply) await notify(from, reply, mood, { prompted: true });
   });
 }
 if (photon.credentials()) {

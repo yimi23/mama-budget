@@ -158,7 +158,7 @@ function whatsLeft(month, who = 'mama') {
   const days = month.daysLeft != null ? month.daysLeft : daysLeftInWeek();
   const perDay = days ? Math.floor(left / days) : left;
   const tail = who === 'nana' ? 'That’s about $' + perDay + ' a day, hon.' : `That is $${perDay} a day. Rice is at home.`;
-  return `$${left}. ${days} days. ${tail}`;
+  return `$${left}. ${days} day${days === 1 ? '' : 's'}. ${tail}`;
 }
 
 function daysLeftInWeek(now = new Date()) {
@@ -219,7 +219,10 @@ function notifyText(level, week, it, who = 'mama', cartItemNames) {
   const nairaPart = naira != null ? ` ${naira.toLocaleString()} naira.` : '';
   const what = it.item || it.merchant || 'this';
   const cartPart = cartItemNames && cartItemNames.length ? `\nCart: ${cartItemNames.join(', ')}.` : '';
-  return `${notifyLine(level, it, who)}\n$${Math.round(it.price || 0)} on ${what}. $${left} left this week.${billPart}${nairaPart}${cartPart}`;
+  // A transfer is not a thing you bought: "$50 sent home." not "$50 on Sent home."
+  const moved = level === 'proud' && /^(sent home|moved to savings)$/i.test(what);
+  const amountPart = moved ? `$${Math.round(it.price || 0)} ${what.toLowerCase()}.` : `$${Math.round(it.price || 0)} on ${what}.`;
+  return `${notifyLine(level, it, who)}\n${amountPart} $${left} left this week.${billPart}${moved ? '' : nairaPart}${cartPart}`;
 }
 
 // A conversational reply to an arbitrary incoming text (not a purchase verdict): uses the same

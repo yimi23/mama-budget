@@ -15,6 +15,7 @@ const { parse } = require('./parse');
 const memory = require('./memory');
 const notify = require('./index');
 const watch = require('./watch');
+const schedule = require('../photon/schedule');
 
 const APOLOGY = /\b(sorry|my bad|you.?re right|i.?m sorry|i apologi[sz]e|forgive me)\b/i;
 
@@ -29,9 +30,11 @@ function bankOf(who) {
   return who === 'nana' ? writer.NANA : writer.MAMA;
 }
 
-function fallbackReply(text, { week, who, apology, storedPromise }) {
+function fallbackReply(text, { week, who, apology, storedPromise, intent }) {
   const bank = bankOf(who);
   const tail = `\n${writer.subLine(week)}`;
+  const left = Math.max(0, week.budget - week.spent);
+  if (intent === 'hello' || intent === 'thanks') return textLine(intent, { left, who });
   if (storedPromise) {
     const open = apology ? (bank.down && bank.down[1]) || bank.down[0] : (who === 'nana' ? "Okay, hon. I'll hold you to that." : 'Okay. I will hold you to that.');
     return `${open} I will remember: "${storedPromise}."${tail}`;
@@ -47,6 +50,8 @@ async function handleIncoming(text, who = 'mama', from, messageId) {
   notify.logIncoming(from, text);
   const mem = memory.read();
   memory.addHistory(mem, 'user', text);
+  mem.lastInboundAt = Date.now(); // the two week silence rule in photon/schedule.js reads this
+  schedule.heardFrom();
 
   // Commands first (notify/parse.js understands the shapes people actually type). A verb with no amount asks
   // for the amount. Saving past what is left is refused with the number. Money home is never capped and never
@@ -63,7 +68,8 @@ async function handleIncoming(text, who = 'mama', from, messageId) {
     const rec = cmd.intent === 'home' ? await nessie.transferHome(cmd.amount, requestId) : await nessie.moveToSavings(cmd.amount, requestId);
     if (rec.nessieId) watch.markSeen(rec.nessieId);
     const week = nessie.week();
-    return say(writer.notifyText('proud', week, { item: cmd.intent === 'home' ? 'Sent home' : 'Moved to savings', price: cmd.amount }, who), 'proud');
+    const line = textLine(cmd.intent === 'home' ? 'home' : 'saved', { amount: cmd.amount, left: Math.max(0, week.budget - week.spent), who });
+    return say(`${line}\n$${Math.max(0, week.budget - week.spent)} left this week.`, 'proud');
   }
 
   const week = nessie.week();
@@ -71,12 +77,12 @@ async function handleIncoming(text, who = 'mama', from, messageId) {
   const promiseText = extractPromise(text);
 
   let reply = await writer.modelReply({ who, userText: text, week, history: mem.history, promises: memory.activePromises(mem) }).catch(() => null);
-  if (!reply) reply = fallbackReply(text, { week, who, apology, storedPromise: promiseText });
+  if (!reply) reply = fallbackReply(text, { week, who, apology, storedPromise: promiseText, intent: cmd.intent });
 
   if (promiseText) memory.addPromise(mem, promiseText);
   memory.addHistory(mem, who, reply);
   memory.write(mem);
-  return { reply, mood: apology ? 'calm' : week.mood };
+  return { reply, mood: apology ? 'calm' : week.mood, intent: cmd.intent };
 }
 
 module.exports = { handleIncoming };

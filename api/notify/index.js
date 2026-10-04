@@ -9,7 +9,8 @@
 //
 // The gate (api/photon/gate.js) runs here for every sender: quiet hours, a gap and a daily cap on anything
 // she starts herself. opts.prompted = true (a reply, a tap on "Text me what you saw", a statement) skips it.
-// A held text is still logged, with held: why, so GET /messages shows what she bit her tongue on.
+// opts.important = true (Gele down, a proud moment) skips only the daily cap. A held text is still logged,
+// with held: why, so GET /messages shows what she bit her tongue on.
 
 const log = require('./log');
 const photon = require('../photon/spectrum');
@@ -24,7 +25,7 @@ async function notify(to, text, mood, opts = {}) {
   if (!text) return null;
   const dest = to || process.env.PHOTON_TO || 'you';
   const sender = senderName();
-  const held = gate.gate({ to: dest, prompted: !!opts.prompted });
+  const held = gate.gate({ to: dest, prompted: !!opts.prompted, important: !!opts.important });
   if (held) {
     log.push({ to: dest, text, mood: mood || null, sender, sent: false, held, direction: 'out', at: Date.now() });
     return { sender, sent: false, held };

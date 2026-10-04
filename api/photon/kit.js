@@ -57,10 +57,11 @@ function readSeen() { try { return new Set(JSON.parse(fs.readFileSync(SEEN, 'utf
 function writeSeen(set) { try { fs.writeFileSync(SEEN, JSON.stringify([...set].slice(-2000))); } catch {} }
 
 /**
- * Listen for texts to this Mac and answer them. onIncoming(text, from) returns her reply (or nothing).
+ * Listen for texts to this Mac. onIncoming(text, from, messageId) decides and sends the reply itself
+ * (through notify(), so it is logged and gated like every other text); nothing is sent from here.
  * Direct messages only, never groups or reactions, only people on PHOTON_ALLOW (default: PHOTON_TO).
  * Deduped by message guid in data/photon-seen.json. A no-op when not available(), so wiring it
- * unconditionally is safe. In dry run it listens for real but logs the reply instead of sending it.
+ * unconditionally is safe. In dry run it listens for real and the reply is logged, not sent.
  */
 function listen(onIncoming) {
   if (!configured() || watching) return false;
@@ -76,9 +77,7 @@ function listen(onIncoming) {
       seen.add(key); writeSeen(seen);
       if (!allowed(m.sender)) { console.log(`[imessage] ignored ${mask(m.sender)}: not on the list`); return; }
       console.log(`[imessage] from ${mask(m.sender)}: ${m.text}`);
-      let reply;
-      try { reply = await onIncoming(m.text, m.sender); } catch (e) { console.log('[imessage] onIncoming failed:', e.message); return; }
-      if (reply) await send(m.sender, reply);
+      try { await onIncoming(m.text, m.sender, key); } catch (e) { console.log('[imessage] onIncoming failed:', e.message); }
     },
     onError: (e) => { lastError = `watch: ${e.message}`; console.log('[imessage] watcher:', e.message); },
   }).catch((e) => { watching = false; lastError = `watch: ${e.message}`; console.log('[imessage] could not start watching:', e.message); });

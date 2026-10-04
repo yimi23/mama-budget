@@ -1,6 +1,6 @@
 # The demo. The judge drives. About 60 seconds.
 
-Before judging: `npm run seed`, `npm run api`, extension loaded, Target.com cart open and empty, Photon Mac on wifi with the judge's number in PHOTON_TO if they have an iPhone.
+Before judging: `npm run seed`, `npm run api`, extension loaded, Target.com cart open and empty, the judge's iPhone number in `api/.env` as PHOTON_TO (the Mac kit texts from this Mac, no signup; `GET /photon/health` must say `sender: imessage`). Rehearse with `PHOTON_DRY=1 npm run api` so nothing is sent; see docs/PHOTON.md.
 
 1. **Rice and soap.** Judge adds both. Badge stays calm. Say: "Rice at Target. Her gele stays low. She reads the item, not the store."
 2. **AirPods.** Judge adds them. Badge shakes, card opens, gele climbs, she speaks. Say nothing. Let the room hear her.

@@ -81,13 +81,20 @@ function parseTagged(description) {
   return m ? { tag: m[1].toLowerCase(), item: m[2].trim() } : null;
 }
 
-function levelFor(tag, afterRatio) {
+// Which text a ledger event earns. Money to family or savings: proud. A want that takes the week past the
+// envelope: over (Gele down). A want that carries the week across 75%: warning, once, at the crossing (a week
+// already at 80% does not get warned again on every coffee). Any other want: note, the plain "it is in the
+// book" text the plan calls the bought anyway text. Needs: nothing, ever.
+function levelFor(tag, afterRatio, beforeRatio = afterRatio) {
   if (tag === 'family' || tag === 'saved') return 'proud';
   if (tag !== 'want') return null;
   if (afterRatio >= 1) return 'over';
-  if (afterRatio >= 0.75) return 'warning';
+  if (afterRatio >= 0.75 && beforeRatio < 0.75) return 'warning';
   return 'note';
 }
+// The plan names two texts she must never swallow: the budget blowing and a proud moment. They skip the
+// daily cap in notify(); soft notes and warnings do not.
+const important = (level) => level === 'over' || level === 'proud';
 
 function merchantNameFor(cache, merchantId) {
   if (!merchantId) return '';
@@ -107,11 +114,13 @@ async function handlePurchase(p, cache) {
   }
   const merchant = merchantNameFor(cache, p.merchant_id);
   const alreadyMirrored = cache.purchases.some((c) => c.nessieId === p._id);
+  const amountNum = Number(p.amount || 0);
   if (!alreadyMirrored) {
-    cache.purchases.push({ item: itemName, amount: Number(p.amount || 0), merchant, tag, date: String(p.purchase_date || '').slice(0, 10), nessieId: p._id });
+    cache.purchases.push({ item: itemName, amount: amountNum, merchant, tag, date: String(p.purchase_date || '').slice(0, 10), nessieId: p._id });
   }
   const weekAfter = nessie.week();
-  const level = levelFor(tag, weekAfter.ratio);
+  const beforeRatio = weekAfter.budget ? Math.max(0, weekAfter.spent - (tag === 'want' ? amountNum : 0)) / weekAfter.budget : 0;
+  const level = levelFor(tag, weekAfter.ratio, beforeRatio);
   if (!level) return; // need: no text
 
   const amount = Number(p.amount || 0);
@@ -129,7 +138,7 @@ async function handlePurchase(p, cache) {
   memory.addHistory(mem, 'mama', text);
   memory.write(mem);
 
-  await notifyMod.notify(null, text, level);
+  await notifyMod.notify(null, text, level, { important: important(level) });
 }
 
 async function handleWithdrawal(w, cache) {
@@ -144,7 +153,7 @@ async function handleWithdrawal(w, cache) {
   const mem = memory.read();
   memory.addHistory(mem, 'mama', text);
   memory.write(mem);
-  await notifyMod.notify(null, text, 'proud');
+  await notifyMod.notify(null, text, 'proud', { important: true });
 }
 
 async function tick() {
@@ -158,9 +167,12 @@ async function tick() {
       nessie.call('GET', `/accounts/${cache.accountId}/withdrawals`),
     ]);
   } catch (e) {
-    console.log('[watch] Nessie unavailable this tick, skipping:', e.message);
+    // Say it once, not every three seconds. Said again only after Nessie has answered in between.
+    if (!outage) console.log('[watch] Nessie unavailable, skipping ticks until it answers:', e.message);
+    outage = true;
     return;
   }
+  if (outage) { console.log('[watch] Nessie is back'); outage = false; }
 
   const state = readState();
   const seen = new Set(state.seen);
@@ -191,6 +203,7 @@ async function tick() {
 }
 
 let timer;
+let outage = false;
 function start() {
   if (timer) return;
   const run = () => tick().catch((e) => console.log('[watch] tick failed:', e.message));
@@ -208,4 +221,4 @@ function resetState() {
   recentCarts = [];
 }
 
-module.exports = { start, stop, resetState, recordCart, latestCart, markSeen };
+module.exports = { start, stop, resetState, recordCart, latestCart, markSeen, levelFor };

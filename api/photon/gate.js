@@ -3,7 +3,9 @@
 //   quiet 11pm to 7am for anything she starts herself (replies and taps are "prompted" and always go),
 //   one unprompted text per person every few minutes (sends are slow and two in a row reads as nagging),
 //   one unprompted text a day per person on top of the statements (PHOTON_DAILY_CAP, 0 turns it off).
-// Pure apart from the small state file, so the rules are tested without Messages.
+// "important" is the text the plan asks for by name: the budget blowing, or a proud moment. It skips the
+// daily cap (a soft "noted" text earlier in the day must never silence Gele down) but never quiet hours
+// or the gap. Pure apart from the small state file, so the rules are tested without Messages.
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -20,12 +22,12 @@ function quiet(now = new Date()) { const h = now.getHours(); return h >= 23 || h
 const dayKey = (now) => `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
 
 // Why a text is held back, or null when it may go.
-function gate({ to, prompted, state = readState(), now = new Date() }) {
+function gate({ to, prompted, important, state = readState(), now = new Date() }) {
   if (prompted) return null;
   if (quiet(now)) return 'quiet';
   const sent = (state.sent || {})[to] || {};
   if (sent.at && now - new Date(sent.at) < GAP_MS) return 'gap';
-  if (DAILY_CAP > 0 && sent.day === dayKey(now) && (sent.count || 0) >= DAILY_CAP) return 'daily';
+  if (!important && DAILY_CAP > 0 && sent.day === dayKey(now) && (sent.count || 0) >= DAILY_CAP) return 'daily';
   return null;
 }
 

@@ -12,6 +12,7 @@ const path = require('node:path');
 const nessie = require('../nessie/client');
 const { weeklyStatement, monthlyStatement } = require('../lines/writer');
 const { notify } = require('../notify');
+const memory = require('../notify/memory');
 
 const STATE = path.join(__dirname, '..', '..', 'data', 'photon-state.json');
 const HOUR = 19; // 7pm local
@@ -84,12 +85,33 @@ async function send(kind, { now = new Date(), to, grandma: g } = {}) {
   const body = kind === 'monthly' ? monthlyText(now, who) : weeklyText(now, who);
   const result = await notify(to, body, 'calm', { prompted: true }); // statements skip the gate: PLAN allows them on top of the daily text
   const sent = !!(result && result.sent);
-  if (sent) writeState(kind === 'monthly' ? { monthlySentFor: monthKey(now), lastMonthlyAt: now.toISOString() } : { weeklySentFor: weekKey(now), lastWeeklyAt: now.toISOString() });
+  if (sent) writeState({ ...(kind === 'monthly' ? { monthlySentFor: monthKey(now), lastMonthlyAt: now.toISOString() } : { weeklySentFor: weekKey(now), lastWeeklyAt: now.toISOString() }), ...(readState().firstStatementAt ? {} : { firstStatementAt: now.toISOString() }) });
   return { ok: sent, texted: sent, kind, text: body, to: to || process.env.PHOTON_TO || null };
 }
 
+// PLAN: "if you go silent two weeks she sends one line and stops." Silence is measured from the last text
+// they sent her, or from her first statement if they never have. Once she has said her one line, statements
+// stop until they text again (chat.js calls heardFrom()).
+const TWO_WEEKS = 14 * 86400000;
+function silence(now = new Date(), state = readState(), mem = memory.read()) {
+  const since = mem.lastInboundAt || (state.firstStatementAt ? new Date(state.firstStatementAt).getTime() : null);
+  if (!since || now - since < TWO_WEEKS) return null;
+  return state.wentQuietAt ? 'quiet' : 'say goodbye';
+}
+function goodbyeLine(who) {
+  return who === 'nana' ? 'Two weeks and not a word, hon. I will stop texting. Say anything and I am right here.' : 'Two weeks and I have not heard from you. I will stop texting. Say anything and I am here.';
+}
+function heardFrom() { const s = readState(); if (s.wentQuietAt) { delete s.wentQuietAt; fs.writeFileSync(STATE, JSON.stringify(s, null, 2)); } }
+
 async function tick(now = new Date()) {
   const results = [];
+  const quietState = silence(now);
+  if (quietState === 'say goodbye') {
+    const sent = await notify(undefined, goodbyeLine(grandma()), 'calm', { prompted: true });
+    if (sent && sent.sent) writeState({ wentQuietAt: now.toISOString() });
+    return [{ ok: !!(sent && sent.sent), kind: 'goodbye' }];
+  }
+  if (quietState === 'quiet') return results;
   for (const kind of due(now)) results.push(await send(kind, { now }));
   return results;
 }
@@ -108,4 +130,4 @@ function overview(now = new Date()) {
   return { now: now.toISOString(), due: due(now, s), next: { weekly: nextSunday7(now).toISOString(), monthly: nextMonthEnd7(now).toISOString() }, last: { weekly: s.lastWeeklyAt || null, monthly: s.lastMonthlyAt || null }, grandma: grandma() };
 }
 
-module.exports = { due, weeklyText, monthlyText, send, tick, startScheduler, stopScheduler, overview, nextSunday7, nextMonthEnd7, weekKey, monthKey };
+module.exports = { due, weeklyText, monthlyText, send, tick, startScheduler, stopScheduler, overview, nextSunday7, nextMonthEnd7, weekKey, monthKey, silence, heardFrom, goodbyeLine };

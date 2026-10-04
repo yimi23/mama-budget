@@ -92,7 +92,7 @@ function listen(onIncoming) {
         const fromId = message.sender?.id;
         if (fromId) spaces.remember(fromId, space.id);
         let reply;
-        try { reply = await onIncoming(message.content.text, fromId); } catch (e) { console.log('[photon] onIncoming failed:', e.message); continue; }
+        try { reply = await onIncoming(message.content.text, fromId, message.id); } catch (e) { console.log('[photon] onIncoming failed:', e.message); continue; }
         if (reply) await space.send(reply).catch((e) => console.log('[photon] reply send failed:', e.message));
       }
     })().catch((e) => console.log('[photon] listener stopped:', e.message));
