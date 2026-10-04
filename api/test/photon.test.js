@@ -211,3 +211,24 @@ test('the true line reads the top want against the cheapest staple, in her voice
   assert.equal(trueLineText(null), null);
   assert.equal(trueLineText({ topCategory: '', topAmount: 50 }), null, 'no category, nothing true to say');
 });
+
+// Her own words must never come back as orders. Texting the Mac's own number shows her texts as received.
+const { parse: parseText } = require('../notify/parse');
+const kitEcho = require('../photon/kit');
+
+test('statements are not instructions: her confirmations and asides never move money', () => {
+  assert.deepEqual(parseText('$50 sent home. That one is never waste. Greet them for me.'), { intent: 'other' });
+  assert.deepEqual(parseText('$25. 1 day. That is $25 a day. Rice is at home.'), { intent: 'other' });
+  assert.deepEqual(parseText('Nothing to send. Say the amount, like "send 50 home".').intent, 'home');
+  assert.deepEqual(parseText('send 50 home'), { intent: 'home', amount: 50 });
+  assert.deepEqual(parseText('send $50 to mum'), { intent: 'home', amount: 50 });
+  assert.deepEqual(parseText('transfer 30 to family'), { intent: 'home', amount: 30 });
+  assert.deepEqual(parseText('move 40 to savings'), { intent: 'save', amount: 40 });
+  assert.deepEqual(parseText('You kept $40.'), { intent: 'other' });
+});
+
+test('a text that matches what she just sent is an echo, whoever Messages says sent it', () => {
+  kitEcho.remember('This week: $50 of $75 fun money gone,  $25 left.');
+  assert.equal(kitEcho.isEcho('This week: $50 of $75 fun money gone, $25 left.'), true);
+  assert.equal(kitEcho.isEcho('how much do I have left'), false);
+});

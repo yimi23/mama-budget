@@ -42,8 +42,24 @@ async function send(to, text) {
   if (dry()) { console.log(`[imessage] dry run, would text ${mask(to)}:\n${text}`); return { to, text, dry: true }; }
   const client = load();
   if (!client) return null;
-  try { await client.send(to, String(text)); lastError = null; return { to, text }; }
+  try { await client.send(to, String(text)); lastError = null; remember(text); return { to, text }; }
   catch (e) { lastError = `send: ${e.message}`; console.log('[imessage] send failed:', e.message); return null; }
+}
+
+// What she sent in the last ten minutes. When PHOTON_TO is the Mac's own number (one person rehearsing alone), Messages
+// shows her own text as received with isFromMe false, and without this she would answer herself, forever, and once
+// parsed "send 50 home" out of her own reply. An echo is dropped by its text, whoever Messages says sent it.
+const ECHO_MS = 10 * 60 * 1000;
+const sent = new Map();
+const fold = (t) => String(t || '').replace(/\s+/g, ' ').trim();
+function remember(text) {
+  const now = Date.now();
+  for (const [k, at] of sent) if (now - at > ECHO_MS) sent.delete(k);
+  sent.set(fold(text), now);
+}
+function isEcho(text) {
+  const at = sent.get(fold(text));
+  return at != null && Date.now() - at <= ECHO_MS;
 }
 
 // "+1 (734) 555-0100" and "17345550100" are the same person. Emails compare lower case.
@@ -68,13 +84,18 @@ function listen(onIncoming) {
   const client = load();
   if (!client) return false;
   const seen = readSeen();
+  // Only texts that arrive while this process is alive. A restart must never replay the backlog: an old text of
+  // hers would come back with the memo empty.
+  const startedAt = Date.now() - 5000;
   watching = true;
   client.startWatching({
     onDirectMessage: async (m) => {
       if (m.isFromMe || m.isGroupChat || m.isReaction || !m.text || !m.text.trim()) return;
+      if (m.date && new Date(m.date).getTime() < startedAt) return;
       const key = m.guid || m.id;
       if (seen.has(key)) return;
       seen.add(key); writeSeen(seen);
+      if (isEcho(m.text)) { console.log(`[imessage] echo of her own text from ${mask(m.sender)}, ignored`); return; }
       if (!allowed(m.sender)) { console.log(`[imessage] ignored ${mask(m.sender)}: not on the list`); return; }
       console.log(`[imessage] from ${mask(m.sender)}: ${m.text}`);
       try { await onIncoming(m.text, m.sender, key); } catch (e) { console.log('[imessage] onIncoming failed:', e.message); }
@@ -96,4 +117,4 @@ function mask(s) { s = String(s || ''); return s.includes('@') ? s.replace(/^(.)
 
 async function close() { if (sdk) { try { if (watching) sdk.stopWatching(); await sdk.close(); } catch {} sdk = null; watching = false; } }
 
-module.exports = { send, listen, available, status, close, allowed, norm };
+module.exports = { send, listen, available, status, close, allowed, norm, isEcho, remember };
