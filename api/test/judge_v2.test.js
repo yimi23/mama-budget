@@ -103,3 +103,11 @@ test('every loud line names the plan: the price, the item, and the week', () => 
   assert.equal(shopName('jumia.com.ng'), 'Jumia');
   assert.equal(shopName('Target'), 'Target');
 });
+
+test('loudness scales the ask line, never the math', () => {
+  const lamp = (loudness) => judge({ item: 'Desk lamp', price: 30 }, week, {}, { loudness, now: new Date(2026, 9, 4, 12) });
+  assert.equal(lamp('full').label, 'ask');
+  assert.equal(lamp('mama').label, 'ask');
+  assert.equal(lamp('gentle').label, 'want', 'Gentle Auntie asks from $40');
+  assert.equal(judge({ item: 'Desk lamp', price: 30 }, week).label, 'ask', 'no tier given: the $15 line');
+});

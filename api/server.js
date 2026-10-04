@@ -105,7 +105,7 @@ const routes = {
     setHome(body.home);
     const items = (body.items || []).map((it) => ({ item: String(it.name || ''), price: Number(it.unitPrice || 0) * Number(it.qty || 1), merchant: it.store || '', currency: body.currency || 'USD', home: body.home || null }));
     // The rules judge the full title (the protected word is often at the end: "...Fragrant Rice"); her line gets the short name.
-    const judged = items.map((item) => ({ item, v: v2.judge(item, w, memory) }));
+    const judged = items.map((item) => ({ item, v: v2.judge(item, w, memory, { loudness: body.loudness, now: new Date() }) }));
     const verdicts = judged.map(({ item, v }) => {
       const spoken = { ...item, item: shortName(item.item) };
       return { name: item.item, short: spoken.item, price: item.price, ...v, line: lineFor(v, spoken, w, who), ack: ackLine(v, spoken, who), sub: subLine(w) };
@@ -162,8 +162,23 @@ const routes = {
         fs.writeFileSync(file, mp3);
       }
     }
-    if (!mp3) return { audio: false };
+    if (!mp3) return { __raw: true, status: 204, contentType: 'text/plain', body: '' };
     return { __raw: true, contentType: 'audio/mpeg', body: mp3 };
+  },
+
+  // "You're right, Mama" and the item leaves the cart: the money stays in the week and Kept goes up. Idempotent by
+  // requestId. The record lives in the local ledger (Nessie has no notion of a purchase that did not happen).
+  'POST /v2/putback': async (body) => {
+    const name = String(body.name || '');
+    const amount = Math.round(Number(body.price || 0));
+    if (!name || !(amount > 0) || !body.requestId) throw new Error('name, price and requestId are required');
+    const c = nessie.readCache();
+    c.putBack = c.putBack || [];
+    if (!c.putBack.some((p) => p.requestId === body.requestId)) {
+      c.putBack.push({ item: name, amount, date: new Date().toISOString().slice(0, 10), requestId: String(body.requestId) });
+      nessie.writeCache(c);
+    }
+    return { ok: true, week: nessie.week() };
   },
 
   'POST /buy': async (body) => {
@@ -263,7 +278,7 @@ http.createServer(async (req, res) => {
     try {
       const out = await handler(raw ? JSON.parse(raw) : {}, query);
       if (out && out.__raw) {
-        res.writeHead(200, { 'content-type': out.contentType, ...cors });
+        res.writeHead(out.status || 200, { 'content-type': out.contentType, ...cors });
         return res.end(out.body);
       }
       res.writeHead(200, { 'content-type': 'application/json', ...cors });

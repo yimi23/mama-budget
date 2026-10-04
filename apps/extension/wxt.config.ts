@@ -8,7 +8,7 @@ export default defineConfig({
   manifest: {
     name: 'Mama Budget',
     description: 'Your weekly fun money, with someone in your cart who speaks before you pay, not after.',
-    permissions: ['storage', 'offscreen'],
+    permissions: ['storage', 'offscreen', 'tts'],
     host_permissions: ['http://localhost:8787/*'],
     // Her faces load as <img> inside the shadow root on store pages.
     web_accessible_resources: [{ resources: ['faces/*/*.svg'], matches: ['<all_urls>'] }],

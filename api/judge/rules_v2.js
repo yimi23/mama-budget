@@ -18,7 +18,13 @@ const ASK_LINE = 15; // below this she never asks, a small want is a nod at most
 const key = (it) => String(it.item || '').toLowerCase().replace(/,.*$/, '').replace(/[^a-z0-9 ]/g, '').trim();
 const has = (t, words) => words.some((w) => String(t).toLowerCase().includes(w));
 
-function judge(it, month = { budget: 75, spent: 0 }, memory = {}) {
+// Loudness scales the ask line, never the math: Full Nigerian Mother asks from $15, Mama from $25, Gentle Auntie from
+// $40. `now` is injected (not read) so the judge stays pure; it is here for the quiet hours rule when that ships.
+const ASK_LINE_FOR = { full: 15, mama: 25, gentle: 40 };
+
+function judge(it, month = { budget: 75, spent: 0 }, memory = {}, { loudness, now } = {}) {
+  void now;
+  const askLine = ASK_LINE_FOR[loudness] || ASK_LINE;
   const k = key(it);
   const ratio = month.budget ? month.spent / month.budget : 0;
   const base = ratio >= 0.75 ? 'watching' : 'calm';
@@ -46,7 +52,7 @@ function judge(it, month = { budget: 75, spent: 0 }, memory = {}) {
   }
 
   // Unknown item. Small: a nod. Otherwise: ask, neutral face, nothing moves.
-  if (price < ASK_LINE) return out('want', false, base, 'Small. A nod, nothing more.', ['small']);
+  if (price < askLine) return out('want', false, base, 'Small. A nod, nothing more.', ['small']);
   return out('ask', false, 'watching', 'First time. She asks, she does not scold.', ['ask']);
 }
 

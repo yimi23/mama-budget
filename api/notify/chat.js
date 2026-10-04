@@ -69,7 +69,7 @@ async function handleIncoming(text, who = 'mama', from, messageId) {
     if (rec.nessieId) watch.markSeen(rec.nessieId);
     const week = nessie.week();
     const line = textLine(cmd.intent === 'home' ? 'home' : 'saved', { amount: cmd.amount, left: Math.max(0, week.budget - week.spent), who });
-    return say(`${line}\n$${Math.max(0, week.budget - week.spent)} left this week.`, 'proud');
+    return say(`${line}\n$${week.kept} kept this week. $${Math.max(0, week.budget - week.spent)} left.`, 'proud');
   }
 
   const week = nessie.week();

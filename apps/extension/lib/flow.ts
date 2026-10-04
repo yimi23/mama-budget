@@ -3,6 +3,7 @@
 // At most one reaction per item and three asks per session; everything else stays quiet.
 
 import type { Verdict, Week } from '@mama/shared/types';
+import { words } from './onboarding.ts';
 
 export const MAX_ASKS = 3;
 
@@ -54,4 +55,11 @@ export function ackSub(v: Verdict, week: Week): string | null {
 /** Screen 11: the first time the week turns to watching on a page, she says so, once. Not on the way back down. */
 export function crossedIntoWatching(prev: Week | undefined, next: Week): boolean {
   return next.mood === 'watching' && prev?.mood !== 'watching' && (prev == null || prev.ratio < next.ratio);
+}
+
+/** What she says out loud: numbers as words ("two hundred and fifty five", never "255"), commas and $ gone. */
+export function spoken(text: string): string {
+  return text
+    .replace(/\$\s?(\d[\d,]*)(?:\.\d+)?/g, (_m, n: string) => `${words(Number(n.replace(/,/g, '')))} dollars`)
+    .replace(/(\d[\d,]*)(?:\.\d+)?/g, (_m, n: string) => words(Number(n.replace(/,/g, ''))));
 }

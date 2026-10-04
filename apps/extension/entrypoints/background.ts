@@ -31,7 +31,7 @@ async function judgeCart(store: string, currency: CurrencyCode, items: CartItem[
   const reply = await call<JudgeReply>('/v2/judge', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ items: items.map((i) => ({ ...i, store })), memory, currency, grandma: (settings as { grandma?: string }).grandma ?? 'mama', home: await homeSetting() }),
+    body: JSON.stringify({ items: items.map((i) => ({ ...i, store })), memory, currency, grandma: (settings as { grandma?: string }).grandma ?? 'mama', home: await homeSetting(), loudness: (settings as { loudness?: string }).loudness }),
   });
   return reply ? { ok: true as const, ...reply, handled: await handledLists() } : { ok: false as const };
 }
@@ -173,7 +173,10 @@ async function speak(msg: Extract<Message, { type: 'SPEAK' }>): Promise<{ ok: bo
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ text: msg.text, grandma: msg.grandma }), signal: AbortSignal.timeout(8000),
     });
-    if (!res.ok || !(res.headers.get('content-type') ?? '').startsWith('audio/')) return silent;
+    if (!res.ok || !(res.headers.get('content-type') ?? '').startsWith('audio/')) {
+      // No ElevenLabs: the browser's own voice, so a line is never only text when sound is on.
+      try { browser.tts.speak(msg.text, { rate: 0.95, volume: volumeFor(st.loudness) }); return { ok: true, duration: null }; } catch { return silent; }
+    }
     const dataUrl = toDataUrl(await res.arrayBuffer());
     if (!(await offscreenReady())) return silent;
     const reply = (await browser.runtime.sendMessage({ type: 'PLAY', dataUrl, volume: volumeFor(st.loudness) })) as { ok?: boolean; duration?: number | null } | undefined;
@@ -240,6 +243,15 @@ async function setEnvelope(msg: Extract<Message, { type: 'SET_ENVELOPE' }>) {
   if (!(await apiUp())) return { ok: false as const };
   const r = await call<{ ok: boolean; envelope: number }>('/envelope', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ amount: msg.amount }) });
   return r ? { ok: true as const, envelope: r.envelope } : { ok: false as const };
+}
+
+async function putBack(msg: Extract<Message, { type: 'PUT_BACK' }>) {
+  if (!(await apiUp())) return { ok: false as const };
+  const reply = await call<{ ok: true; week: Week }>('/v2/putback', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name: msg.name, price: msg.price, requestId: `putback:${weekKey()}:${postedKey(msg.name)}` }),
+  });
+  return reply ? { ok: true as const, week: reply.week } : { ok: false as const };
 }
 
 /** The popup's Start over: she forgets every answer and asks again, as on a fresh install. */
@@ -311,6 +323,9 @@ export default defineBackground(() => {
         return true;
       case 'SET_ENVELOPE':
         setEnvelope(msg).then(sendResponse, () => sendResponse({ ok: false }));
+        return true;
+      case 'PUT_BACK':
+        putBack(msg).then(sendResponse, () => sendResponse({ ok: false }));
         return true;
       case 'START_OVER':
         startOver().then(() => sendResponse({ ok: true }), () => sendResponse({ ok: true }));

@@ -18,6 +18,8 @@ export type Message =
   | { type: 'BUY'; store: string; currency: CurrencyCode; item: { name: string; short: string; price: number } }
   /** A real order confirmation page: charge the store's last cart, minus anything already posted. */
   | { type: 'CONFIRM'; store: string; orderId: string }
+  /** The item you agreed to put back left the cart: the money stays in the week, Kept goes up. */
+  | { type: 'PUT_BACK'; name: string; price: number }
   | { type: 'START_OVER' }
   /** Her voice for one line. Fire and forget: the card never waits on audio. */
   | { type: 'SPEAK'; text: string; grandma: 'mama' | 'nana' }
@@ -42,6 +44,7 @@ export type Reply<M extends Message> =
   M extends { type: 'MARK' } ? { ok: true } :
   M extends { type: 'BUY' } ? ({ ok: true } & BuyReply) | { ok: false } :
   M extends { type: 'CONFIRM' } ? { ok: true; posted: number } :
+  M extends { type: 'PUT_BACK' } ? { ok: true; week: Week } | { ok: false } :
   M extends { type: 'START_OVER' } ? { ok: true } :
   M extends { type: 'SPEAK' } ? { ok: boolean; duration: number | null } :
   M extends { type: 'MONTH' } ? { ok: true; month: Month } | { ok: false } :

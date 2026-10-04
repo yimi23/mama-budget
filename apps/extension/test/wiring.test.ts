@@ -25,6 +25,8 @@ test('the session sends what the card promises', () => {
     "type: 'BUY'": 'Buy anyway charges the bank',
     "type: 'SPEAK'": 'her voice on the Shocked card',
     "type: 'CART_READ'": 'keeps the last cart for confirmation pages',
+    "type: 'PUT_BACK'": 'put it back moves Kept in the ledger',
+    "type: 'CUE'": 'the proud cue when it leaves the cart',
   };
   for (const [needle, why] of Object.entries(sends)) assert.ok(session.includes(needle), `${why}: ${needle}`);
   assert.ok(session.includes('putBack.set('), "You're right watches the item");

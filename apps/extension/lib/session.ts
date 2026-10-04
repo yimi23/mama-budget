@@ -7,7 +7,7 @@ import { mountBadge, type Badge, type Grandma } from './ui/badge';
 import { mountCard, type Card } from './ui/card';
 import { mountBubble, type Bubble } from './ui/bubble';
 import { mountPanel, type Panel } from './ui/panel';
-import { ackSub, askManyLine, crossedIntoWatching, nextCard, wantLabel, type Handled } from './flow';
+import { ackSub, askManyLine, crossedIntoWatching, nextCard, spoken, wantLabel, type Handled } from './flow';
 import { storeKey } from '@mama/shared/store-key';
 import { toUSD } from '@mama/shared/currency';
 import { readCart, readKey } from './readers';
@@ -85,7 +85,10 @@ async function grandma(): Promise<Grandma | null> {
 }
 let saidPick = false;
 
+let lastGrandma: Grandma | null = null;
+
 function showWeek(g: Grandma, week: Week, mood: Mood = week.mood) {
+  lastGrandma = g;
   if (!badge) {
     badge = mountBadge();
     card = mountCard(badge.root);
@@ -192,6 +195,11 @@ function onRead(read: CartRead | null) {
     putBack.delete(name);
     remember(lines.proud);
     bubble?.say(lines.proud, `$${Math.round(price)} stays in the week.`);
+    void send({ type: 'CUE', cue: 'proud' });
+    // The money stays in the week: Kept goes up in the ledger and the badge shows the new week.
+    void send<{ ok: true; week: Week } | { ok: false }>({ type: 'PUT_BACK', name, price }).then((r) => {
+      if (r?.ok && lastWeek) { const g = lastGrandma; if (g) showWeek(g, r.week); }
+    });
   }
   if (talking) {
     if (discussing && card?.open && !read?.items.some((i) => i.name === discussing)) card.close();
@@ -249,7 +257,7 @@ async function react(g: Grandma, week: Week, v: Verdict, also: Verdict[] = []) {
   showWeek(g, week, v.mood);
   panel?.close();
   remember(v.line);
-  void send({ type: 'SPEAK', text: v.line, grandma: g }); // her voice: here and on Gele down only; the card never waits
+  void send({ type: 'SPEAK', text: spoken(v.line), grandma: g }); // her voice: here and on Gele down only; the card never waits
   badge!.shake();
   const choice = await card!.ask({
     grandma: g, mood: v.mood, tone: 'alarm', line: v.line, sub: v.sub,
@@ -272,7 +280,7 @@ async function react(g: Grandma, week: Week, v: Verdict, also: Verdict[] = []) {
   if (!reply?.ok) return hideAll();
   showWeek(g, reply.week);
   remember(reply.line);
-  if (reply.week.ratio >= 1) void send({ type: 'SPEAK', text: reply.line, grandma: g }); // Gele down
+  if (reply.week.ratio >= 1) void send({ type: 'SPEAK', text: spoken(reply.line), grandma: g }); // Gele down
   bubble!.say(reply.line, reply.texted ? `${reply.sub} Texted.` : reply.sub);
 }
 

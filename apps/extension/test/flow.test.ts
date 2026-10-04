@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { MAX_ASKS, ackSub, askManyLine, crossedIntoWatching, nextCard, wantLabel } from '../lib/flow.ts';
+import { MAX_ASKS, ackSub, askManyLine, crossedIntoWatching, nextCard, spoken, wantLabel } from '../lib/flow.ts';
 import type { Verdict } from '@mama/shared/types';
 
 const v = (key: string, label: Verdict['label'], react = false): Verdict => ({
@@ -78,4 +78,12 @@ test('she says she is watching once, when the week crosses 75% on the way up', (
   assert.equal(crossedIntoWatching(watching, watching), false, 'never twice');
   assert.equal(crossedIntoWatching({ ...watching, ratio: 1.2, mood: 'down' }, watching), false, 'not on the way back down');
   assert.equal(crossedIntoWatching(undefined, calm), false);
+});
+
+
+test('her voice gets words, never digits', () => {
+  assert.equal(spoken('We said 75 dollars for the week. AirPods Pro alone is 179. That is 286,400 naira.'),
+    'We said seventy five dollars for the week. AirPods Pro alone is one hundred and seventy nine. That is two hundred and eighty six thousand four hundred naira.');
+  assert.equal(spoken('$25 left.'), 'twenty five dollars left.');
+  assert.doesNotMatch(spoken('154 dollars past the week. $0 left.'), /\d/);
 });
