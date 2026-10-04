@@ -16,6 +16,7 @@ const memory = require('./memory');
 const notify = require('./index');
 const watch = require('./watch');
 const schedule = require('../photon/schedule');
+const { weigh } = require('./weigh');
 
 const APOLOGY = /\b(sorry|my bad|you.?re right|i.?m sorry|i apologi[sz]e|forgive me)\b/i;
 
@@ -46,8 +47,8 @@ function fallbackReply(text, { week, who, apology, storedPromise, intent }) {
   return bank.calm[0] + tail;
 }
 
-async function handleIncoming(text, who = 'mama', from, messageId) {
-  notify.logIncoming(from, text);
+async function handleIncoming(text, who = 'mama', from, messageId, { images = [] } = {}) {
+  notify.logIncoming(from, images.length ? `${text || ''} [photo]`.trim() : text);
   const mem = memory.read();
   memory.addHistory(mem, 'user', text);
   mem.lastInboundAt = Date.now(); // the two week silence rule in photon/schedule.js reads this
@@ -70,6 +71,14 @@ async function handleIncoming(text, who = 'mama', from, messageId) {
     const week = nessie.week();
     const line = textLine(cmd.intent === 'home' ? 'home' : 'saved', { amount: cmd.amount, left: Math.max(0, week.budget - week.spent), who });
     return say(`${line}\n$${week.kept} kept this week. $${Math.max(0, week.budget - week.spent)} left.`, 'proud');
+  }
+
+  // A purchase, by words or by photo: reader five. Same judge as the cart, same memory keys, one bubble.
+  const weighed = await weigh({ text, images, who, mem, week: before }).catch(() => null);
+  if (weighed) {
+    memory.addHistory(mem, who, weighed.reply || `(${weighed.react || 'nod'})`);
+    memory.write(mem);
+    return { reply: weighed.reply, mood: weighed.mood, intent: weighed.intent, react: weighed.react, verdicts: weighed.verdicts };
   }
 
   const week = nessie.week();

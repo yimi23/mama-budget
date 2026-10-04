@@ -311,9 +311,10 @@ const routes = {
   'GET /messages': async () => getMessages(),
 
   'POST /messages/incoming': async (body) => {
-    const { reply, mood, intent } = await chat.handleIncoming(String(body.text || ''), 'mama', body.from, body.id);
-    const out = await notify(body.from, reply, mood, { prompted: true });
-    return { ok: true, reply, intent, texted: !!(out && out.sent) };
+    const images = Array.isArray(body.images) ? body.images.filter((i) => i && i.data && /^image\//.test(i.mediaType || '')).slice(0, 3) : [];
+    const { reply, mood, intent, react, verdicts } = await chat.handleIncoming(String(body.text || ''), 'mama', body.from, body.id, { images });
+    const out = reply ? await notify(body.from, reply, mood, { prompted: true }) : null;
+    return { ok: true, reply, intent, react, verdicts, texted: !!(out && out.sent) };
   },
 
   'GET /photon/health': async () => ({ sender: require('./notify').senderName(), spectrum: !!photon.credentials(), imessage: await kit.status() }),
@@ -398,10 +399,10 @@ schedule.startScheduler();
 // PHOTON_ prefixed fallback) are set -- a no-op otherwise, so this is always safe to call.
 // spectrum.js sends the reply itself (same space, continuing the thread), so this just logs that leg
 // for GET /messages. handleIncoming() is the exact same function POST /messages/incoming calls.
-photon.listen(async (text, fromId, messageId) => {
-  const { reply, mood } = await chat.handleIncoming(text, 'mama', fromId, messageId);
-  if (reply) require('./notify/log').push({ to: fromId || 'them', text: reply, mood, sender: 'photon', sent: true, direction: 'out', at: Date.now() });
-  return reply;
+photon.listen(async (text, fromId, messageId, { images = [] } = {}) => {
+  const { reply, mood, react } = await chat.handleIncoming(text, 'mama', fromId, messageId, { images });
+  if (reply || react) require('./notify/log').push({ to: fromId || 'them', text: reply || `(${react})`, mood, sender: 'photon', sent: true, direction: 'out', at: Date.now() });
+  return { reply, react };
 });
 // The Mac kit listens the same way when it is the live sender: texts to this Mac's Messages, the same
 // handleIncoming(), and the reply goes back through notify() (prompted: replies skip the gate), so it is

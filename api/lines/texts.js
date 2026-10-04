@@ -9,6 +9,16 @@ const MAMA = {
   unknown: ['I only talk about money. Ask me how much you have left, or say "move 20 to savings".'],
   hello: ['I am here. ${left} left this week. Ask me anything about it.'],
   thanks: ['Ehen. Go and rest.'],
+  // Weighing a purchase by text (notify/weigh.js). Numbers first, the item, nothing about the person.
+  whatFor: ['${item}, ${price}. What is it for?'],
+  andThat: ['And ${item}, ${price}. Tell me what that one is for.'],
+  fits: ['${item}, ${price}. It fits. ${left} left after.'],
+  needs: ['That one is a need. Buy it.'],
+  needNoted: ['Okay. ${item} is a need for you. I will not ask again.'],
+  planned: ['${item} for ${occasion}. Planned, so it stays off the week. ${left} left for the rest.'],
+  isThisIt: ['${item}, ${price}${store}. That is the one?'],
+  wrongOne: ['Okay. Tell me the item and the price.'],
+  cannotSee: ['I cannot see a price in that. Tell me what it is and how much.'],
 };
 
 const NANA = {
@@ -19,13 +29,25 @@ const NANA = {
   unknown: ['I just do the money, hon. Ask me what is left, or say "move 20 to savings".'],
   hello: ['Hi hon. ${left} left this week.'],
   thanks: ['Any time, hon.'],
+  whatFor: ['${item}, ${price}. What is it for, hon?'],
+  andThat: ['And ${item}, ${price}. What is that one for?'],
+  fits: ['${item}, ${price}. That fits. ${left} left after.'],
+  needs: ['That is a need, hon. Go ahead.'],
+  needNoted: ['Okay, hon. ${item} is a need for you. I will not ask again.'],
+  planned: ['${item} for ${occasion}. Planned, so it stays off the week. ${left} left for the rest.'],
+  isThisIt: ['${item}, ${price}${store}. Is that the one?'],
+  wrongOne: ['Okay, hon. Tell me the item and the price.'],
+  cannotSee: ['I cannot make out a price there, hon. What is it and how much?'],
 };
 
-function textLine(key, { amount, left, who = 'mama' } = {}) {
+function textLine(key, { amount, left, who = 'mama', item, price, occasion, store } = {}) {
   const bank = who === 'nana' ? NANA : MAMA;
   const pool = bank[key] || bank.unknown;
   const t = pool[Math.round(amount || left || 0) % pool.length];
-  return t.replace('${amount}', `$${Math.round(amount || 0)}`).replace('${left}', `$${Math.round(left || 0)}`);
+  return t.replace('${amount}', `$${Math.round(amount || 0)}`).replace(/\$\{left\}/g, `$${Math.round(left || 0)}`)
+    .replace('${item}', String(item || 'That').trim()).replace('${price}', `$${Math.round(price || 0)}`)
+    .replace('${occasion}', String(occasion || 'the occasion').trim().replace(/[.!?]+$/, ''))
+    .replace('${store}', store ? ` at ${store}` : '');
 }
 
 module.exports = { textLine, MAMA, NANA };

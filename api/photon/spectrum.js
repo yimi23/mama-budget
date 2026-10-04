@@ -83,17 +83,70 @@ async function send(to, text) {
 // the same conversation instead of starting a new one. Replies on the same space it arrived on --
 // the correct way to continue a thread; a fresh send() would start a second conversation instead.
 // A no-op when credentials or the package are missing, so wiring this up unconditionally is safe.
+// A turn is everything one person sends within DEBOUNCE_MS: a screenshot and its caption arrive as two messages and
+// must be read as one. Photos come as attachments (image/*), read into memory once. onIncoming(text, fromId,
+// messageId, { images }) returns { reply, react } or a string; a react is a tapback on their message (a thumbs up
+// when a want fits, no words), the reply is a threaded reply when there was a photo, a plain bubble otherwise.
+// She types while she thinks, so a slow read never looks like silence.
+const DEBOUNCE_MS = Number(process.env.PHOTON_DEBOUNCE_MS || 5000);
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+const turns = new Map(); // space.id -> { timer, texts, images, last, fromId }
+
+async function imageOf(content) {
+  if (content?.type !== 'attachment' || !/^image\//i.test(content.mimeType || '')) return null;
+  try {
+    const buf = await content.read();
+    if (!buf || buf.length > MAX_IMAGE_BYTES) return null;
+    const mediaType = /jpe?g/i.test(content.mimeType) ? 'image/jpeg' : /png/i.test(content.mimeType) ? 'image/png' : /webp/i.test(content.mimeType) ? 'image/webp' : /gif/i.test(content.mimeType) ? 'image/gif' : null;
+    return mediaType ? { data: Buffer.from(buf).toString('base64'), mediaType } : null;
+  } catch (e) {
+    console.log('[photon] could not read attachment:', e.message);
+    return null;
+  }
+}
+
 function listen(onIncoming) {
   getApp().then((ctx) => {
     if (!ctx) return;
+    let builders = {};
+    try { builders = require('spectrum-ts'); } catch { /* plain text only */ }
+    const { typing, reaction, reply: inThread, Emoji } = builders;
+    const EMOJI = { like: Emoji?.like || '👍', love: Emoji?.love || '❤️', laugh: Emoji?.laugh || '😂' };
+
+    const flush = async (space) => {
+      const t = turns.get(space.id);
+      turns.delete(space.id);
+      if (!t) return;
+      const text = t.texts.join(' ').trim();
+      if (!text && !t.images.length) return;
+      if (typing) space.send(typing('start')).catch(() => {});
+      let out;
+      try { out = await onIncoming(text, t.fromId, t.last.id, { images: t.images }); } catch (e) { console.log('[photon] onIncoming failed:', e.message); return; }
+      if (typing) space.send(typing('stop')).catch(() => {});
+      const res = typeof out === 'string' ? { reply: out } : out || {};
+      if (res.react && reaction) await space.send(reaction(EMOJI[res.react] || EMOJI.like, t.last)).catch((e) => console.log('[photon] tapback failed:', e.message));
+      if (res.reply) {
+        const content = t.images.length && inThread ? inThread(res.reply, t.last) : res.reply;
+        await space.send(content).catch((e) => console.log('[photon] reply send failed:', e.message));
+      }
+    };
+
     (async () => {
       for await (const [space, message] of ctx.app.messages) {
-        if (message.content?.type !== 'text') continue;
         const fromId = message.sender?.id;
         if (fromId) spaces.remember(fromId, space.id);
-        let reply;
-        try { reply = await onIncoming(message.content.text, fromId, message.id); } catch (e) { console.log('[photon] onIncoming failed:', e.message); continue; }
-        if (reply) await space.send(reply).catch((e) => console.log('[photon] reply send failed:', e.message));
+        const c = message.content;
+        const image = await imageOf(c);
+        const text = c?.type === 'text' ? c.text : c?.type === 'markdown' ? c.markdown : '';
+        if (!image && !text) continue;
+        const t = turns.get(space.id) || { texts: [], images: [], fromId, last: message };
+        if (text) t.texts.push(text);
+        if (image) t.images.push(image);
+        t.last = message;
+        t.fromId = fromId || t.fromId;
+        if (t.timer) clearTimeout(t.timer);
+        t.timer = setTimeout(() => flush(space).catch((e) => console.log('[photon] turn failed:', e.message)), DEBOUNCE_MS);
+        turns.set(space.id, t);
       }
     })().catch((e) => console.log('[photon] listener stopped:', e.message));
   }).catch(() => {});

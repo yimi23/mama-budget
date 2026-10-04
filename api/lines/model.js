@@ -49,8 +49,8 @@ const ITEMS_SCHEMA = {
     items: {
       type: 'array',
       items: {
-        type: 'object', additionalProperties: false, required: ['name', 'qty', 'unitPrice', 'period'],
-        properties: { name: { type: 'string' }, qty: { type: 'integer' }, unitPrice: { type: 'number' }, period: { type: 'string', enum: ['once', 'week', 'month', 'year'] } },
+        type: 'object', additionalProperties: false, required: ['name', 'qty', 'unitPrice', 'period', 'store', 'wasPrice'],
+        properties: { name: { type: 'string' }, qty: { type: 'integer' }, unitPrice: { type: 'number' }, period: { type: 'string', enum: ['once', 'week', 'month', 'year'] }, store: { type: ['string', 'null'] }, wasPrice: { type: ['number', 'null'] } },
       },
     },
     subtotal: { type: ['number', 'null'] },
@@ -68,20 +68,25 @@ subtotal is the cart subtotal or total if shown, else null. currency from the sy
 how sure you are that these are exactly the cart lines. Return JSON only.`;
 
 /** Cart text -> items. Null when the model is off or unsure past repair. */
-async function extractItems(text) {
+async function extractItems(text, images = []) {
   if (!ready()) return null;
   try {
+    // A screenshot or photo of a product page reads like cart text: the image blocks go first, the words after.
+    const content = [
+      ...images.slice(0, 3).map((i) => ({ type: 'image', source: { type: 'base64', media_type: i.mediaType || 'image/png', data: i.data } })),
+      { type: 'text', text: (text || 'What is for sale here and at what price?').slice(0, 6000) },
+    ];
     const res = await client.messages.create(
       {
         model: MODEL, max_tokens: 2000, system: EXTRACT_SYSTEM, output_config: { effort: 'low', format: { type: 'json_schema', schema: ITEMS_SCHEMA } },
-        messages: [{ role: 'user', content: text.slice(0, 6000) }],
+        messages: [{ role: 'user', content }],
       },
-      { timeout: EXTRACT_TIMEOUT_MS },
+      { timeout: images.length ? EXTRACT_TIMEOUT_MS * 2 : EXTRACT_TIMEOUT_MS },
     );
     const raw = res.content.filter((b) => b.type === 'text').map((b) => b.text).join('');
     const out = JSON.parse(raw);
     if (!Array.isArray(out.items)) return null;
-    out.items = out.items.filter((i) => i && i.name && i.unitPrice > 0).map((i) => ({ name: String(i.name).trim(), qty: Math.max(1, Math.round(i.qty || 1)), unitPrice: Number(i.unitPrice), period: ['week', 'month', 'year'].includes(i.period) ? i.period : 'once' }));
+    out.items = out.items.filter((i) => i && i.name && i.unitPrice > 0).map((i) => ({ name: String(i.name).trim(), qty: Math.max(1, Math.round(i.qty || 1)), unitPrice: Number(i.unitPrice), period: ['week', 'month', 'year'].includes(i.period) ? i.period : 'once', store: i.store || null, wasPrice: i.wasPrice > 0 ? Number(i.wasPrice) : null }));
     out.confidence = Math.max(0, Math.min(1, Number(out.confidence) || 0));
     return out;
   } catch {
