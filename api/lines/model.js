@@ -87,23 +87,45 @@ subtotal is the cart subtotal or total if shown, else null. currency from the sy
 how sure you are that these are exactly the cart lines. Return JSON only.`;
 
 /** Cart text -> items. Null when the model is off or unsure past repair. */
+/** The items add up to the page's own subtotal, or there is no subtotal and the model is sure. The arithmetic is the check. */
+function verified(out) {
+  if (!out || !Array.isArray(out.items) || !out.items.length) return false;
+  const sum = out.items.reduce((s, i) => s + Number(i.unitPrice || 0) * Number(i.qty || 1), 0);
+  if (out.subtotal != null && Number.isFinite(Number(out.subtotal))) return Math.abs(sum - Number(out.subtotal)) < 0.02;
+  return Number(out.confidence) >= 0.85;
+}
+
+/**
+ * Cart text (and photos) to items. The fast model reads first and is kept only when its items add up to the page's
+ * subtotal (or there is no subtotal and it is sure); otherwise the main model reads. Measured on a Zara bag: 3.1 s
+ * against 6.5 s with the same six items; on a Target page the fast read invented a protection plan, the sum missed
+ * the subtotal, and the main model took over. Arithmetic, not trust.
+ */
 async function extractItems(text, images = []) {
   if (!ready()) return null;
+  const fast = await extractWith(FAST_MODEL, text, images, true).catch(() => null);
+  if (verified(fast)) return fast;
+  return extractWith(MODEL, text, images, false);
+}
+
+async function extractWith(model, text, images, plain) {
   try {
     // A screenshot or photo of a product page reads like cart text: the image blocks go first, the words after.
     const content = [
       ...images.slice(0, 3).map((i) => ({ type: 'image', source: { type: 'base64', media_type: i.mediaType || 'image/png', data: i.data } })),
       { type: 'text', text: (text || 'What is for sale here and at what price?').slice(0, 6000) },
     ];
+    const shape = ' Respond with only a JSON object {"items":[{"name","qty","unitPrice","period":"once|week|month|year","store","wasPrice"}],"subtotal":number or null,"currency":"USD|NGN|GBP|EUR|CAD","confidence":0 to 1}.';
     const res = await client.messages.create(
       {
-        model: MODEL, max_tokens: 2000, system: [{ type: 'text', text: EXTRACT_SYSTEM, cache_control: { type: 'ephemeral' } }], output_config: { effort: 'low', format: { type: 'json_schema', schema: ITEMS_SCHEMA } },
+        model, max_tokens: 2000, system: [{ type: 'text', text: EXTRACT_SYSTEM + (plain ? shape : ''), cache_control: { type: 'ephemeral' } }],
+        ...(plain ? {} : { output_config: { effort: 'low', format: { type: 'json_schema', schema: ITEMS_SCHEMA } } }),
         messages: [{ role: 'user', content }],
       },
       { timeout: images.length ? EXTRACT_TIMEOUT_MS * 2 : EXTRACT_TIMEOUT_MS },
     );
     const raw = res.content.filter((b) => b.type === 'text').map((b) => b.text).join('');
-    const out = JSON.parse(raw);
+    const out = JSON.parse(plain ? (raw.match(/\{[\s\S]*\}/) || [raw])[0] : raw);
     if (!Array.isArray(out.items)) return null;
     out.items = out.items.filter((i) => i && i.name && i.unitPrice > 0).map((i) => ({ name: String(i.name).trim(), qty: Math.max(1, Math.round(i.qty || 1)), unitPrice: Number(i.unitPrice), period: ['week', 'month', 'year'].includes(i.period) ? i.period : 'once', store: i.store || null, wasPrice: i.wasPrice > 0 ? Number(i.wasPrice) : null }));
     out.confidence = Math.max(0, Math.min(1, Number(out.confidence) || 0));
