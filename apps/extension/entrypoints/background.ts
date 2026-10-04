@@ -3,6 +3,7 @@
 import type { HandledLists, Message } from '@mama/shared/messages';
 import type { Answer, CartItem, CurrencyCode, JudgeReply, Week } from '@mama/shared/types';
 import { apiUp, call } from '../lib/api';
+import { weekKey } from '@mama/shared/week';
 
 const LAST_CART_TTL_MS = 30 * 60 * 1000;
 
@@ -34,22 +35,37 @@ async function judgeCart(store: string, currency: CurrencyCode, items: CartItem[
   return reply ? { ok: true as const, ...reply, handled: await handledLists() } : { ok: false as const };
 }
 
-// One reaction per item and no repeat asks, across tabs and reloads until the browser closes.
+// Asks: no repeats and at most three per browser session (storage.session).
+// Reactions: once per item per envelope week, durable (storage.local), so an extension reload or a Chrome restart
+// never makes her scold the same admitted want twice. The reaction belongs to the moment of admission; for the rest
+// of the week a remembered want shows only on her face and the meter. Next week it is fair game again.
 async function handledLists(): Promise<HandledLists> {
-  const { handled } = await browser.storage.session.get('handled');
-  return (handled as HandledLists | undefined) ?? { asked: [], reacted: [] };
+  const [{ asked = [] }, { reacted = {} }] = await Promise.all([
+    browser.storage.session.get('asked'),
+    browser.storage.local.get('reacted'),
+  ]);
+  const week = weekKey();
+  const thisWeek = Object.entries(reacted as Record<string, string>).filter(([, w]) => w === week).map(([k]) => k);
+  return { asked: asked as string[], reacted: thisWeek };
 }
 
 async function mark(kind: keyof HandledLists, key: string) {
-  const h = await handledLists();
-  if (!h[kind].includes(key)) h[kind].push(key);
-  await browser.storage.session.set({ handled: h });
+  if (kind === 'asked') {
+    const { asked = [] } = await browser.storage.session.get('asked');
+    if (!(asked as string[]).includes(key)) await browser.storage.session.set({ asked: [...(asked as string[]), key] });
+    return;
+  }
+  const { reacted = {} } = await browser.storage.local.get('reacted');
+  // Only this week's entries are kept, so the record never grows past one week of items.
+  const week = weekKey();
+  const kept = Object.fromEntries(Object.entries(reacted as Record<string, string>).filter(([, w]) => w === week));
+  await browser.storage.local.set({ reacted: { ...kept, [key]: week } });
 }
 
 /** The popup's Start over: she forgets every answer and asks again, as on a fresh install. */
 async function startOver() {
-  await browser.storage.local.remove('memory');
-  await browser.storage.session.remove('handled');
+  await browser.storage.local.remove(['memory', 'reacted']);
+  await browser.storage.session.remove('asked');
 }
 
 /** Her memory of your answers. Durable, keyed by the rules' own item key, shared across every store. */
