@@ -433,11 +433,11 @@ async function voiceNote(line, who, mood) {
 }
 
 photon.listen(async (text, fromId, messageId, { images = [] } = {}) => {
-  const { reply, mood, react, followUp } = await chat.handleIncoming(text, 'mama', fromId, messageId, { images });
+  const { reply, mood, react, followUp, who = 'mama' } = await chat.handleIncoming(text, 'mama', fromId, messageId, { images });
   if (reply || react) require('./notify/log').push({ to: fromId || 'them', text: reply || `(${react})`, mood, sender: 'photon', sent: true, direction: 'out', at: Date.now() });
   // Gele down arrives in her voice too: the same line as a voice note, after the text (text first, always, for
   // whoever cannot or will not listen).
-  const voiceLine = mood === 'shocked' && reply ? () => voiceNote(reply, 'mama', mood) : null;
+  const voiceLine = mood === 'shocked' && reply ? () => voiceNote(reply, who, mood) : null;
   return { reply, react, followUp, mood, voiceLine };
 });
 // The Mac kit listens the same way when it is the live sender: texts to this Mac's Messages, the same

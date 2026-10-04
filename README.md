@@ -37,7 +37,7 @@ The intervention happens at the only moment that changes behaviour: between the 
 - **A stateless service worker.** All state in `chrome.storage` (memory keyed by normalised name so a want admitted on Amazon is remembered on Target, reasons, what was reacted to this week, what was posted). Audio from an offscreen document, `browser.tts` as fallback. The API fails twice in a row and the badge hides; a store page never shows an error.
 - **Pre-written speech.** While the ask card is on screen she already writes both possible reactions and warms the voice, so the moment you answer she speaks.
 - **The claim is a test, not a sentence.** `api/test/invariance.test.js` swaps the model for one that returns garbage and asserts all 50 frozen verdicts are byte for byte unchanged; then, for every case in every memory state, week, loudness and watched flag (over 10,000 situations), that whether she reacts is identical for every value the model could return, that a garbage answer behaves exactly like no answer, that family money is always protected, and that the model can only ever make her quieter.
-- **140 tests**, 71 on the API (judge v1 and v2, invariance, reasons, the text reader, the no repeat picker, the ledger questions, Photon gate and echoes) and 69 on the extension (detector, each reader against saved real carts and product pages, flow, badge, week math, onboarding, and a source reading guard that fails if a shipped feature is not wired into the session).
+- **144 tests**, 73 on the API (judge v1 and v2, invariance, reasons, the text reader, the no repeat picker, the ledger questions, Photon gate and echoes) and 71 on the extension (detector, each reader against saved real carts and product pages, flow, badge, week math, onboarding, and a source reading guard that fails if a shipped feature is not wired into the session).
 
 ### Usability
 
@@ -133,7 +133,7 @@ cp .env.example api/.env     # fill NESSIE_KEY, ANTHROPIC_API_KEY, ELEVEN_API_KE
 npm run seed                  # a month of history for the demo student
 npm run api                   # http://localhost:8787, GET /health should answer
 
-npm test                      # 140 tests
+npm test                      # 144 tests
 npm run score                 # the 50 case score
 npm run build:ext             # apps/extension/build/chrome-mv3
 ```

@@ -161,13 +161,13 @@ test('Gele down and proud skip the daily cap, never quiet hours or the gap', () 
 test('a transfer text reads as a transfer, not a purchase, and skips the naira', () => {
   const week = { budget: 75, spent: 50, bills: [] };
   const home = notifyText('proud', week, { item: 'Sent home', price: 50 }, 'mama');
-  assert.match(home, /\n\$50 sent home\. \$25 left this week\./);
+  assert.match(home, /\n\$50 sent home\. \$50 of \$75 this week, \$25 left\./);
   assert.doesNotMatch(home, /naira|on Sent home/);
   // The figure back home follows the person's setting, which the extension sends with every judgement.
   require('../lines/writer').setHome('NGN');
   const bought = notifyText('note', week, { item: 'Latte', price: 6 }, 'mama');
   require('../lines/writer').setHome(null);
-  assert.match(bought, /\$6 on Latte\. \$25 left this week\./);
+  assert.match(bought, /\$6 on Latte\. \$50 of \$75 this week, \$25 left\./);
   assert.match(bought, /naira/);
   assert.doesNotMatch(notifyText('note', week, { item: 'Latte', price: 6 }, 'mama'), /naira/, 'no home currency set: no figure');
 });

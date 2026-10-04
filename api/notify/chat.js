@@ -118,7 +118,7 @@ async function handleIncoming(text, who = 'mama', from, messageId, { images = []
   const before = nessie.week();
   const left = Math.max(0, before.budget - before.spent);
   const requestId = messageId ? `imsg-${messageId}` : undefined;
-  const say = (reply, mood) => { memory.addHistory(mem, who, reply); memory.write(mem); return { reply, mood, intent: cmd.intent }; };
+  const say = (reply, mood) => { memory.addHistory(mem, who, reply); memory.write(mem); return { reply, mood, intent: cmd.intent, who }; };
   if (cmd.intent === 'grandma') {
     mem.grandma = cmd.who;
     who = cmd.who;
@@ -146,7 +146,7 @@ async function handleIncoming(text, who = 'mama', from, messageId, { images = []
   if (weighed) {
     memory.addHistory(mem, who, weighed.reply || `(${weighed.react || 'nod'})`);
     memory.write(mem);
-    return { reply: weighed.reply, mood: weighed.mood, intent: weighed.intent, react: weighed.react, verdicts: weighed.verdicts, followUp: weighed.followUp };
+    return { reply: weighed.reply, mood: weighed.mood, intent: weighed.intent, react: weighed.react, verdicts: weighed.verdicts, followUp: weighed.followUp, who };
   }
 
   const week = nessie.week();
@@ -159,7 +159,7 @@ async function handleIncoming(text, who = 'mama', from, messageId, { images = []
   if (promiseText) memory.addPromise(mem, promiseText);
   memory.addHistory(mem, who, reply);
   memory.write(mem);
-  return { reply, mood: apology ? 'calm' : week.mood, intent: cmd.intent };
+  return { reply, mood: apology ? 'calm' : week.mood, intent: cmd.intent, who };
 }
 
 module.exports = { handleIncoming, ledgerView, boughtLine, billsLine, savingsLine };

@@ -568,8 +568,10 @@ function notifyText(level, week, it, who = 'mama', cartItemNames) {
   const cartPart = cartItemNames && cartItemNames.length ? `\nCart: ${cartItemNames.join(', ')}.` : '';
   // A transfer is not a thing you bought: "$50 sent home." not "$50 on Sent home."
   const moved = level === 'proud' && /^(sent home|moved to savings)$/i.test(what);
-  const amountPart = moved ? `$${Math.round(it.price || 0)} ${what.toLowerCase()}.` : `$${Math.round(it.price || 0)} on ${what}.`;
-  return `${notifyLine(level, it, who, week)}\n${amountPart} $${left} left this week.${billPart}${moved ? '' : nairaPart}${cartPart}`;
+  const where = it.merchant && !moved ? ` at ${shopName(it.merchant)}` : '';
+  const amountPart = moved ? `$${Math.round(it.price || 0)} ${what.toLowerCase()}.` : `$${Math.round(it.price || 0)} on ${what}${where}.`;
+  const weekPart = `$${Math.round(week.spent || 0)} of $${Math.round(week.budget || 0)} this week, $${left} left.${week.kept ? ` Kept $${Math.round(week.kept)}.` : ''}`;
+  return `${notifyLine(level, it, who, week)}\n${amountPart} ${weekPart}${billPart}${moved ? '' : nairaPart}${cartPart}`;
 }
 
 // A conversational reply to an arbitrary incoming text (not a purchase verdict): uses the same
