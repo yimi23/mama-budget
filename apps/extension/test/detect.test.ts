@@ -51,3 +51,28 @@ test('confirmation pages', () => {
   assert.ok(isConfirmationPage(page({ url: 'https://example.com/receipt', text: 'Thank you for shopping. Order number: W12345678' })));
   assert.equal(isConfirmationPage(page({ url: 'https://example.com/cart', text: 'Subtotal $20 Checkout' })), false);
 });
+
+test('"Total" with an amount counts, a bare total does not', () => {
+  assert.ok(isCartPage(page({ url: 'https://www.zara.com/us/en/shop/cart', text: 'Select all items TOTAL $ 994.60 * Tax not included CONTINUE (9)' })));
+  assert.equal(isCartPage(page({ url: 'https://example.com/blog/cart-before-horse', text: 'In total we wrote three posts' })), false);
+});
+
+test('script contents never count as page text', async () => {
+  const { JSDOM } = await import('jsdom');
+  const { readSignals } = await import('../lib/detect.ts');
+  const doc = new JSDOM('<body><p>Weekly news</p><script>window.cfg={"checkout":{"isEnabled":false},"subtotal":1}</script></body>').window.document;
+  const s = readSignals(doc, 'https://example.com/orders-of-magnitude');
+  assert.doesNotMatch(s.text, /checkout|subtotal/);
+  assert.equal(isCartPage(s), false);
+});
+
+test('real Zara bag wakes her by the URL and the total, not by its scripts', async () => {
+  const { JSDOM } = await import('jsdom');
+  const { readFileSync } = await import('node:fs');
+  const { readSignals } = await import('../lib/detect.ts');
+  const html = readFileSync(new URL('./fixtures/carts/zara_cart.html', import.meta.url), 'utf8');
+  const doc = new JSDOM(html).window.document;
+  const s = readSignals(doc, 'https://www.zara.com/us/en/shop/cart');
+  assert.equal(s.hasCheckoutNode || /check ?out/i.test(s.text), false, 'no checkout word on the visible page');
+  assert.ok(isCartPage(s));
+});

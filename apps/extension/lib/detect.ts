@@ -4,7 +4,7 @@
 const CART_PATH = /(^|[\/_.-])(cart|checkout|bag|basket|order)s?([\/_.?#-]|$)/i;
 const CONFIRM_PATH = /(thank[-_]?you|order[-_]?confirmation|order[-_]?placed|confirmation)/i;
 const ADD_WORDS = /\b(add to (cart|bag|basket|trolley)|buy now|add to order|ajouter au panier|in den warenkorb|añadir a la cesta|agregar al carrito)\b/i;
-const SUBTOTAL_WORDS = /\b(subtotal|sub-total|order total|estimated total|cart total|basket total)\b/i;
+const SUBTOTAL_WORDS = /\b(subtotal|sub-total|order total|estimated total|cart total|basket total)\b|\btotal\s*:?\s*(US\$|CA\$|[$£€₦])\s?\d/i;
 const CHECKOUT_WORDS = /\b(check ?out|proceed to (checkout|payment)|place (your )?order)\b/i;
 const ORDER_NUMBER = /\border\s*(number|no\.?|#)\s*[:#]?\s*[A-Z0-9-]{5,}/i;
 
@@ -16,7 +16,7 @@ const CHECKOUT_SELECTOR =
 export interface PageSignals {
   url: string;
   title: string;
-  /** First 20k chars of body text. Bounded so the gate stays cheap on huge pages. */
+  /** First 20k chars of the page's text, scripts and styles skipped. Bounded so the gate stays cheap. */
   text: string;
   hasSubtotalNode: boolean;
   hasCheckoutNode: boolean;
@@ -51,13 +51,28 @@ export function isAddToCartLabel(label: string): boolean {
   return ADD_WORDS.test(label.replace(/\s+/g, ' ').trim());
 }
 
+const SKIP = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE', 'SVG']);
+
+/** Text nodes in order, skipping script and style contents (inline JSON says "checkout" on pages that are not carts). */
+function visibleText(doc: Document, root: Element, cap: number): string {
+  // NodeFilter.SHOW_TEXT is 4; the literal keeps this file free of globals node lacks.
+  const walker = doc.createTreeWalker(root, 4);
+  let out = '';
+  for (let n = walker.nextNode(); n && out.length < cap; n = walker.nextNode()) {
+    const parent = n.parentElement;
+    if (parent && SKIP.has(parent.tagName.toUpperCase())) continue;
+    out += n.nodeValue + ' ';
+  }
+  return out.slice(0, cap);
+}
+
 /** Reads the live page into PageSignals. Read only. */
 export function readSignals(doc: Document, url: string): PageSignals {
   const body = doc.body;
   return {
     url,
     title: doc.title,
-    text: body ? (body.textContent ?? '').slice(0, 20000) : '',
+    text: body ? visibleText(doc, body, 20000) : '',
     hasSubtotalNode: !!doc.querySelector(SUBTOTAL_SELECTOR),
     hasCheckoutNode: !!doc.querySelector(CHECKOUT_SELECTOR),
   };
