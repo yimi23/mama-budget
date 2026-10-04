@@ -1,6 +1,6 @@
 // Every message between content script, popup and worker. Add the case here before writing the handler.
 
-import type { Answer, BuyReply, CartItem, CartRead, CurrencyCode, JudgeReply, Week } from './types.ts';
+import type { Answer, BuyReply, CartItem, CartRead, Cue, CurrencyCode, JudgeReply, Month, Week } from './types.ts';
 
 /** What she already asked about or reacted to this browser session, across every tab and reload. */
 export interface HandledLists {
@@ -21,6 +21,18 @@ export type Message =
   | { type: 'START_OVER' }
   /** Her voice for one line. Fire and forget: the card never waits on audio. */
   | { type: 'SPEAK'; text: string; grandma: 'mama' | 'nana' }
+  /** Onboarding 05: the 30 day read, in her words. */
+  | { type: 'MONTH'; grandma: 'mama' | 'nana' }
+  /** Onboarding 05: fetch these lines into the API's voice cache so screen 06 speaks at once. Nothing plays. */
+  | { type: 'WARM'; texts: string[]; grandma: 'mama' | 'nana' }
+  /** Onboarding 07: send the first statement now. ok only when a text actually went. */
+  | { type: 'TEXT_NOW'; grandma: 'mama' | 'nana'; to?: string }
+  /** Can she text right now, is the API up. Drives disabled states, never a fake sent state. */
+  | { type: 'HEALTH' }
+  /** Onboarding 06: the weekly envelope she proposed, adjusted. */
+  | { type: 'SET_ENVELOPE'; amount: number }
+  /** One of the six cue sounds. Honours settings.sounds and quiet hours. */
+  | { type: 'CUE'; cue: Cue }
   | { type: 'PING' };
 
 export type Reply<M extends Message> =
@@ -31,7 +43,13 @@ export type Reply<M extends Message> =
   M extends { type: 'BUY' } ? ({ ok: true } & BuyReply) | { ok: false } :
   M extends { type: 'CONFIRM' } ? { ok: true; posted: number } :
   M extends { type: 'START_OVER' } ? { ok: true } :
-  M extends { type: 'SPEAK' } ? { ok: boolean } :
+  M extends { type: 'SPEAK' } ? { ok: boolean; duration: number | null } :
+  M extends { type: 'MONTH' } ? { ok: true; month: Month } | { ok: false } :
+  M extends { type: 'WARM' } ? { ok: true } :
+  M extends { type: 'TEXT_NOW' } ? { ok: boolean; texted: boolean; text: string | null; reason: string | null } :
+  M extends { type: 'HEALTH' } ? { api: boolean; texts: boolean; voice: boolean } :
+  M extends { type: 'SET_ENVELOPE' } ? { ok: true; envelope: number } | { ok: false } :
+  M extends { type: 'CUE' } ? { ok: boolean } :
   M extends { type: 'ANSWER' } ? { ok: true } :
   M extends { type: 'PING' } ? { ok: true; at: number } :
   never;

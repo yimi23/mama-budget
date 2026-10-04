@@ -119,16 +119,20 @@ function summary(filter, envelope) {
   const wants = purchases.filter((p) => p.tag === 'want');
   const spent = wants.reduce((s, p) => s + p.amount, 0);
   const kept = transfers.reduce((s, t) => s + t.amount, 0) + (c.putBack || []).filter((k) => filter(k.date)).reduce((s, k) => s + k.amount, 0);
+  // A charge with no store name (a card buy from an unknown page) groups under its own item name instead of a blank.
   const byMerchant = {};
-  for (const p of wants) byMerchant[p.merchant] = (byMerchant[p.merchant] || 0) + p.amount;
+  for (const p of wants) { const k = p.merchant || p.item || 'something'; byMerchant[k] = (byMerchant[k] || 0) + p.amount; }
   const topWants = Object.entries(byMerchant).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([merchant, amount]) => ({ merchant, amount, category: (c.merchants || []).find((m) => m.name === merchant)?.category || merchant }));
+  const deposits = (c.deposits || []).filter((d) => filter(d.date));
+  const sentHome = transfers.filter((t) => t.to === 'family').reduce((s, t) => s + t.amount, 0);
+  const toSavings = transfers.filter((t) => t.to === 'savings').reduce((s, t) => s + t.amount, 0);
   const needs = purchases.filter((p) => p.tag === 'need');
   const staples = needs.filter((p) => /rice|eggs|bread|groceries|beans|garri/i.test(p.item));
   const cheapestFood = staples.find((p) => /rice/i.test(p.item)) || staples.sort((a, b) => a.amount - b.amount)[0] || null;
   const bills = (c.bills || []).map((b) => ({ ...b, daysUntil: Math.ceil((new Date(b.due) - new Date()) / 86400000) })).filter((b) => b.daysUntil >= 0 && b.daysUntil <= 7);
   const ratio = envelope ? spent / envelope : 0;
   const mood = ratio >= 1 ? 'down' : ratio >= 0.9 ? 'shocked' : ratio >= 0.75 ? 'watching' : 'calm';
-  return { envelope, budget: envelope, spent, left: Math.max(0, envelope - spent), kept, ratio, mood, bills, topWants, cheapestFood, counts: { purchases: purchases.length, wants: wants.length, needs: needs.length } };
+  return { envelope, budget: envelope, spent, left: Math.max(0, envelope - spent), kept, ratio, mood, bills, topWants, cheapestFood, sentHome, toSavings, counts: { purchases: purchases.length, wants: wants.length, needs: needs.length, paychecks: deposits.length, transfers: transfers.length, bills: (c.bills || []).length } };
 }
 
 // This week's envelope. What the badge, the card and "how much do I have left" read.
@@ -158,7 +162,25 @@ function proposeEnvelope(m = month()) { return Math.max(25, Math.ceil((m.spent /
 // Three watches from the top want merchants. Facts only; wording in lines/writer.js.
 function watches(m = month()) { return m.topWants.slice(0, 3); }
 
+// The first name Nessie holds for the demo student. Read once, kept in the cache. Used exactly once, on "Here is what I saw".
+async function customerName() {
+  const c = readCache();
+  if (c.firstName) return c.firstName;
+  if (!c.customerId) return null;
+  const cust = await call('GET', `/customers/${c.customerId}`);
+  c.firstName = cust && cust.first_name ? String(cust.first_name) : null;
+  if (c.firstName) writeCache(c);
+  return c.firstName;
+}
+
+// The weekly envelope, set from onboarding screen 06. Whole dollars, 25 to 500.
+function setEnvelope(amount) {
+  const n = Math.max(25, Math.min(500, Math.round(Number(amount) || 0)));
+  const c = readCache(); c.envelope = n; writeCache(c);
+  return n;
+}
+
 async function spentThisWeek() { return week().spent; }
 const spentThisMonth = spentThisWeek; // old name, kept for the server
 
-module.exports = { call, purchase, transferHome, moveToSavings, deposit, week, month, trueLine, proposeEnvelope, watches, weekStart, daysLeftInWeek, spentThisWeek, spentThisMonth, readCache, writeCache };
+module.exports = { call, purchase, transferHome, moveToSavings, deposit, week, month, trueLine, proposeEnvelope, watches, weekStart, daysLeftInWeek, spentThisWeek, spentThisMonth, readCache, writeCache, customerName, setEnvelope };

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en" data-mama-practice>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mama Budget: try her</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="brand"><span class="avatar" id="brand-avatar"><img src="/faces/mama/calm.svg" alt="" id="brand-face" /></span><span class="wordmark">Mama Budget</span></div>
+      <a class="store" id="open-store" href="https://www.amazon.com/gp/cart/view.html" target="_blank" rel="noopener">Open a real store</a>
+    </header>
+    <main>
+      <section class="copy">
+        <p class="eyebrow">Practice cart. Nothing here is real.</p>
+        <h1>Watch the corner.</h1>
+        <p class="lead" id="lead">Rice and soap are in. She said nothing. Something else is about to land.</p>
+        <p class="note" id="note" hidden></p>
+        <ul class="cart" data-cart id="cart">
+          <li class="item" data-row><span class="thumb"></span><span class="name" data-name>20 lb bag of rice</span><span class="price" data-price>$24</span></li>
+          <li class="item" data-row><span class="thumb"></span><span class="name" data-name>Dish soap</span><span class="price" data-price>$4</span></li>
+        </ul>
+      </section>
+      <aside class="summary">
+        <div class="line"><span>Subtotal</span><span data-subtotal id="subtotal">$28</span></div>
+        <div class="line total"><span>Total</span><span id="total">$28</span></div>
+        <button type="button" class="checkout" disabled>Check out</button>
+      </aside>
+    </main>
+    <svg class="draw" id="draw" aria-hidden="true"><path id="draw-path" /></svg>
+    <div class="callout" id="callout" hidden>That’s me. I live here.</div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

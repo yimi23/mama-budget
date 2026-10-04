@@ -9,10 +9,13 @@ import { runAdapter, type AdapterSpec } from './adapter';
 import { amazon } from './sites/amazon';
 import { target } from './sites/target';
 import { walmart } from './sites/walmart';
+import { practice } from './sites/practice';
 
 const HAND_WRITTEN: AdapterSpec[] = [amazon, target, walmart];
 
 export async function readCart(doc: Document, url: string): Promise<CartRead | null> {
+  // The practice cart is our own page (chrome-extension://...), so it is known by a mark on the document, not a host.
+  if (doc.documentElement.hasAttribute('data-mama-practice')) return runAdapter(practice, doc);
   const platform = await readPlatform(doc);
   if (platform && platform.items.length) return platform;
 

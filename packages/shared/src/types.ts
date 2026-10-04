@@ -37,6 +37,25 @@ export interface Week {
   bills: { payee: string; nickname?: string; amount: number; due: string; daysUntil: number }[];
 }
 
+/** GET /month: the 30 day read for onboarding. Everything she knows before you have typed anything. */
+export interface Month extends Week {
+  firstName: string | null;
+  proposedEnvelope: number;
+  sentHome: number;
+  toSavings: number;
+  counts: { purchases: number; wants: number; needs: number; paychecks: number; transfers: number; bills: number };
+  topWants: { merchant: string; amount: number; category: string }[];
+  trueLine: { topCategory: string; topAmount: number; contrastItem: string | null; contrastAmount: number | null } | null;
+  lines: {
+    /** Null when there is no month to speak of: the screen is skipped. */
+    trueLine: { text: string; spoken: string } | null;
+    watches: { title: string; line: string; spoken: string }[];
+  };
+}
+
+/** The six cue sounds (docs/research_clicky_onboarding.md section 4.7). Synthesised in the offscreen document. */
+export type Cue = 'arrive' | 'ask' | 'surprised' | 'proud' | 'text' | 'tick';
+
 export type Label = 'need' | 'want' | 'ask';
 export type Answer = 'need' | 'want';
 

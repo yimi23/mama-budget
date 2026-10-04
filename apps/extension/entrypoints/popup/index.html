@@ -4,32 +4,167 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mama Budget</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
-    <main>
-      <header>
-        <h1>Who is checking on you?</h1>
-        <p class="lead">Same rules. Different mouth. You can change this any time.</p>
-      </header>
-      <div class="pick" role="radiogroup" aria-label="Your grandma">
-        <button type="button" class="grandma" data-grandma="mama" role="radio" aria-checked="false">
-          <span class="tile mama"><img src="/faces/mama/calm.svg" alt="" width="164" height="170" /></span>
-          <span class="name">Mama</span>
-          <span class="desc">Nigerian. Warm first, loud second. Tells you what it costs back home.</span>
-        </button>
-        <button type="button" class="grandma" data-grandma="nana" role="radio" aria-checked="false">
-          <span class="tile nana"><img src="/faces/nana/calm.svg" alt="" width="164" height="170" /></span>
-          <span class="name">Nana</span>
-          <span class="desc">Midwestern. Sweet first, dry second. Says less than she means.</span>
-        </button>
-      </div>
-      <p id="picked" class="status" role="status" aria-live="polite"></p>
-      <section class="group" aria-labelledby="over-title">
-        <h2 id="over-title">Start over</h2>
-        <p>She forgets your answers and asks again, like a fresh install. Use it before each demo.</p>
-        <button id="over" type="button" class="pill">Start over</button>
-        <p id="status" class="status" role="status" aria-live="polite"></p>
+    <main id="frame" data-step="">
+      <div class="dots" id="dots" aria-hidden="true"></div>
+      <button id="mute" type="button" class="mute" aria-label="Sound on" hidden></button>
+
+      <!-- 02 Welcome: she arrives, then speaks. Text appears with the voice, not before. -->
+      <section data-step="welcome" hidden>
+        <div class="welcome">
+          <div class="speak-row"><h1 id="welcome-title"></h1><span class="speaking" id="welcome-speaking" hidden><i></i><i></i><i></i><i></i><i></i>Speaking</span></div>
+          <p class="body" id="welcome-body"></p>
+          <p class="lead" id="welcome-sub"></p>
+        </div>
+        <button type="button" class="pill" data-go="next">Let’s start</button>
+        <div class="arrival" id="arrival"><img id="welcome-face" alt="" src="/faces/mama/calm.svg" /></div>
+      </section>
+
+      <!-- 03 Who is checking on you. Neither speaks first. -->
+      <section data-step="grandma" hidden>
+        <header><h1>Who is checking on you?</h1><p class="lead">Same rules. Different mouth. You can change this later.</p></header>
+        <div class="pick" role="radiogroup" aria-label="Your grandma">
+          <div class="grandma" data-grandma="mama">
+            <button type="button" class="tile mama" role="radio" aria-checked="false" aria-label="Mama"><img src="/faces/mama/calm.svg" alt="" /></button>
+            <span class="name">Mama</span>
+            <span class="desc">Nigerian. Warm first, loud second. Tells you what it costs back home.</span>
+            <button type="button" class="hear" data-hear="mama"><span class="play"></span>Hear her</button>
+          </div>
+          <div class="grandma" data-grandma="nana">
+            <button type="button" class="tile nana" role="radio" aria-checked="false" aria-label="Nana"><img src="/faces/nana/calm.svg" alt="" /></button>
+            <span class="name">Nana</span>
+            <span class="desc">Midwestern. Sweet first, dry second. Says less than she means.</span>
+            <button type="button" class="hear" data-hear="nana"><span class="play"></span>Hear her</button>
+          </div>
+        </div>
+        <div class="spacer"></div>
+        <p class="foot" id="mothers"></p>
+      </section>
+
+      <!-- 04 Where the money lives. She is not on this screen. -->
+      <section data-step="bank" hidden>
+        <header><h1>Where the money lives.</h1><p class="lead">She reads your last 30 days so she knows you before you shop. You don’t need to tell her anything. Nothing is moved without you.</p></header>
+        <div class="list">
+          <div class="row stack"><span class="row-title">Demo student</span><span class="row-sub">Capital One Nessie. A simulated bank for this hackathon, not your real account. Checking and savings.</span></div>
+        </div>
+        <p class="status" id="bank-status" role="status" aria-live="polite"></p>
+        <div class="spacer"></div>
+        <div class="actions">
+          <button type="button" class="pill" id="bank-connect">Let her read it</button>
+          <button type="button" class="plain" data-go="skip">Not now</button>
+        </div>
+      </section>
+
+      <!-- 05 Give me a second. Rows tick as the counts arrive. -->
+      <section data-step="reading" hidden>
+        <div class="reading-head">
+          <span class="avatar mama" id="reading-avatar"><img src="/faces/mama/calm.svg" alt="" id="reading-face" /></span>
+          <div><h1 id="reading-title">Give me a second.</h1><p class="lead">Reading the last 30 days.</p></div>
+        </div>
+        <ul class="list ticks" id="ticks">
+          <li class="row" data-tick="purchases"><span class="row-title">Purchases</span><span class="check"></span></li>
+          <li class="row" data-tick="paychecks"><span class="row-title">Paychecks</span><span class="check"></span></li>
+          <li class="row" data-tick="transfers"><span class="row-title">Transfers</span><span class="check"></span></li>
+          <li class="row" data-tick="bills"><span class="row-title">Bills</span><span class="check"></span></li>
+        </ul>
+        <div class="spacer"></div>
+        <p class="foot">She only reads. The bank never hears from her.</p>
+      </section>
+
+      <!-- 06 Here is what I saw. Her first spoken words about you. -->
+      <section data-step="saw" hidden>
+        <header><h1>Here is what I saw.</h1></header>
+        <div class="saw">
+          <span class="avatar square mama" id="saw-avatar"><img src="/faces/mama/shocked.svg" alt="" id="saw-face" /></span>
+          <div class="saw-text">
+            <p class="true-line" id="true-line"></p>
+            <span class="speaking" id="saw-speaking" hidden><i></i><i></i><i></i><i></i><i></i>Her first words</span>
+          </div>
+        </div>
+        <div class="envelope">
+          <label for="envelope-range" class="envelope-label"><span id="envelope-prefix">Fun money this week:</span> <output id="envelope-value" for="envelope-range">$75</output></label>
+          <input type="range" id="envelope-range" min="25" max="300" step="5" value="75" aria-label="Weekly fun money" />
+          <p class="row-sub" id="envelope-sub">A week of what you spend, plus room to breathe. Slide it if she is wrong.</p>
+        </div>
+        <div class="spacer"></div>
+        <button type="button" class="pill" id="saw-fair">That’s fair</button>
+      </section>
+
+      <!-- 06b Here is what I'll watch. Three rows from her own month. -->
+      <section data-step="watch" hidden>
+        <header><h1>Here is what I’ll watch.</h1><p class="lead">From your own month. Not a list someone wrote for everybody.</p></header>
+        <ul class="list watches" id="watches"></ul>
+        <div class="spacer"></div>
+        <div class="actions">
+          <button type="button" class="pill" data-go="next">Good</button>
+          <button type="button" class="plain" id="watch-change">Change these</button>
+        </div>
+      </section>
+
+      <!-- 07 Your phone. -->
+      <section data-step="phone" hidden>
+        <header><h1>Your phone.</h1><p class="lead" id="phone-lead">She texts. A short statement every Sunday at 7pm, and one text when something big happens. iPhone for now.</p></header>
+        <div class="list">
+          <label class="row phone-row"><span class="prefix">+1</span><input id="phone" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="(989) 555 0142" aria-label="Your phone number" /></label>
+        </div>
+        <p class="status" id="phone-status" role="status" aria-live="polite"></p>
+        <div class="spacer"></div>
+        <div class="actions">
+          <button type="button" class="pill" id="phone-send">Text me what you saw</button>
+          <button type="button" class="plain" data-go="skip">Not now</button>
+        </div>
+      </section>
+
+      <!-- 07b Check your phone. The bubble is the text that was actually sent. -->
+      <section data-step="check" hidden>
+        <header><h1>Check your phone.</h1><p class="lead">That is the first one. You did nothing yet and she already has something for you.</p></header>
+        <div class="imsg"><span class="imsg-meta" id="imsg-meta">Mama · just now</span><div class="imsg-bubble" id="imsg-text"></div></div>
+        <div class="spacer"></div>
+        <button type="button" class="pill" data-go="next">Next</button>
+      </section>
+
+      <!-- 08 How loud. Nothing is picked for you. -->
+      <section data-step="loud" hidden>
+        <header><h1>How loud?</h1><p class="lead">This changes her mouth, never her math. Nothing is picked for you. Pick one and you hear the difference.</p></header>
+        <div class="list" id="tiers" role="radiogroup" aria-label="How loud"></div>
+        <div class="spacer"></div>
+        <button type="button" class="pill" id="loud-next" disabled>Next</button>
+      </section>
+
+      <!-- 09 Go shopping. Kept counts up. -->
+      <section data-step="go" hidden>
+        <div class="scene mama" id="go-scene"><img src="/faces/mama/proud.svg" alt="" id="go-face" /></div>
+        <header><h1>Go shopping. I’ll be there.</h1>
+          <div class="kept"><span class="kept-num" id="kept">$0</span><span class="lead" id="kept-sub">kept this week. Let’s make it grow.</span></div>
+          <p class="lead">Try me on a practice cart first, then open any store. Quiet until I’m not.</p>
+        </header>
+        <div class="spacer"></div>
+        <div class="actions">
+          <button type="button" class="pill" id="go-practice">Try me first</button>
+          <button type="button" class="plain" id="go-store">Open a store instead</button>
+        </div>
+      </section>
+
+      <!-- After onboarding: the popup is her settings. -->
+      <section data-step="home" hidden>
+        <header><h1 id="home-title">Mama is in your cart.</h1><p class="lead" id="home-status"></p></header>
+        <div class="list settings">
+          <div class="row stack"><span class="row-title">Who</span><div class="seg" id="home-grandma"><button type="button" data-v="mama">Mama</button><button type="button" data-v="nana">Nana</button></div></div>
+          <div class="row stack"><span class="row-title">How loud</span><div class="seg" id="home-loud"></div></div>
+          <label class="row between"><span class="row-title">Sounds</span><input type="checkbox" id="home-sounds" /></label>
+          <div class="row between"><span class="row-title">Phone</span><span class="row-sub" id="home-phone">Not set</span></div>
+          <div class="row between"><span class="row-title">Fun money a week</span><span class="row-sub" id="home-envelope"></span></div>
+        </div>
+        <div class="spacer"></div>
+        <div class="actions">
+          <button type="button" class="pill" id="home-over">Start over</button>
+          <button type="button" class="plain" id="home-tour">Take the tour again</button>
+        </div>
+        <p class="status" id="home-note" role="status" aria-live="polite"></p>
       </section>
     </main>
     <script type="module" src="./main.ts"></script>

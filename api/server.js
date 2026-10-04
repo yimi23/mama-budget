@@ -7,7 +7,8 @@
 //   POST /deposit   { amount }                                  -> savings deposit, triggers Proud
 //   GET  /week                                                  -> this week's envelope: budget, spent, left, kept, mood, bills
 //   GET  /month                                                 -> the 30 day read for onboarding: true line, watches, proposed envelope
-//   GET  /month?history=30                                      -> same
+//   GET  /month?grandma=nana                                     -> same, her lines in Nana's words; carries firstName and lines { trueLine, watches } with spoken forms
+//   POST /envelope  { amount }                                   -> sets the weekly envelope (onboarding 06)
 //   POST /v2/judge  { items:[{name,qty,unitPrice,store}], memory, grandma, currency } -> v2 verdict per item (ask, remember), lines, week
 //   POST /v2/buy    { name, short, price, store, requestId, tag?, memory?, grandma, currency } -> charge posted (idempotent by requestId), week, her line
 //   POST /reset                                                 -> fresh student, fresh cache, clears watcher/messages/memory
@@ -40,6 +41,8 @@ const photon = require('./photon/spectrum');
 const kit = require('./photon/kit');
 const bankPage = require('./bank/page');
 const schedule = require('./photon/schedule');
+const onboarding = require('./lines/onboarding');
+const { watchLines } = require('./lines/writer');
 
 const PRESETS = {
   airpods: { item: 'AirPods Pro', price: 179, tag: 'want', merchant: 'Apple Store' },
@@ -54,7 +57,17 @@ function html(body) {
 const PORT = process.env.PORT || 8787;
 // The envelope is weekly. Every number comes from the ledger sums in nessie/client.js, never from a balance field.
 async function month() { return nessie.week(); }
-async function reading() { const m = nessie.month(); return { ...m, trueLine: nessie.trueLine(m), watches: nessie.watches(m), proposedEnvelope: nessie.proposeEnvelope(m) }; }
+// The 30 day read for onboarding. ?grandma=nana changes the wording of her lines, nothing else. firstName is the one
+// time her name is used (screen 06); null when Nessie is unreachable, and the screen simply leaves it out.
+async function reading(query = {}) {
+  const who = query.grandma === 'nana' ? 'nana' : 'mama';
+  const m = nessie.month();
+  const tl = nessie.trueLine(m);
+  const watches = nessie.watches(m);
+  const firstName = await nessie.customerName().catch(() => null);
+  const watchTexts = watchLines(watches, who).map((w) => ({ ...w, spoken: onboarding.spokenNumbers(w.line) }));
+  return { ...m, firstName, trueLine: tl, watches, proposedEnvelope: nessie.proposeEnvelope(m), lines: { trueLine: onboarding.trueLineText(tl, who), watches: watchTexts } };
+}
 
 // GET /schedule?now=1&grandma=nana or POST /schedule { now, kind?, to?, grandma? }: a query string and
 // a JSON body mean the same thing here, so both call paths share this.
@@ -68,7 +81,9 @@ async function scheduleRoute(body, query) {
 const routes = {
   'GET /health': async () => ({ ok: true }),
   'GET /week': month,
-  'GET /month': reading,
+  'GET /month': (body, query) => reading(query),
+  // Onboarding screen 06: the weekly envelope she proposed, adjusted. Whole dollars, 25 to 500. The badge reads it next tick.
+  'POST /envelope': async (body) => { const envelope = nessie.setEnvelope(body.amount); return { ok: true, envelope, week: nessie.week() }; },
 
   'POST /judge': async (body) => {
     const m = await month();
@@ -131,13 +146,14 @@ const routes = {
   'POST /tts': async (body) => {
     const text = String(body.text || '').trim();
     if (!text) throw new Error('text is required');
-    const voice = process.env.ELEVEN_VOICE_ID || 'default';
+    const who = body.grandma === 'nana' ? 'nana' : 'mama';
+    const voice = (who === 'nana' ? process.env.ELEVEN_VOICE_ID_NANA : null) || process.env.ELEVEN_VOICE_ID || 'default';
     const dir = path.join(__dirname, '.cache', 'tts');
     const file = path.join(dir, `${crypto.createHash('sha1').update(`${voice}\n${text}`).digest('hex')}.mp3`);
     let mp3 = null;
     if (fs.existsSync(file)) mp3 = fs.readFileSync(file);
     else {
-      const url = await speak(text).catch(() => null);
+      const url = await speak(text, who).catch(() => null);
       if (url) {
         mp3 = Buffer.from(url.slice(url.indexOf(',') + 1), 'base64');
         fs.mkdirSync(dir, { recursive: true });

@@ -1,9 +1,10 @@
 // Service worker. Stateless: everything lives in chrome.storage. Every listener is top level and synchronous.
 
 import type { HandledLists, Message } from '@mama/shared/messages';
-import type { Answer, BuyReply, CartItem, CartRead, CurrencyCode, JudgeReply, Week } from '@mama/shared/types';
+import type { Answer, BuyReply, CartItem, CartRead, CurrencyCode, JudgeReply, Month, Week } from '@mama/shared/types';
 import { API, apiUp, call } from '../lib/api';
 import { weekKey } from '@mama/shared/week';
+import { quietHours } from '../lib/quiet';
 
 const LAST_CART_TTL_MS = 30 * 60 * 1000;
 
@@ -151,25 +152,86 @@ function toDataUrl(buf: ArrayBuffer): string {
   return `data:audio/mpeg;base64,${btoa(bin)}`;
 }
 
-/** Fetches her line as mp3 from /tts and plays it in the offscreen document. Silent on any failure. */
-async function speak(msg: Extract<Message, { type: 'SPEAK' }>): Promise<{ ok: boolean }> {
+const silent = { ok: false, duration: null };
+
+/** Fetches her line as mp3 from /tts and plays it in the offscreen document. Silent on any failure, and in quiet hours. */
+async function speak(msg: Extract<Message, { type: 'SPEAK' }>): Promise<{ ok: boolean; duration: number | null }> {
   const { settings = {} } = await browser.storage.local.get('settings');
   const st = settings as { sounds?: boolean; loudness?: string };
-  if (st.sounds === false) return { ok: false };
-  if (!(await apiUp())) return { ok: false };
+  if (st.sounds === false || quietHours()) return silent;
+  if (!(await apiUp())) return silent;
   try {
     const res = await fetch(`${API}/tts`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ text: msg.text, grandma: msg.grandma }), signal: AbortSignal.timeout(8000),
     });
-    if (!res.ok || !(res.headers.get('content-type') ?? '').startsWith('audio/')) return { ok: false };
+    if (!res.ok || !(res.headers.get('content-type') ?? '').startsWith('audio/')) return silent;
     const dataUrl = toDataUrl(await res.arrayBuffer());
-    if (!(await offscreenReady())) return { ok: false };
-    const reply = (await browser.runtime.sendMessage({ type: 'PLAY', dataUrl, volume: volumeFor(st.loudness) })) as { ok?: boolean } | undefined;
+    if (!(await offscreenReady())) return silent;
+    const reply = (await browser.runtime.sendMessage({ type: 'PLAY', dataUrl, volume: volumeFor(st.loudness) })) as { ok?: boolean; duration?: number | null } | undefined;
+    return { ok: !!reply?.ok, duration: reply?.duration ?? null };
+  } catch {
+    return silent;
+  }
+}
+
+/** Onboarding 05: ask the API to generate (and cache) these lines now, so screen 06 speaks the moment it opens. */
+async function warm(msg: Extract<Message, { type: 'WARM' }>): Promise<{ ok: true }> {
+  if (!(await apiUp())) return { ok: true };
+  await Promise.all(msg.texts.filter(Boolean).map((text) =>
+    fetch(`${API}/tts`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text, grandma: msg.grandma }), signal: AbortSignal.timeout(12000) }).catch(() => null),
+  ));
+  return { ok: true };
+}
+
+/** One of the six cue sounds, from the offscreen document. Honours the sounds toggle and quiet hours. */
+async function cue(msg: Extract<Message, { type: 'CUE' }>): Promise<{ ok: boolean }> {
+  const { settings = {} } = await browser.storage.local.get('settings');
+  const st = settings as { sounds?: boolean; loudness?: string };
+  if (st.sounds === false || quietHours()) return { ok: false };
+  if (!(await offscreenReady())) return { ok: false };
+  try {
+    const reply = (await browser.runtime.sendMessage({ type: 'PLAY_CUE', cue: msg.cue, volume: volumeFor(st.loudness) })) as { ok?: boolean } | undefined;
     return { ok: !!reply?.ok };
   } catch {
     return { ok: false };
   }
+}
+
+/** Onboarding 05: the 30 day read, in the chosen grandma's words. */
+async function month(msg: Extract<Message, { type: 'MONTH' }>) {
+  if (!(await apiUp())) return { ok: false as const };
+  const m = await call<Month>(`/month?grandma=${msg.grandma}`);
+  return m ? { ok: true as const, month: m } : { ok: false as const };
+}
+
+/** Onboarding 07: the first statement, now. The API answers ok only when a sender accepted the text. */
+async function textNow(msg: Extract<Message, { type: 'TEXT_NOW' }>) {
+  const off = { ok: false, texted: false, text: null, reason: 'The API is not answering' };
+  if (!(await apiUp())) return off;
+  const q = new URLSearchParams({ now: '1', grandma: msg.grandma });
+  if (msg.to) q.set('to', msg.to);
+  const r = await call<{ ok: boolean; texted: boolean; text: string; reason?: string }>(`/schedule?${q}`);
+  if (!r) return off;
+  return { ok: !!r.ok, texted: !!r.texted, text: r.text ?? null, reason: r.ok ? null : (r.reason ?? 'Texts are off right now') };
+}
+
+/** Is the API up, can she text, can she speak. Drives disabled states so nothing is ever shown as done that was not. */
+async function health() {
+  const api = await apiUp();
+  if (!api) return { api, texts: false, voice: false };
+  const [photon, voice] = await Promise.all([
+    call<{ sender: string }>('/photon/health'),
+    fetch(`${API}/tts`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text: 'Rice is at home.', grandma: 'mama' }), signal: AbortSignal.timeout(8000) })
+      .then((r) => r.ok && (r.headers.get('content-type') ?? '').startsWith('audio/')).catch(() => false),
+  ]);
+  return { api, texts: !!photon && photon.sender !== 'log', voice };
+}
+
+async function setEnvelope(msg: Extract<Message, { type: 'SET_ENVELOPE' }>) {
+  if (!(await apiUp())) return { ok: false as const };
+  const r = await call<{ ok: boolean; envelope: number }>('/envelope', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ amount: msg.amount }) });
+  return r ? { ok: true as const, envelope: r.envelope } : { ok: false as const };
 }
 
 /** The popup's Start over: she forgets every answer and asks again, as on a fresh install. */
@@ -185,10 +247,10 @@ async function remember(key: string, answer: Answer) {
 }
 
 export default defineBackground(() => {
-  // First run: she never defaults a grandma, so the chooser opens itself until one is picked.
+  // First run: onboarding opens itself in a tab until it has been finished once. She never defaults a grandma.
   browser.runtime.onInstalled.addListener(() => {
     browser.storage.local.get('settings').then(({ settings = {} }) => {
-      if (!(settings as { grandma?: string }).grandma) browser.tabs.create({ url: browser.runtime.getURL('/popup.html') }).catch(() => {});
+      if (!(settings as { onboarded?: boolean }).onboarded) browser.tabs.create({ url: browser.runtime.getURL('/popup.html') }).catch(() => {});
     }).catch(() => {});
   });
 
@@ -218,7 +280,25 @@ export default defineBackground(() => {
         confirmOrder(msg).then(sendResponse, () => sendResponse({ ok: true, posted: 0 }));
         return true;
       case 'SPEAK':
-        speak(msg).then(sendResponse, () => sendResponse({ ok: false }));
+        speak(msg).then(sendResponse, () => sendResponse(silent));
+        return true;
+      case 'WARM':
+        warm(msg).then(sendResponse, () => sendResponse({ ok: true }));
+        return true;
+      case 'CUE':
+        cue(msg).then(sendResponse, () => sendResponse({ ok: false }));
+        return true;
+      case 'MONTH':
+        month(msg).then(sendResponse, () => sendResponse({ ok: false }));
+        return true;
+      case 'TEXT_NOW':
+        textNow(msg).then(sendResponse, () => sendResponse({ ok: false, texted: false, text: null, reason: 'The API is not answering' }));
+        return true;
+      case 'HEALTH':
+        health().then(sendResponse, () => sendResponse({ api: false, texts: false, voice: false }));
+        return true;
+      case 'SET_ENVELOPE':
+        setEnvelope(msg).then(sendResponse, () => sendResponse({ ok: false }));
         return true;
       case 'START_OVER':
         startOver().then(() => sendResponse({ ok: true }), () => sendResponse({ ok: true }));

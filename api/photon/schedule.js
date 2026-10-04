@@ -81,6 +81,7 @@ function grandma() { return readState().grandma === 'nana' ? 'nana' : 'mama'; }
 // "texted" only means an actual send happened, same contract as every other notification in the app.
 async function send(kind, { now = new Date(), to, grandma: g } = {}) {
   if (g === 'mama' || g === 'nana') writeState({ grandma: g });
+  if (to) writeState({ to }); // the number from onboarding screen 07 is where the Sunday statements go from now on
   const who = grandma();
   const body = kind === 'monthly' ? monthlyText(now, who) : weeklyText(now, who);
   const result = await notify(to, body, 'calm', { prompted: true }); // statements skip the gate: PLAN allows them on top of the daily text
@@ -112,7 +113,7 @@ async function tick(now = new Date()) {
     return [{ ok: !!(sent && sent.sent), kind: 'goodbye' }];
   }
   if (quietState === 'quiet') return results;
-  for (const kind of due(now)) results.push(await send(kind, { now }));
+  for (const kind of due(now)) results.push(await send(kind, { now, to: readState().to }));
   return results;
 }
 

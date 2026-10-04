@@ -176,3 +176,28 @@ test('no dashes or emoji in any of her Messages copy', () => {
   const samples = [textLine('home', { amount: 50 }), textLine('saved', { amount: 40, who: 'nana' }), textLine('nothing'), textLine('tooMuch', { amount: 90, left: 25 }), textLine('other'), textLine('hello', { left: 25 }), goodbyeLine('nana'), weeklyText(new Date(), 'nana')];
   for (const t of samples) { assert.doesNotMatch(t, /[—–]| - |\p{Extended_Pictographic}/u, t); }
 });
+
+// Onboarding lines from the ledger: numbers in words for her voice, digits for the screen.
+const { words, spokenNumbers, trueLineText } = require('../lines/onboarding');
+
+test('numbers become words the way a person says them', () => {
+  assert.equal(words(0), 'zero'); assert.equal(words(7), 'seven'); assert.equal(words(24), 'twenty four');
+  assert.equal(words(102), 'one hundred and two'); assert.equal(words(179), 'one hundred and seventy nine');
+  assert.equal(words(1200), 'one thousand two hundred'); assert.equal(words(120000), 'one hundred and twenty thousand');
+});
+
+test('the spoken form never contains a digit', () => {
+  const s = spokenNumbers('You spent $102 on it, so when DoorDash is open I will say something. 75% gone. 2 days.');
+  assert.doesNotMatch(s, /\d/);
+  assert.match(s, /one hundred and two dollars/); assert.match(s, /seventy five percent/); assert.match(s, /two days/);
+  assert.equal(spokenNumbers('$1 left'), 'one dollar left');
+});
+
+test('the true line reads the top want against the cheapest staple, in her voice', () => {
+  const tl = { topCategory: 'food delivery', topAmount: 102, contrastItem: 'rice', contrastAmount: 24 };
+  assert.equal(trueLineText(tl, 'mama').text, 'Last 30 days: $102 on food delivery. Rice was $24. We need to talk.');
+  assert.equal(trueLineText(tl, 'nana').text, 'Last 30 days: $102 on food delivery. Rice was $24. Hm.');
+  assert.equal(trueLineText(tl).spoken, 'Last thirty days: one hundred and two dollars on food delivery. Rice was twenty four dollars. We need to talk.');
+  assert.equal(trueLineText(null), null);
+  assert.equal(trueLineText({ topCategory: '', topAmount: 50 }), null, 'no category, nothing true to say');
+});
