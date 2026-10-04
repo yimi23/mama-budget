@@ -63,8 +63,11 @@ test('the figure back home follows the person, not the grandma', () => {
 
 test('every answer gets an acknowledgement; a declared need gets no comment on its price', () => {
   const need = judge({ item: 'Tamron lens', price: 1260 }, week, remember({}, { item: 'Tamron lens' }, 'need'));
-  assert.equal(ackLine(need, { item: 'Tamron lens', price: 1260 }), 'Okay. I will remember.');
-  assert.equal(ackLine(need, { item: 'Tamron lens', price: 1260 }, 'nana'), 'Okay. Noted.');
+  const { MAMA, NANA } = require('../lines/writer');
+  const m = ackLine(need, { item: 'Tamron lens', price: 1260 });
+  assert.ok(MAMA.ackNeed.includes(m), `from the ackNeed pool: ${m}`);
+  assert.doesNotMatch(m, /1260/, 'no comment on the price of a need');
+  assert.ok(NANA.ackNeed.includes(ackLine(need, { item: 'Tamron lens', price: 1260 }, 'nana')));
   const fits = judge({ item: 'Desk lamp', price: 20 }, week, remember({}, { item: 'Desk lamp' }, 'want'));
   assert.match(ackLine(fits, { item: 'Desk lamp', price: 20 }), /Carry on|fits/);
   const blown = judge({ item: 'AirPods Pro', price: 179 }, week, remember({}, { item: 'AirPods Pro' }, 'want'));
@@ -96,8 +99,12 @@ test('every loud line names the plan: the price, the item, and the week', () => 
     assert.doesNotMatch(line, /rice|came to/i, 'the pantry is not the point');
   }
   const small = judge({ item: 'Desk lamp', price: 40 }, week, remember({}, { item: 'Desk lamp' }, 'want'));
-  assert.match(lineFor(small, { item: 'Desk lamp', price: 40 }, week), /40 dollars, with 25 dollars left this week/, 'beats what is left');
-  assert.match(lineFor(v, it, week), /We said 75 dollars for the week\. AirPods Pro alone is 179/, 'beats the whole week');
+  const beatsLeft = lineFor(small, { item: 'Desk lamp', price: 40 }, week);
+  assert.match(beatsLeft, /40/, `beats what is left names the price: ${beatsLeft}`);
+  assert.match(beatsLeft, /\b25\b/, `beats what is left names what is left: ${beatsLeft}`);
+  const beatsWeek = lineFor(v, it, week);
+  assert.match(beatsWeek, /179/, `beats the whole week names the price: ${beatsWeek}`);
+  assert.match(beatsWeek, /\b75\b/, `beats the whole week names the week: ${beatsWeek}`);
   const over = { budget: 75, spent: 229, ratio: 229 / 75 };
   assert.match(buyLine(over, it), /154/, 'past the week she names how far over');
   assert.equal(shopName('jumia.com.ng'), 'Jumia');
@@ -119,7 +126,8 @@ test('on a naira store she says the store price first, dollars after, and adds n
   assert.match(line, /₦286,400 \(179 dollars\)/);
   assert.doesNotMatch(line, /That is .* naira/);
   const usd = lineFor(v, { item: 'AirPods Pro', price: 179, storePrice: 179, currency: 'USD' }, week);
-  assert.match(usd, /alone is 179 dollars\. Put it back\./);
+  assert.match(usd, /179 dollars/);
+  assert.doesNotMatch(usd, /naira|₦/);
 });
 
 test('a watch carries what she says when that site opens', () => {

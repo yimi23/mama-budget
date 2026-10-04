@@ -42,7 +42,7 @@ test('greetings and thanks are recognised; the rest goes to the conversation', (
 
 test('the Messages lines name the amount and say nothing about the person', () => {
   const l = textLine('home', { amount: 50, who: 'mama' });
-  assert.match(l, /\$50 sent home/);
+  assert.match(l, /^\$50\b.*home/, `the amount first, then home: ${l}`);
   assert.doesNotMatch(l, /you always|stupid|wasteful/i);
   assert.match(textLine('tooMuch', { amount: 5000, left: 25, who: 'nana' }), /\$5000\?.*\$25 left/);
   assert.match(textLine('nothing', { who: 'mama' }), /send 50 home/);

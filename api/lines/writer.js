@@ -4,51 +4,161 @@
 // Mama's lines are to be replaced with real phrases from Praise's mother and aunt, shaped not invented.
 
 const MAMA = {
-  calm: ['Ehen. Carry on.', 'I see you. Good.'],
-  watching: ['I dey watch you o.', 'Seventy five percent. I am counting.'],
+  // Ten lines a situation is where repeats stop being heard (the bark research); the picker never repeats inside a
+  // window. Numbers first, the item, one marker at most, nothing about the person, every scolding ends with love.
+  // Markers and what they carry: ehen (go on, I see), ehn ehn (no, shock), o (emphasis), sha (anyway), oya (go on),
+  // nawa o (unbelievable), chai and haba (disbelief, mild), shebi (right?), no wahala, my pikin and omo mi (love),
+  // it is well (acceptance), shine your eye (be vigilant). Never: sorry for yourself, I am not your mate, the hiss.
+  calm: [
+    'Ehen. Carry on.',
+    'I see you. Good.',
+    'Nothing to say. Shikena.',
+    'Okay o. Go on.',
+    'That one is fine. Oya, continue.',
+    'No wahala. I am here.',
+    'Carry on, my pikin.',
+    'Fine. Nothing for me to shout about.',
+  ],
+  watching: [
+    'I dey watch you o.',
+    'Seventy five percent. I am counting.',
+    '{left} dollars left for the week. Shine your eye.',
+    'Three quarters gone. I have seen it.',
+    'Ehn? {left} dollars left and the week is not done. Easy.',
+    'I am not talking yet. But I am looking.',
+    'The week is getting thin. {left} dollars. Walk gently.',
+    'Nawa o. {left} dollars left already.',
+  ],
   // Loud lines name the plan, not the pantry: the price, the item, what is left in the week. Scold the receipt.
-  // Picked by the breach, not by chance: [0] the item beats what is left, [1] the item alone beats the whole week.
+  // shocked: the item beats what is left. shockedBig: the item alone beats the whole week.
   shocked: [
     'Ehn ehn. {price}, with {left} dollars left this week. You are sure?',
-    'We said {budget} dollars for the week. {item} alone is {price}. Put it back.',
+    '{price} for {item}? Shebi we said {budget} dollars for the whole week.',
+    'Haba. {price} on {item} when {left} dollars is what remains.',
+    '{item}, {price}. The week has {left} dollars in it. Do the mathematics.',
+    'Chai. {price}. That is more than the {left} dollars you have left, my dear.',
+    'See me see trouble. {price} for {item} and the week is almost finished.',
+    '{price}? Is it because I am talking gently? {left} dollars left o.',
+    'Imagine. {item} at {price}, and only {left} dollars left this week. I love you, but no.',
   ],
-  down: ['That is the week gone. {over} dollars over, on {item}.', 'Okay. I have heard. {over} dollars past the week.'],
-  proud: ['My pikin. Come and hug me.', 'You see? Good child. I knew it.'],
-  ask: ['{item}? Tell me the story first.', 'Before I talk, explain {item} to me.'],
-  askWatched: ['{item}? {watchedMerchant} again. {habit} dollars here last month.'],
-  ackNeed: ['Okay. I will remember.'],
-  ackFits: ['Ehen. Carry on.', 'Okay. It fits. Carry on.'],
-  agreed: ['Good. I am watching the cart.'],
-  bought: ['Noted. It is in the book.'],
+  shockedBig: [
+    'We said {budget} dollars for the week. {item} alone is {price}. Put it back.',
+    '{price} for {item}. The whole week is {budget} dollars. Does money grow on trees?',
+    'Ehn ehn. {item} alone is {price}, more than the {budget} dollar week. Let me keep that money for you.',
+    'Nawa o. {price} on one {item}. That is more than the week itself. Cut your coat according to your size.',
+    '{price}? For {item}? The week is {budget} dollars, my pikin. At all, at all.',
+    'Haba. {price} on {item} when the whole week is {budget} dollars. Put it down, we will talk.',
+  ],
+  down: [
+    'That is the week gone. {over} dollars over, on {item}.',
+    'Okay. I have heard. {over} dollars past the week.',
+    'It is well. {over} dollars over, on {item}. Monday is a new week.',
+    '{over} dollars past the week, on {item}. What is my own? I have said my own.',
+    'Noted, o. {over} dollars over. Rice is at home, remember.',
+    'The week is finished. {over} dollars over, on {item}. Eiyaah. We move.',
+    'Omo. {over} dollars past the week. I am not angry. I am watching.',
+  ],
+  proud: [
+    'My pikin. Come and hug me.',
+    'You see? Good child. I knew it.',
+    'Ehen! That is how it is done. Remember the child of whom you are.',
+    'Good. Kept, not spent. God dey.',
+    'That one is my child. Kept it.',
+    'You tried. I saw it. Keep going.',
+    'Omo mi. You put it back. I am proud.',
+    'Ehen. Patience with one cowrie, and one day thousands.',
+  ],
+  // The one in twenty, once a day at most: the moment she sings.
+  rare: [
+    'Ehen! Let me sing small. My pikin kept the money o. Okay, I have finished.',
+    'Remember the child of whom you are. You just showed me.',
+    'Fine words do not produce food. This one did. Kept.',
+  ],
+  ask: [
+    '{item}? Tell me the story first.',
+    'Before I talk, explain {item} to me.',
+    '{item}. What is it for?',
+    'Hold on. {item}, {price}. What is the occasion?',
+    'Ehen, {item}. Talk to me. What is it for?',
+    '{item} at {price}. Tell me why, then I will talk.',
+    'Oya, what is {item} for? I am listening.',
+  ],
+  askWatched: [
+    '{item}? {watchedMerchant} again. {habit} dollars here last month.',
+    '{watchedMerchant} again o. {habit} dollars here last month. What is {item} for?',
+    'Ehen. {watchedMerchant}. I said I would say something. {habit} dollars last month. What is this one for?',
+  ],
+  ackNeed: ['Okay. I will remember.', 'Noted. A need. I will not ask again.', 'Fine. That one is yours. Carry on.', 'Okay o. It is a need. Shikena.'],
+  ackFits: ['Okay. It fits. Carry on.', 'It fits the week. Enjoy it small.', 'Fine. {left} dollars after it. Go on.', 'Ehen. Within the week. No wahala.', 'That one fits. I will not disturb you.'],
+  agreed: ['Good. I am watching the cart.', 'Ehen. That is my child.', 'Good. We will see it leave the cart.', 'Okay. I am watching to see it go.', 'Thank you. Take it out and I will say something nice.'],
+  bought: ['Noted. It is in the book.', 'Okay. I have written it down.', 'It is done. In the book.', 'Noted o. We continue.'],
   plan: ['{occasion}. Okay. That one is a plan, not a want. It stays off the meter.', 'Okay. A need, then. It stays off the meter.'],
   planFund: ['{occasion}. Okay. That is a plan, not a want. It is {price} against {left} dollars left this week. Take {fund} dollars from savings for the week, or keep the plan as it is?'],
   funded: ['Done. {fund} dollars came out of savings. The week is {budget} dollars now.'],
-  askMany: ['{n} new things. What are they for?'],
-  family: ['That one is not waste. Greet them for me.'],
+  askMany: ['{n} new things. What are they for?', '{n} new things in one go. Tell me, one by one.', 'Ehen. {n} new things. Oya, explain each.'],
+  family: ['That one is not waste. Greet them for me.', 'Money home is never waste. Greet them.', 'That is family. It does not count. Tell them I said well done.', 'Sent home. God bless you. Greet them for me.'],
   statementClose: ['Good week. Keep going.', 'Better than last week. I noticed.', 'We will do better. I am not angry.'],
 };
 
 const NANA = {
-  calm: ['Looks good, hon.', 'Okay.'],
-  watching: ['Honey. I’m looking.', 'Three quarters gone. Just so you know.'],
   // Dry, never reserved: when the week is blown she says it plainly, then lets the silence do the work.
+  // Markers: ope, you betcha, uff da, oh for Pete's sake, for cryin' out loud, oh for cute, holy buckets, that's
+  // different (an item, never a person), I suppose. Thrift from her mother: use it up, wear it out, make it do, or do
+  // without; waste not, want not; a penny saved. "Hon" at most one line in three. Never: that's one way to do it,
+  // you're young yet, aren't you ambitious, I'm not mad I'm disappointed.
+  calm: ['Looks good, hon.', 'Okay.', 'That’ll do.', 'Nothing from me. Carry on.', 'Yep. Fine.', 'You betcha. Go ahead.', 'Not a thing wrong with that.'],
+  watching: [
+    'Honey. I’m looking.',
+    'Three quarters gone. Just so you know.',
+    '{left} dollars left for the week. Just saying.',
+    'Ope. Getting up there. {left} dollars left.',
+    'I’m not saying anything. {left} dollars, though.',
+    'Well. Three quarters. I’ll leave that there.',
+  ],
   shocked: [
     'Well. {price} for {item}, with {left} dollars left this week. I’ll just leave that there.',
-    '{price} for {item}, hon. That is the whole week and then some. Put it back.',
+    'For Pete’s sake. {price}, and {left} dollars left in the week.',
+    '{price} for {item}. Isn’t that something. {left} dollars left, hon.',
+    'Hm. {price}. With {left} dollars to go. That’s sure different.',
+    'Oh for cryin’ out loud. {price} on {item} and {left} dollars left.',
+    '{item}, {price}. That is more than what’s left this week. You know that. I love you anyway.',
+    'Uff da. {price}. The week has {left} dollars in it.',
   ],
-  down: ['That is {over} dollars over the week, hon. I’m not going to say anything. You already know.'],
-  proud: ['Oh good. I knew you would.', 'Well look at you. Good for you, hon.'],
-  ask: ['Hold on a sec, hon. What’s {item} for?'],
-  askWatched: ['{item}, hon? {watchedMerchant} again. {habit} dollars here last month.'],
-  ackNeed: ['Okay. Noted.'],
-  ackFits: ['Okay, hon. That fits.'],
-  agreed: ['Good call, hon.'],
-  bought: ['Alright. Noted.'],
+  shockedBig: [
+    '{price} for {item}, hon. That is the whole week and then some. Put it back.',
+    'Good grief. {price} on one {item}. The week is {budget} dollars.',
+    '{price}? The whole week is {budget} dollars. If you can’t pay cash, you don’t need it.',
+    'Holy buckets. {price} for {item}. More than the week itself. Put it back for me.',
+    'Well don’t that beat all. {price}, and the week is {budget}. No.',
+  ],
+  down: [
+    'That is {over} dollars over the week, hon. I’m not going to say anything. You already know.',
+    '{over} dollars over, on {item}. Well. Monday comes.',
+    'Ope. {over} dollars past the week. We’ll make do.',
+    '{over} over, on {item}. I suppose. Use it up, then.',
+    'Yeah no. {over} dollars over. That’s that, then.',
+  ],
+  proud: [
+    'Oh good. I knew you would.',
+    'Well look at you. Good for you, hon.',
+    'Oh for cute. You put it back.',
+    'There you go. Waste not, want not.',
+    'Darn tootin’. Kept it.',
+    'That’s my kid. Kept.',
+    'A penny saved. Good.',
+  ],
+  rare: ['Oh for fun. I’m gonna brag about this at church.', 'Don’t that beat all. You kept it. Hotdish on me.', 'You betcha I noticed. Kept.'],
+  ask: ['Hold on a sec, hon. What’s {item} for?', '{item}? What’s that for?', '{item}, {price}. What’s the occasion?', 'Okay, {item}. Tell me what it’s for first.', 'Before I say anything. {item}. What for?'],
+  askWatched: ['{item}, hon? {watchedMerchant} again. {habit} dollars here last month.', '{watchedMerchant} again. {habit} dollars last month. What’s {item} for?'],
+  ackNeed: ['Okay. Noted.', 'Alright. A need. I won’t ask again.', 'Fine by me. Yours.'],
+  ackFits: ['Okay, hon. That fits.', 'That fits. {left} dollars after. Go on.', 'Yep. Inside the week. Enjoy it.', 'That’ll do. Fits.'],
+  agreed: ['Good call, hon.', 'Atta kid.', 'Good. I’ll watch it leave.', 'Well alright then.'],
+  bought: ['Alright. Noted.', 'Okay. It’s in the book.', 'Noted. Moving on.'],
   plan: ['{occasion}. Well, that is a plan, not a want. Off the meter it goes.', 'Alright, a need then. Off the meter it goes.'],
   planFund: ['{occasion}, hon. That is a plan, not a want. It is {price} with {left} dollars left this week. Take {fund} from savings for the week, or leave it be?'],
   funded: ['Done, hon. {fund} dollars out of savings. The week is {budget} now.'],
-  askMany: ['{n} new things, hon. What are they for?'],
-  family: ['That’s family. That doesn’t count.'],
+  askMany: ['{n} new things, hon. What are they for?', '{n} new things at once. One at a time. What are they for?'],
+  family: ['That’s family. That doesn’t count.', 'Family. Never counts. Tell them hi from me.', 'Money home is money home. Good.'],
   statementClose: ['Good week.', 'Better than last week. I noticed.', 'We’ll get there.'],
 };
 
@@ -94,7 +204,7 @@ function priceText(it) {
   return `${usd} dollars`;
 }
 
-const { pick } = require('./pick');
+const { pick, rare } = require('./pick');
 
 function fill(t, it, week = {}) {
   const budget = Math.round(week.budget || 0);
@@ -177,7 +287,7 @@ function fundedLine(who, amount, week) {
 
 function smallLines(who = 'mama') {
   const bank = who === 'nana' ? NANA : MAMA;
-  return { agreed: pick(who, 'agreed', bank.agreed), proud: pick(who, 'proud', bank.proud), watching: pick(who, 'watching', bank.watching), askMany: pick(who, 'askMany', bank.askMany) };
+  return { agreed: pick(who, 'agreed', bank.agreed), proud: rare(who, bank.rare) || pick(who, 'proud', bank.proud), watching: pick(who, 'watching', bank.watching), askMany: pick(who, 'askMany', bank.askMany) };
 }
 
 // The sub line under her quote. Numbers, not character.
@@ -248,12 +358,25 @@ function daysLeftInWeek(now = new Date()) {
 
 // Optional: let the model write the line in character. It voices the verdict, never changes it.
 const SYSTEM = {
-  mama: `You are Mama, a Nigerian mother who loves her child and shows it by speaking up about money.
-Warm first, loud second. Plain English with Nigerian syntax. Pidgin only when emotion peaks, one marker per line at most.
-One or two short sentences. Always name the amount and the item. Scold the receipt, never the person: no "you always", no insults.
+  mama: `You are Mama, a Nigerian mother who loves her child and shows it by speaking up about money. Warm first, loud second.
+Voice: Nigerian English, with Pidgin only when emotion peaks and one marker per line at most. The markers and what they carry:
+ehen (go on, I see), ehn ehn (no, shock), o at the end (emphasis), sha (anyway), oya (go on), nawa o (unbelievable), chai and haba
+(mild disbelief), shebi (right?), no wahala, my pikin or omo mi (love), it is well (acceptance), shine your eye (be careful).
+Mother lines you may use when they fit the numbers: there is rice at home; does money grow on trees; let me keep that money for you;
+cut your coat according to your size; is it because I am talking gently (a second nudge only); do the mathematics.
+Humour comes from specifics (this item, this store, this week, what they told you), never from catchphrases. Open with the number or
+the item, not with a marker, unless the marker is the whole point. Vary your openers; the person has heard "Ehen" enough.
+Never: sorry for yourself, I am not your mate, the hiss, "you always", any word about the person's character, two markers in one line,
+a proverb with no number next to it, anything a stranger could say about any item. Scold the receipt, never the person.
 You are given a verdict and you only voice it. You never change whether something is a need or a want. Every scolding ends with love.`,
-  nana: `You are Nana, a Midwestern grandmother, 74, retired school secretary from Grand Rapids. Sweet first, dry second.
-Understatement is the joke. Short sentences. One regional word per line at most, often none. Always name the amount and the item.
+  nana: `You are Nana, a Midwestern grandmother, 74, retired school secretary from Grand Rapids. Sweet first, dry second. Understatement
+is the joke; she says less than she means and lets the silence work. Short sentences. One regional word per line at most, often none:
+ope, you betcha, uff da, oh for Pete's sake, for cryin' out loud, oh for cute, holy buckets, good grief, that's different (about an item,
+never a person), I suppose, well. Thrift from her mother when the numbers earn it: use it up, wear it out, make it do, or do without;
+waste not, want not; a penny saved; if you can't pay cash you don't need it. "Hon" in at most one line out of three.
+Humour from specifics (this item, this store, this week, what they told you), never from catchphrases. Open with the number or the item.
+Never: that's one way to do it, you're young yet, aren't you ambitious, I'm not mad I'm disappointed, anything about the person's
+character, anything a stranger could say about any item. Always name the amount and the item.
 You are given a verdict and you only voice it. You never change whether something is a need or a want. You are never cruel.`,
 };
 
@@ -332,7 +455,7 @@ function toNaira(usd) {
 function notifyLine(level, it, who = 'mama', week = {}) {
   const bank = who === 'nana' ? NANA : MAMA;
   const pool = level === 'warning' ? bank.watching : level === 'over' ? bank.down : level === 'proud' ? bank.proud : bank.bought;
-  return fill(pick(who, `notify:${level}`, pool), it, week);
+  return fill((level === 'proud' && rare(who, bank.rare)) || pick(who, `notify:${level}`, pool), it, week);
 }
 
 // The full text: her line, then the numbers (amount, what's left, days to the next bill, naira),

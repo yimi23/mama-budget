@@ -39,6 +39,19 @@ function pick(who, key, pool, rng = Math.random) {
   return choice;
 }
 
+/**
+ * The one in twenty. A special line at `odds`, at most once a day per character, so it stays special. Null otherwise.
+ */
+function rare(who, pool, odds = 0.05, rng = Math.random, now = Date.now()) {
+  if (!Array.isArray(pool) || !pool.length) return null;
+  const s = load();
+  const last = s[`${who}/rareAt`] || 0;
+  if (now - last < 24 * 60 * 60 * 1000 || rng() >= odds) return null;
+  s[`${who}/rareAt`] = now;
+  save();
+  return pool[Math.floor(rng() * pool.length)];
+}
+
 /** The last few lines said in a situation, newest last. */
 function recent(who, key) {
   const s = load();
@@ -51,4 +64,4 @@ function reset() {
   save();
 }
 
-module.exports = { pick, recent, reset, WINDOW_MAX };
+module.exports = { pick, rare, recent, reset, WINDOW_MAX };
