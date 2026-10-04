@@ -100,7 +100,7 @@ function silence(now = new Date(), state = readState(), mem = memory.read()) {
   return state.wentQuietAt ? 'quiet' : 'say goodbye';
 }
 function goodbyeLine(who) {
-  return who === 'nana' ? 'Two weeks and not a word, hon. I will stop texting. Say anything and I am right here.' : 'Two weeks and I have not heard from you. I will stop texting. Say anything and I am here.';
+  return require('../lines/writer').phrase(who, 'silence');
 }
 function heardFrom() { const s = readState(); if (s.wentQuietAt) { delete s.wentQuietAt; fs.writeFileSync(STATE, JSON.stringify(s, null, 2)); } }
 

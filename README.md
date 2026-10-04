@@ -8,11 +8,11 @@ Built at MHacks 2026 by **Praise Oyimi** and **Ugonna Emeka-Inegbu**. Tracks: Fi
 
 ## Who she is for
 
-International and first generation students who send money home. Their budget has a line most apps have no category for: family. Every bank app files a $200 transfer home under "Transfers" next to a $200 jacket. She files it under need, before any rule about wants runs, because to her user that is not a judgement call. Two grandmas ship: **Mama**, Nigerian, who adds the naira so you hear the price the way home hears it, and **Nana**, US Midwest, for everyone else. Same rules, same math, different voice.
+International and first generation students who send money home. Their budget has a line most apps have no category for: family. Every bank app files a $200 transfer home under "Transfers" next to a $200 jacket. She files it under need, before any rule about wants runs, because to her user that is not a judgement call. Four grandmas ship: **Mama**, Nigerian; **Nana**, US Midwest; **Abuela**, Mexican American; **Grandma Wong**, Cantonese. Same rules, same math, four voices, each written from documented speech of real grandmothers, never improvised, with the lines that shame left out on purpose. The figure from home follows the person's region, never the grandma. In Messages, one word (abuela, wong, nana, mama) changes who answers.
 
 ## Ninety seconds with her
 
-1. **Install.** The first run opens in a tab. Two questions: who is checking (Mama or Nana) and how loud (Gentle Auntie, Mama, Full Nigerian Mother). Everything else she reads from the bank.
+1. **Install.** The first run opens in a tab. Two questions: who is checking (Mama, Nana, Abuela or Grandma Wong) and how loud (three tiers under her own names, from Gentle Auntie to Full Nigerian Mother). Everything else she reads from the bank.
 2. **She reads your month** from Nessie: the envelope, what went on wants this week, what you kept, the merchants that keep coming back. "Here is what I saw" uses your name once, from the ledger. "What I will watch" names the merchants she will meet you at.
 3. **A practice cart** so you meet her before a real store. Rice, quiet. Something you do not need, she asks.
 4. **Amazon.** Rice in the cart, she breathes in the corner, meter still. AirPods in, one neutral card: "AirPods Pro, $249. What is this for?" with a one line box for a reason.

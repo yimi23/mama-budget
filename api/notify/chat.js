@@ -48,7 +48,7 @@ function boughtLine(view, about, week, who) {
     const mine = view.thisWeek.filter(hit);
     const monthHit = (view.month.topWants || []).find((w) => w.merchant.toLowerCase().includes(about.toLowerCase()));
     const weekSum = mine.reduce((s, x) => s + x.amount, 0);
-    if (!mine.length && !monthHit) return who === 'nana' ? `Nothing at ${about} that I can see, hon.` : `Nothing at ${about} that I can see.`;
+    if (!mine.length && !monthHit) return writer.phrase(who, 'nothingHere', about);
     return `$${weekSum} at ${monthHit ? monthHit.merchant : about} this week${monthHit ? `, $${monthHit.amount} in the last 30 days` : ''}. $${left} left this week.`;
   }
   const wants = view.thisWeek.filter((x) => x.tag === 'want');
@@ -58,7 +58,7 @@ function boughtLine(view, about, week, who) {
 
 function billsLine(view, who) {
   const bills = view.month.bills || [];
-  if (!bills.length) return who === 'nana' ? 'Nothing due that I can see, hon.' : 'Nothing due that I can see.';
+  if (!bills.length) return writer.phrase(who, 'nothingDue');
   return bills.map((b) => `${b.nickname || b.payee}, $${b.amount}, due in ${b.daysUntil} day${b.daysUntil === 1 ? '' : 's'}.`).join(' ') + (bills.length === 1 ? ' That is it this month.' : '');
 }
 
@@ -85,11 +85,11 @@ function fallbackReply(text, { week, who, apology, storedPromise, intent }) {
   const left = Math.max(0, week.budget - week.spent);
   if (intent === 'hello' || intent === 'thanks') return textLine(intent, { left, who });
   if (storedPromise) {
-    const open = apology ? (bank.down && bank.down[1]) || bank.down[0] : (who === 'nana' ? "Okay, hon. I'll hold you to that." : 'Okay. I will hold you to that.');
+    const open = apology ? (bank.down && bank.down[1]) || bank.down[0] : writer.phrase(who, 'holdYou');
     return `${open} I will remember: "${storedPromise}."${tail}`;
   }
   if (apology) {
-    return (who === 'nana' ? "Okay, hon. I hear you. I love you anyway." : 'Okay. I hear you. I still love you o.') + tail;
+    return writer.phrase(who, 'apology') + tail;
   }
   if (/how much|left|budget/i.test(text)) return writer.whatsLeft(week, who);
   return bank.calm[0] + tail;

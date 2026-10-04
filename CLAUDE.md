@@ -36,7 +36,7 @@ WXT (Manifest V3, TypeScript) for the extension. Hono on Node 24 for the API. no
 - The envelope decides volume: a want that fits gets a nod, a want that blows the week gets Gele down. The envelope is weekly, Monday to Sunday, closed by the Sunday 7pm statement.
 - Max one reaction per item, three asks per session, one card at a time (queue the rest), quiet 11pm to 7am is opt in for the hackathon (settings.quietHours, PHOTON_QUIET=1; the product default once shipped). Buy anyway always works. Nothing is ever blocked. No store button is ever clicked by us.
 - `week.spent` is want tagged purchases this week only. Needs never move the meter. `month()` is the 30 day read used once, in onboarding.
-- Loudness scales thresholds in the judge (1.0, 0.6, 0.3). Same three tiers for Nana under her own names.
+- Loudness scales thresholds in the judge (1.0, 0.6, 0.3). Same three tiers for every grandma under her own names. The family (mama, nana, abuela, wong) is a registry: a brief in `api/lines/character.js`, a bank of lines in writer.js and texts.js under the same keys, a voice id `ELEVEN_VOICE_ID_<WHO>`, five faces, a tile. Lines come from documented speech, never improvised.
 - Store currency first, USD after, from `packages/shared/currency.ts`. Mama adds naira unless the store is already in naira.
 - If the API fails twice in a row the badge hides. Never show an error on a store page. The page must behave as if she was never installed.
 - Amazon adapter reads the active cart only. Saved for later, Buy it again and recommendations are never items.

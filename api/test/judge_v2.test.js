@@ -121,6 +121,23 @@ test('loudness scales the ask line, never the math', () => {
   assert.equal(judge({ item: 'Desk lamp', price: 30 }, week).label, 'ask', 'no tier given: the $15 line');
 });
 
+test('every grandma keeps the loud line rule: price, item and the week number, in every loud pool', () => {
+  const { BANK } = require('../lines/writer');
+  for (const [who, bank] of Object.entries(BANK)) {
+    for (const key of ['shocked', 'shockedBig']) for (const t of bank[key]) {
+      assert.match(t, /\{price\}/, `${who}.${key}: ${t}`);
+      assert.match(t, /\{item\}/, `${who}.${key} names the item: ${t}`);
+      assert.match(t, key === 'shocked' ? /\{left\}/ : /\{budget\}/, `${who}.${key} names the week's number: ${t}`);
+    }
+    for (const t of bank.down) assert.match(t, /\{over\}/, `${who}.down names how far over: ${t}`);
+    for (const key of Object.keys(bank)) for (const t of bank[key]) {
+      assert.doesNotMatch(t, /[—–]/, `${who}.${key} has a dash: ${t}`);
+      assert.doesNotMatch(t, /you always|stupid|wasteful|sorry for yourself|not your mate|te lo dije|other people/i, `${who}.${key} shames: ${t}`);
+    }
+    assert.ok(bank.shocked.length >= 4 && bank.proud.length >= 4 && bank.ask.length >= 3, `${who} has enough lines not to repeat`);
+  }
+});
+
 test('on a naira store she says the store price first, dollars after, and adds no naira line', () => {
   const memory = remember({}, { item: 'AirPods Pro' }, 'want');
   const v = judge({ item: 'AirPods Pro', price: 179 }, week, memory);

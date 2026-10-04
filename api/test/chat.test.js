@@ -47,3 +47,13 @@ test('bills and savings read straight from the ledger', () => {
   assert.equal(savingsLine(view, week), '$640 in savings. $40 kept this week. $50 went home this month.');
   assert.match(billsLine({ month: { bills: [] } }, 'nana'), /Nothing due/);
 });
+
+test('one word picks the grandma for the thread; garbage picks nobody', () => {
+  assert.deepEqual(parse('abuela'), { intent: 'grandma', who: 'abuela' });
+  assert.deepEqual(parse('po po'), { intent: 'grandma', who: 'wong' });
+  assert.deepEqual(parse('switch to nana'), { intent: 'grandma', who: 'nana' });
+  assert.deepEqual(parse('Mama!'), { intent: 'grandma', who: 'mama' });
+  assert.notEqual(parse('abuelas are the best').intent, 'grandma');
+  const { GRANDMAS } = require('../lines/character');
+  assert.deepEqual(Object.keys(GRANDMAS), ['mama', 'nana', 'abuela', 'wong']);
+});

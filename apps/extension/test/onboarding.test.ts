@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { DOTS, TIERS, countUp, dotIndex, formatPhone, homeFor, inHome, next, regionHome, skip, speechSeconds, toE164, words } from '../lib/onboarding.ts';
+import { DOTS, TIERS, countUp, dotIndex, formatPhone, homeFor, inHome, next, regionHome, skip, speechSeconds, toE164, words, COPY } from '../lib/onboarding.ts';
 
 test('the happy path visits every screen in the planned order', () => {
   const p = { bank: true, texted: true };
@@ -41,6 +41,10 @@ test('three tiers per grandma under her own names, same keys', () => {
   assert.deepEqual(TIERS.mama.map((t) => t.key), ['gentle', 'mama', 'full']);
   assert.deepEqual(TIERS.nana.map((t) => t.key), ['gentle', 'mama', 'full']);
   assert.equal(TIERS.nana[2]!.name, 'Nana Before Coffee');
+  for (const who of ['mama', 'nana', 'abuela', 'wong'] as const) {
+    assert.deepEqual(TIERS[who].map((t) => t.key), ['gentle', 'mama', 'full'], `${who} has the three tiers`);
+    assert.ok(COPY[who].name && COPY[who].welcome.length > 40 && COPY[who].preview, `${who} has copy`);
+  }
 });
 
 test('phone formatting and E.164', () => {

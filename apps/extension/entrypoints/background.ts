@@ -255,7 +255,7 @@ async function health() {
   if (!api) return { api, texts: false, voice: false };
   const [photon, voice] = await Promise.all([
     call<{ sender: string }>('/photon/health'),
-    fetch(`${API}/tts`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text: 'Rice is at home.', grandma: 'mama' }), signal: AbortSignal.timeout(8000) })
+    fetch(`${API}/tts`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text: 'I am here.', grandma: await grandmaSetting() }), signal: AbortSignal.timeout(8000) })
       .then((r) => r.ok && (r.headers.get('content-type') ?? '').startsWith('audio/')).catch(() => false),
   ]);
   return { api, texts: !!photon && photon.sender !== 'log', voice };

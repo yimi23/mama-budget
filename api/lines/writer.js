@@ -32,13 +32,13 @@ const MAMA = {
   // Loud lines name the plan, not the pantry: the price, the item, what is left in the week. Scold the receipt.
   // shocked: the item beats what is left. shockedBig: the item alone beats the whole week.
   shocked: [
-    'Ehn ehn. {price}, with {left} dollars left this week. You are sure?',
+    'Ehn ehn. {price} for {item}, with {left} dollars left this week. You are sure?',
     '{price} for {item}? Shebi we said {budget} dollars for the whole week. {left} dollars left.',
     'Haba. {price} on {item} when {left} dollars is what remains.',
     '{item}, {price}. The week has {left} dollars in it. Do the mathematics.',
     'Chai. {price} for {item}. That is more than the {left} dollars you have left, my dear.',
     'See me see trouble. {price} for {item}, and only {left} dollars left in the week.',
-    '{price}? Is it because I am talking gently? {left} dollars left o.',
+    '{price} for {item}? Is it because I am talking gently? {left} dollars left o.',
     'Imagine. {item} at {price}, and only {left} dollars left this week. I love you, but no.',
   ],
   shockedBig: [
@@ -188,7 +188,7 @@ const ABUELA = {
     'Híjole. {price} on one {item}, more than the {budget} dollar week itself. No.',
     '{price} for {item}? The week is {budget} dollars. Does money grow on trees, mi cielo?',
     '{item} alone is {price}. The whole week is {budget} dollars. Ay no. Put it back for me.',
-    '{price}? The week is {budget} dollars, mija. De poquito en poquito, not like this.',
+    '{price} for {item}? The week is {budget} dollars, mija. De poquito en poquito, not like this.',
   ],
   down: [
     '{over} dollars over the week, on {item}. Ni modo. Monday is new.',
@@ -230,14 +230,14 @@ const WONG = {
     'Aiya. {price} for {item}, and {left} dollars left in the week.',
     '{item}, {price}. The week has {left} dollars in it. That is a lot of rice. Lap lap gaai san fu.',
     '{price} for {item}? {left} dollars left this week. Your grandfather bought our first television for less.',
-    'You said you wanted it. {price} of wanting, with {left} dollars left.',
+    'You said you wanted {item}. {price} of wanting, with {left} dollars left.',
     'Gam gwai. {price} for {item}. {left} dollars left. Cheaper somewhere else, always.',
   ],
   shockedBig: [
     '{price} for {item}. The whole week is {budget} dollars. Put it back.',
     '{price} on one {item}, more than the {budget} dollar week. No.',
     '{item} alone is {price}. The week is {budget} dollars. Sik faan first, then we talk.',
-    'Aiya. {price}. The week is {budget} dollars. Put it back for me.',
+    'Aiya. {price} for {item}. The week is {budget} dollars. Put it back for me.',
   ],
   down: ['{over} dollars over. The week is finished. Eat at home.', 'Over by {over} dollars, on {item}. We talk on Sunday.', 'That is the week. {over} dollars over. I am not angry, I am counting.', '{over} dollars past the week, on {item}. Mm. Monday.'],
   proud: ['Good. Kept it.', 'Mm. That one I like.', 'You put it back. Hou lek.', 'Kept, not spent. That is how. Gwaai.', 'Good. One less thing to dust.', 'Zik siu sing do. Little adds up. Good.'],
@@ -255,6 +255,15 @@ const WONG = {
   family: ['That is family. It does not count.', 'Money home. Good. That one is never waste.', 'For the family. Good.'],
   statementClose: ['Good week. Have you eaten?', 'Better than last week. I counted.', 'We do better next week. I am not angry.'],
 };
+
+// The small phrases that are not pool lines: one per grandma, so nobody speaks in Mama's words by accident.
+const PHRASES = {
+  mama: { whatsLeftTail: (d) => `That is $${d} a day. Rice is at home.`, watchSoft: 'I will say something', watchHere: (m, a) => `${m}. I said I would say something. $${a} here last month.`, holdYou: 'Okay. I will hold you to that.', apology: 'Okay. I hear you. I still love you o.', silence: 'Two weeks and I have not heard from you. I will stop texting. Say anything and I am here.', trueLineClose: 'We need to talk.', nothingHere: (x) => `Nothing at ${x} that I can see.`, nothingDue: 'Nothing due that I can see.' },
+  nana: { whatsLeftTail: (d) => `That’s about $${d} a day, hon.`, watchSoft: 'I’ll say something', watchHere: (m, a) => `${m}, hon. I said I’d mention it. $${a} here last month.`, holdYou: "Okay, hon. I'll hold you to that.", apology: 'Okay, hon. I hear you. I love you anyway.', silence: 'Two weeks and not a word, hon. I will stop texting. Say anything and I am right here.', trueLineClose: 'Hm.', nothingHere: (x) => `Nothing at ${x} that I can see, hon.`, nothingDue: 'Nothing due that I can see, hon.' },
+  abuela: { whatsLeftTail: (d) => `That is $${d} a day, mija. Hay comida en la casa.`, watchSoft: 'I will say something', watchHere: (m, a) => `${m} again, mija. I said I would say something. $${a} here last month.`, holdYou: 'Okay, mi cielo. I will hold you to that.', apology: 'Okay, mija. I hear you. Dios te bendiga.', silence: 'Two weeks and nothing, mija. I will stop texting. Say anything and I am here.', trueLineClose: 'Híjole.', nothingHere: (x) => `Nothing at ${x} that I can see, mija.`, nothingDue: 'Nothing due that I can see, mija.' },
+  wong: { whatsLeftTail: (d) => `$${d} a day. Eat at home.`, watchSoft: 'I will say something', watchHere: (m, a) => `${m} again. I counted: $${a} here last month.`, holdYou: 'Okay. I will hold you to that.', apology: 'Okay. I heard. Have you eaten?', silence: 'Two weeks, not a word. I will stop texting. Say anything and I am here.', trueLineClose: 'Mm.', nothingHere: (x) => `Nothing at ${x} that I can see.`, nothingDue: 'Nothing due that I can see.' },
+};
+const phrase = (who, key, ...args) => { const v = (PHRASES[who] || PHRASES.mama)[key]; return typeof v === 'function' ? v(...args) : v; };
 
 // The grandmas. Adding one is a brief in character.js, a bank of lines here (same keys), text lines in texts.js, and a
 // voice id in the env; everything else keys off `who`.
@@ -414,10 +423,8 @@ function weeklyStatement({ week, biggest, who = 'mama', trend = 0 }) {
 // Three watches for onboarding, from the top want merchants of the last 30 days. Facts first, one clause of her.
 // `here` is what she says the moment that merchant's site opens: the promise from screen 06b, kept.
 function watchLines(topWants, who = 'mama') {
-  const soft = who === 'nana' ? 'I’ll say something' : 'I will say something';
-  const here = (w) => who === 'nana'
-    ? `${w.merchant}, hon. I said I’d mention it. $${w.amount} here last month.`
-    : `${w.merchant}. I said I would say something. $${w.amount} here last month.`;
+  const soft = phrase(who, 'watchSoft');
+  const here = (w) => phrase(who, 'watchHere', w.merchant, w.amount);
   return topWants.slice(0, 3).map((w, i) => {
     const cat = (w.category || w.merchant).toLowerCase();
     const base = { title: cap(cat), merchant: w.merchant, amount: w.amount, here: here(w) };
@@ -446,7 +453,7 @@ function whatsLeft(month, who = 'mama') {
   const left = Math.max(0, month.budget - month.spent);
   const days = month.daysLeft != null ? month.daysLeft : daysLeftInWeek();
   const perDay = days ? Math.floor(left / days) : left;
-  const tail = who === 'nana' ? 'That’s about $' + perDay + ' a day, hon.' : `That is $${perDay} a day. Rice is at home.`;
+  const tail = phrase(who, 'whatsLeftTail', perDay);
   return `$${left}. ${days} day${days === 1 ? '' : 's'}. ${tail}`;
 }
 
@@ -578,7 +585,7 @@ function modelReply({ who = 'mama', userText, week, ledger = '', history, promis
 }
 
 module.exports = {
-  fresh, bankOf, BANK,
+  fresh, bankOf, BANK, phrase, PHRASES,
   shopName, backHome, setHome,
   lineFor, ackLine, buyLine, buyText, smallLines, subLine, weeklyStatement, monthlyStatement, watchLines, whatsLeft,
   modelLine, modelReply, contextLine, planLine, fundedLine, toNaira, notifyLine, notifyText, MAMA, NANA, ABUELA, WONG,

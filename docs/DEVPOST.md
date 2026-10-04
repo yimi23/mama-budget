@@ -2,7 +2,7 @@
 
 **You set the fun money for the week. She holds you to it, in your cart, before you pay, not after. What you need, she never touches.**
 
-Mama Budget is a Chrome extension and an iMessage thread. A grandmother (Nigerian Mama, or Midwest Nana) lives in the corner of your cart, protects needs and money sent home, asks once what a new want is for, and reacts only when an admitted want blows the week's envelope. The bank is Capital One Nessie. Her phone is Photon Spectrum on iMessage. Her voice is ElevenLabs. Claude reads carts, screenshots and typed reasons; rules keep every promise.
+Mama Budget is a Chrome extension and an iMessage thread. A grandmother (Nigerian Mama, Midwest Nana, Mexican American Abuela or Cantonese Grandma Wong) lives in the corner of your cart, protects needs and money sent home, asks once what a new want is for, and reacts only when an admitted want blows the week's envelope. The bank is Capital One Nessie. Her phone is Photon Spectrum on iMessage. Her voice is ElevenLabs. Claude reads carts, screenshots and typed reasons; rules keep every promise.
 
 ## Inspiration
 

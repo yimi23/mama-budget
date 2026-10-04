@@ -29,7 +29,7 @@ function spokenNumbers(text) {
  */
 function trueLineText(tl, who = 'mama') {
   if (!tl || !tl.topCategory || !(tl.topAmount > 0)) return null;
-  const close = who === 'nana' ? 'Hm.' : 'We need to talk.';
+  const close = require('./writer').phrase(who, 'trueLineClose');
   const contrast = tl.contrastItem && tl.contrastAmount != null ? ` ${cap(tl.contrastItem)} was $${Math.round(tl.contrastAmount)}.` : '';
   const text = `Last 30 days: $${Math.round(tl.topAmount)} on ${tl.topCategory}.${contrast} ${close}`;
   return { text, spoken: spokenNumbers(text) };

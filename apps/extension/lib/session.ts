@@ -269,7 +269,7 @@ async function planFor(g: Grandma, v: Verdict, reason: string) {
     sub: `Savings hold $${Math.round(reply.savings)}. The week would cover it.`,
     primary: `$${reply.proposal.amount} from savings`, secondary: 'Keep the plan',
   });
-  if (choice !== 'primary') { bubble!.say(g === 'nana' ? 'Alright. The plan stays.' : 'Okay. The plan stays.'); return; }
+  if (choice !== 'primary') { bubble!.say({ mama: 'Okay. The plan stays.', nana: 'Alright. The plan stays.', abuela: 'Okay, mija. The plan stays.', wong: 'Okay. The plan stays.' }[g]); return; }
   const funded = await send<{ ok: true; week: Week; line: string } | { ok: false }>({
     type: 'FUND', store: storeKey(location.href), item: { name: v.name, short: v.short }, amount: reply.proposal.amount,
   });

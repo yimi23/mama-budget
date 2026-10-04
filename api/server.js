@@ -200,7 +200,7 @@ const routes = {
     if (!text) throw new Error('text is required');
     const mood = ['shocked', 'down'].includes(body.mood) ? body.mood : 'calm';
     const who = whoOf(body.grandma);
-    const voice = (who === 'nana' ? process.env.ELEVEN_VOICE_ID_NANA : null) || process.env.ELEVEN_VOICE_ID || 'default';
+    const voice = require('./voice/elevenlabs').voiceIdFor(who) || 'default';
     const dir = path.join(__dirname, '.cache', 'tts');
     const file = path.join(dir, `${crypto.createHash('sha1').update(`${voice}\n${who}\n${mood}\n${text}`).digest('hex')}.mp3`);
     let mp3 = null;
