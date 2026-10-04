@@ -115,6 +115,8 @@ function showWeek(g: Grandma, week: Week, mood: Mood = week.mood) {
       if (card!.open || !lastWeek) return; // a question on screen comes first
       panel!.toggle({ week: lastWeek, said });
     });
+    // Her arrival on this page, once: the only sound that is not tied to something she has to say.
+    void send({ type: 'CUE', cue: 'arrive' });
   }
   if (crossedIntoWatching(lastWeek, week)) {
     remember(lines.watching);
@@ -239,6 +241,7 @@ async function ask(g: Grandma, week: Week, v: Verdict) {
   panel?.close();
   remember(v.line);
   mark?.show(() => locateRow(document, location.href, v.name), 'ask');
+  void send({ type: 'CUE', cue: 'ask' }); // a question has a sound of its own; the card never waits for it
   const choice = await card!.ask({
     grandma: g, mood: 'watching', tone: 'ask', line: v.line,
     sub: 'I ask once and remember your answer.',
@@ -315,6 +318,7 @@ async function react(g: Grandma, week: Week, v: Verdict, also: Verdict[] = []) {
   showWeek(g, week, v.mood);
   panel?.close();
   remember(v.line);
+  void send({ type: 'CUE', cue: 'surprised' }); // the intake of breath before she speaks
   void send({ type: 'SPEAK', text: spoken(v.line), grandma: g, mood: v.mood === 'down' ? 'down' : 'shocked' }); // her voice: here and on Gele down only; the card never waits
   badge!.shake();
   mark?.show(() => locateRow(document, location.href, v.name), 'alarm');
@@ -342,6 +346,7 @@ async function react(g: Grandma, week: Week, v: Verdict, also: Verdict[] = []) {
   remember(reply.line);
   if (reply.week.ratio >= 1) void send({ type: 'SPEAK', text: spoken(reply.line), grandma: g, mood: 'down' }); // Gele down
   bubble!.say(reply.line, reply.texted ? `${reply.sub} Texted.` : reply.sub);
+  if (reply.texted) void send({ type: 'CUE', cue: 'text' });
 }
 
 async function readOnce() {
@@ -422,7 +427,6 @@ export async function arrive(ctx: Ctx, line: string) {
   showWeek(g, reply.week, 'watching');
   remember(line);
   bubble!.say(line);
-  void send({ type: 'CUE', cue: 'arrive' });
   start(ctx, 'cart');
 }
 
