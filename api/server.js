@@ -319,7 +319,7 @@ const routes = {
     return { ok: true, reply, intent, react, verdicts, follow, texted: !!(out && out.sent) };
   },
 
-  'GET /photon/health': async () => ({ sender: require('./notify').senderName(), spectrum: !!photon.credentials(), imessage: await kit.status() }),
+  'GET /photon/health': async () => ({ sender: require('./notify').senderName(), spectrum: photon.live(), spectrumKeys: !!photon.credentials(), imessage: await kit.status() }),
 
   'GET /bank': async () => {
     const cache = nessie.readCache();
@@ -439,18 +439,26 @@ photon.listen(async (text, fromId, messageId, { images = [] } = {}) => {
 // The Mac kit listens the same way when it is the live sender: texts to this Mac's Messages, the same
 // handleIncoming(), and the reply goes back through notify() (prompted: replies skip the gate), so it is
 // sent and logged exactly like every other text.
-if (!photon.credentials() && kit.available()) {
+function startKit() {
+  if (!kit.available()) return false;
   kit.listen(async (text, from, messageId) => {
     const { reply, mood, followUp } = await chat.handleIncoming(text, 'mama', from, messageId);
     if (reply) await notify(from, reply, mood, { prompted: true });
     const follow = followUp ? await followUp().catch(() => null) : null;
     if (follow) await notify(from, `${follow.text}\n${follow.url}`, mood, { prompted: true });
   });
+  kit.status().then((st) => console.log(`[imessage] Mac kit is the sender${process.env.PHOTON_DRY === '1' ? ' (dry run)' : ''}: texting ${st.to}, ${st.db ? 'listening for replies' : 'cannot read Messages (Full Disk Access?)'}`));
+  return true;
 }
 if (photon.credentials()) {
-  photon.connected().then((ok) => console.log(ok ? '[photon] connected, listening for replies' : '[photon] credentials set but connection failed (see error above)'));
-} else if (kit.available()) {
-  kit.status().then((st) => console.log(`[imessage] Mac kit is the sender${process.env.PHOTON_DRY === '1' ? ' (dry run)' : ''}: texting ${st.to}, ${st.db ? 'listening for replies' : 'cannot read Messages (Full Disk Access?)'}`));
+  // Spectrum first. If the cloud refuses the keys she must not go silent: the Mac kit takes over where it can.
+  photon.connected().then((ok) => {
+    if (ok) return console.log('[photon] connected, listening for replies');
+    console.log('[photon] credentials set but connection failed (see error above)');
+    if (!startKit()) console.log('[photon] no Mac kit either: using the log sender only');
+  });
+} else if (startKit()) {
+  // the kit said so itself
 } else {
   console.log('[photon] no Spectrum credentials and no PHOTON_TO in api/.env: using the log sender only');
 }

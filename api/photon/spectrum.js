@@ -25,6 +25,7 @@
 //   starting a new conversation every time.
 
 let appPromise;
+let liveNow = false; // true once Spectrum has actually accepted the credentials
 
 function credentials() {
   const projectId = process.env.SPECTRUM_PROJECT_ID || process.env.PHOTON_PROJECT_ID;
@@ -45,9 +46,11 @@ async function getApp() {
         return null; // package not installed: skip this sender without errors
       }
       const app = await Spectrum({ projectId: creds.projectId, projectSecret: creds.projectSecret, providers: [imessage.config()] });
+      liveNow = true;
       return { app, im: imessage(app) };
     })().catch((e) => {
       console.log('[photon] connect failed:', e.message); // never the credentials themselves
+      liveNow = false;
       return null;
     });
   }
@@ -191,4 +194,7 @@ function listen(onIncoming) {
   }).catch(() => {});
 }
 
-module.exports = { send, listen, credentials, connected };
+/** Keys set AND accepted by the cloud. Bad keys must not silence her: the Mac kit or the log takes over. */
+function live() { return liveNow; }
+
+module.exports = { send, listen, credentials, connected, live };

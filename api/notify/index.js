@@ -18,7 +18,7 @@ const kit = require('../photon/kit');
 const gate = require('../photon/gate');
 
 function senderName() {
-  return photon.credentials() ? 'photon' : kit.available() ? 'imessage' : 'log';
+  return photon.live() ? 'photon' : kit.available() ? 'imessage' : 'log';
 }
 
 async function notify(to, text, mood, opts = {}) {
