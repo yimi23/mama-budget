@@ -2,7 +2,7 @@
 // Never caches DOM nodes: every tick re queries from the document.
 
 import type { Answer, CartRead, JudgeReply, Mood, Verdict, Week } from '@mama/shared/types';
-import type { Message } from '@mama/shared/messages';
+import type { HandledLists, Message } from '@mama/shared/messages';
 import { mountBadge, type Badge, type Grandma } from './ui/badge';
 import { mountCard, type Card } from './ui/card';
 import { nextCard, wantLabel, type Handled } from './flow';
@@ -26,7 +26,8 @@ let badge: Badge | undefined;
 let card: Card | undefined;
 let lastRead: CartRead | null = null;
 let talking = false;
-// Per page session. Answers themselves are durable in storage.local through the worker.
+// Mirrors the worker's per browser session lists (storage.session), so reloads and other tabs never repeat her.
+// Answers themselves are durable in storage.local through the worker.
 const handled: Handled = { asked: new Set(), reacted: new Set() };
 
 async function send<T>(msg: Message): Promise<T | null> {
@@ -39,7 +40,7 @@ async function send<T>(msg: Message): Promise<T | null> {
   }
 }
 
-type JudgeResult = ({ ok: true } & JudgeReply) | { ok: false };
+type JudgeResult = ({ ok: true; handled: HandledLists } & JudgeReply) | { ok: false };
 
 async function judge(read: CartRead): Promise<JudgeResult | null> {
   // The envelope is in USD; a naira or pound cart is judged in dollars.
@@ -84,6 +85,8 @@ async function talk(read: CartRead | null) {
       `[mama] judged, $${Math.round(reply.week.left)} left this week\n` +
         reply.verdicts.map((v) => `  ${v.label}${v.react ? ' (react)' : ''}  ${v.short}  ${v.reason}`).join('\n'),
     );
+    for (const k of reply.handled.asked) handled.asked.add(k);
+    for (const k of reply.handled.reacted) handled.reacted.add(k);
     showWeek(g, reply.week);
     for (let next = nextCard(reply.verdicts, handled); next; next = reply.ok ? nextCard(reply.verdicts, handled) : null) {
       if (next.kind === 'react') await react(g, reply.week, next.verdict);
@@ -116,6 +119,7 @@ async function answer(key: string, a: Answer) {
 /** The neutral ask: watching face, meter still, no voice. Returns true for "I just want them". */
 async function ask(g: Grandma, week: Week, v: Verdict): Promise<boolean> {
   handled.asked.add(v.key);
+  send({ type: 'MARK', kind: 'asked', key: v.key });
   showWeek(g, week, 'watching');
   const choice = await card!.ask({
     grandma: g, mood: 'watching', tone: 'ask', line: v.line,
@@ -131,6 +135,7 @@ async function ask(g: Grandma, week: Week, v: Verdict): Promise<boolean> {
 /** A want she has the right to react to. Once per item. Buy anyway always works and touches nothing on the store. */
 async function react(g: Grandma, week: Week, v: Verdict) {
   handled.reacted.add(v.key);
+  send({ type: 'MARK', kind: 'reacted', key: v.key });
   showWeek(g, week, v.mood);
   badge!.shake();
   await card!.ask({

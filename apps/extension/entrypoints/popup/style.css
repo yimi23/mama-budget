@@ -1,0 +1,25 @@
+/* docs/DESIGN.md: cream ground, ink buttons, sentence case, system font for function. */
+:root {
+  --cream: #FBF8F3; --ink: #22172A; --line: #EADFCB; --muted: #5E566B; --green: #0F7B5A;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; width: 400px; min-height: 280px; background: var(--cream); color: var(--ink);
+  font: 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+main { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+h1 { margin: 0; font-size: 20px; line-height: 1.25; font-weight: 800; }
+h2 { margin: 0 0 4px; font-size: 16px; }
+.lead { margin: 0; color: var(--muted); }
+.group { border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.group p { margin: 0; font-size: 14px; color: var(--muted); }
+button {
+  margin-top: 8px; min-height: 44px; border: 0; border-radius: 999px; padding: 0 24px;
+  background: var(--ink); color: var(--cream); font: 600 15px/1 system-ui, -apple-system, "Segoe UI", sans-serif;
+  cursor: pointer; transition: opacity 150ms cubic-bezier(0.05, 0.7, 0.1, 1);
+}
+button:hover { opacity: 0.9; }
+button:focus-visible { outline: 3px solid var(--green); outline-offset: 3px; }
+button:disabled { opacity: 0.5; cursor: default; }
+.status { min-height: 1.45em; color: var(--green) !important; }
+@media (prefers-reduced-motion: reduce) { button { transition: none; } }

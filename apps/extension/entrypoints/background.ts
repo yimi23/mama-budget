@@ -1,6 +1,6 @@
 // Service worker. Stateless: everything lives in chrome.storage. Every listener is top level and synchronous.
 
-import type { Message } from '@mama/shared/messages';
+import type { HandledLists, Message } from '@mama/shared/messages';
 import type { Answer, CartItem, JudgeReply, Week } from '@mama/shared/types';
 import { apiUp, call } from '../lib/api';
 
@@ -31,7 +31,25 @@ async function judgeCart(store: string, items: CartItem[]) {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ items: items.map((i) => ({ ...i, store })), memory, grandma: (settings as { grandma?: string }).grandma ?? 'mama' }),
   });
-  return reply ? { ok: true as const, ...reply } : { ok: false as const };
+  return reply ? { ok: true as const, ...reply, handled: await handledLists() } : { ok: false as const };
+}
+
+// One reaction per item and no repeat asks, across tabs and reloads until the browser closes.
+async function handledLists(): Promise<HandledLists> {
+  const { handled } = await browser.storage.session.get('handled');
+  return (handled as HandledLists | undefined) ?? { asked: [], reacted: [] };
+}
+
+async function mark(kind: keyof HandledLists, key: string) {
+  const h = await handledLists();
+  if (!h[kind].includes(key)) h[kind].push(key);
+  await browser.storage.session.set({ handled: h });
+}
+
+/** The popup's Start over: she forgets every answer and asks again, as on a fresh install. */
+async function startOver() {
+  await browser.storage.local.remove('memory');
+  await browser.storage.session.remove('handled');
 }
 
 /** Her memory of your answers. Durable, keyed by the rules' own item key, shared across every store. */
@@ -54,6 +72,12 @@ export default defineBackground(() => {
         return true;
       case 'JUDGE':
         judgeCart(msg.store, msg.items).then(sendResponse, () => sendResponse({ ok: false }));
+        return true;
+      case 'MARK':
+        mark(msg.kind, msg.key).then(() => sendResponse({ ok: true }), () => sendResponse({ ok: true }));
+        return true;
+      case 'START_OVER':
+        startOver().then(() => sendResponse({ ok: true }), () => sendResponse({ ok: true }));
         return true;
       case 'ANSWER':
         remember(msg.key, msg.answer).then(() => sendResponse({ ok: true }), () => sendResponse({ ok: true }));
