@@ -11,14 +11,31 @@ export interface Handled {
   reacted: Set<string>;
 }
 
-export type Next = { kind: 'react' | 'ask'; verdict: Verdict } | null;
+export type Next =
+  | { kind: 'react'; verdict: Verdict; also: Verdict[] }
+  | { kind: 'ask'; verdict: Verdict }
+  | { kind: 'askMany'; verdicts: Verdict[] }
+  | null;
 
+/**
+ * What to show next. A reaction comes first, to the dearest want she may react to; any other reactable wants ride
+ * along as `also` so she reacts once, not three times. Then the new items: one card when there is one, one card
+ * listing them when there are several (up to what the session's ask budget allows).
+ */
 export function nextCard(verdicts: Verdict[], h: Handled): Next {
-  const react = verdicts.find((v) => v.react && !h.reacted.has(v.key));
-  if (react) return { kind: 'react', verdict: react };
-  if (h.asked.size >= MAX_ASKS) return null;
-  const ask = verdicts.find((v) => v.label === 'ask' && !h.asked.has(v.key));
-  return ask ? { kind: 'ask', verdict: ask } : null;
+  const reacts = verdicts.filter((v) => v.react && !h.reacted.has(v.key)).sort((a, b) => b.price - a.price);
+  if (reacts.length) return { kind: 'react', verdict: reacts[0]!, also: reacts.slice(1) };
+  const room = MAX_ASKS - h.asked.size;
+  if (room <= 0) return null;
+  const asks = verdicts.filter((v) => v.label === 'ask' && !h.asked.has(v.key)).slice(0, room);
+  if (!asks.length) return null;
+  return asks.length === 1 ? { kind: 'ask', verdict: asks[0]! } : { kind: 'askMany', verdicts: asks };
+}
+
+const WORDS = ['', 'One', 'Two', 'Three', 'Four', 'Five'];
+/** "Two new things. What are they for?" from the writer's template. */
+export function askManyLine(template: string, n: number): string {
+  return template.replace('{n}', WORDS[n] ?? String(n));
 }
 
 /** "I just want them" for AirPods, "I just want it" for a camera. */

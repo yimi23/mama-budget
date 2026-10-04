@@ -18,6 +18,23 @@ export interface CardContent {
 
 export type CardChoice = 'primary' | 'secondary' | 'dismiss';
 
+/** One row of the many ask card: an item with its own two answers. */
+export interface AskRow {
+  key: string;
+  short: string;
+  price: number;
+  /** "I just want them" or "I just want it". */
+  wantLabel: string;
+}
+
+export interface AskManyContent {
+  grandma: Grandma;
+  line: string;
+  rows: AskRow[];
+  /** Called the moment a row is answered, so the answer is saved before the card closes. */
+  onAnswer(key: string, answer: 'need' | 'want'): void;
+}
+
 const CSS = `
 .card {
   position: fixed; right: 24px; bottom: 112px; z-index: 2147483647; width: 360px; box-sizing: border-box;
@@ -47,6 +64,17 @@ const CSS = `
 .actions button:focus-visible { outline: 3px solid #22172A; outline-offset: 2px; }
 .primary { background: #0F7B5A; color: #fff; }
 .secondary { background: #EADFCB; color: #141016; }
+/* The many ask: one row per item, the same two answers each, inset list (DESIGN.md). */
+.rows { margin: 2px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.row { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; border: 1px solid #EADFCB; border-radius: 12px; }
+.row .what { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; font-weight: 600; min-width: 0; }
+.row .what span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row .what span:last-child { font-variant-numeric: tabular-nums; color: #5E566B; font-weight: 600; flex-shrink: 0; }
+.row .actions { margin: 0; }
+.row .actions button { min-height: 40px; font-size: 12px; }
+.row .done { font-size: 13px; color: #5E566B; min-height: 40px; display: flex; align-items: center; }
+.notnow { all: unset; align-self: flex-start; margin-top: 2px; font-size: 13px; color: #5E566B; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.notnow:focus-visible { outline: 3px solid #22172A; outline-offset: 2px; border-radius: 4px; }
 @keyframes card-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 @keyframes card-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(8px); } }
 @media (prefers-reduced-motion: reduce) { .card, .card.out { animation: none; } .actions button { transition: none; } }
@@ -55,6 +83,8 @@ const CSS = `
 export interface Card {
   /** Shows the card and resolves with what the person chose. Escape and the page losing her resolve as dismiss. */
   ask(c: CardContent): Promise<CardChoice>;
+  /** Several new items at once: one card, each with its own two answers. Resolves when all are answered or dismissed. */
+  askMany(c: AskManyContent): Promise<void>;
   close(): void;
   readonly open: boolean;
 }
@@ -92,7 +122,15 @@ export function mountCard(root: ShadowRoot): Card {
   secondary.type = 'button';
   secondary.className = 'secondary';
   actions.append(primary, secondary);
-  body.append(line, sub, actions);
+  const rows = document.createElement('ul');
+  rows.className = 'rows';
+  rows.hidden = true;
+  const notNow = document.createElement('button');
+  notNow.type = 'button';
+  notNow.className = 'notnow';
+  notNow.textContent = 'Not now';
+  notNow.hidden = true;
+  body.append(line, sub, actions, rows, notNow);
   card.append(tile, body);
   root.append(style, card);
 
@@ -113,6 +151,46 @@ export function mountCard(root: ShadowRoot): Card {
 
   primary.addEventListener('click', () => finish('primary'));
   secondary.addEventListener('click', () => finish('secondary'));
+  notNow.addEventListener('click', () => finish('dismiss'));
+
+  const single = (on: boolean) => {
+    sub.hidden = !on;
+    actions.hidden = !on;
+    rows.hidden = on;
+    notNow.hidden = on;
+  };
+
+  const makeRow = (r: AskRow, onAnswer: AskManyContent['onAnswer'], answered: () => void) => {
+    const li = document.createElement('li');
+    li.className = 'row';
+    const what = document.createElement('div');
+    what.className = 'what';
+    const name = document.createElement('span');
+    name.textContent = r.short;
+    name.title = r.short;
+    const price = document.createElement('span');
+    price.textContent = `$${Math.round(r.price)}`;
+    what.append(name, price);
+    const acts = document.createElement('div');
+    acts.className = 'actions';
+    const need = document.createElement('button');
+    need.type = 'button'; need.className = 'primary'; need.textContent = 'It\u2019s for something';
+    const want = document.createElement('button');
+    want.type = 'button'; want.className = 'secondary'; want.textContent = r.wantLabel;
+    const settleRow = (answer: 'need' | 'want') => {
+      onAnswer(r.key, answer);
+      const done = document.createElement('div');
+      done.className = 'done';
+      done.textContent = answer === 'need' ? 'For something. Remembered.' : 'A want. Remembered.';
+      acts.replaceWith(done);
+      answered();
+    };
+    need.addEventListener('click', () => settleRow('need'));
+    want.addEventListener('click', () => settleRow('want'));
+    acts.append(need, want);
+    li.append(what, acts);
+    return li;
+  };
   card.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') finish('dismiss');
     e.stopPropagation();
@@ -120,8 +198,23 @@ export function mountCard(root: ShadowRoot): Card {
 
   return {
     get open() { return !!settle; },
+    askMany(c) {
+      if (settle) finish('dismiss');
+      single(false);
+      face.src = browser.runtime.getURL(`/faces/${c.grandma}/watching.svg` as `/faces/mama/calm.svg`);
+      card.dataset.tone = 'ask';
+      line.textContent = c.line;
+      let left = c.rows.length;
+      rows.replaceChildren(...c.rows.map((r) => makeRow(r, c.onAnswer, () => { if (--left === 0) setTimeout(() => finish('primary'), 350); })));
+      card.classList.remove('out');
+      card.hidden = false;
+      returnFocus = document.activeElement;
+      rows.querySelector('button')?.focus({ preventScroll: true });
+      return new Promise<void>((resolve) => { settle = () => resolve(); });
+    },
     ask(c) {
       if (settle) finish('dismiss');
+      single(true);
       face.src = browser.runtime.getURL(`/faces/${c.grandma}/${c.mood}.svg` as `/faces/mama/calm.svg`);
       card.dataset.tone = c.tone;
       line.textContent = c.line;

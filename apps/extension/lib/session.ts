@@ -7,7 +7,7 @@ import { mountBadge, type Badge, type Grandma } from './ui/badge';
 import { mountCard, type Card } from './ui/card';
 import { mountBubble, type Bubble } from './ui/bubble';
 import { mountPanel, type Panel } from './ui/panel';
-import { ackSub, crossedIntoWatching, nextCard, wantLabel, type Handled } from './flow';
+import { ackSub, askManyLine, crossedIntoWatching, nextCard, wantLabel, type Handled } from './flow';
 import { storeKey } from '@mama/shared/store-key';
 import { toUSD } from '@mama/shared/currency';
 import { readCart, readKey } from './readers';
@@ -48,7 +48,7 @@ let talking = false;
 let discussing: string | null = null;
 let lastLog = '';
 let lastShown = '';
-let lines: JudgeReply['lines'] = { agreed: 'Good.', proud: 'Good.', watching: 'I am watching.' };
+let lines: JudgeReply['lines'] = { agreed: 'Good.', proud: 'Good.', watching: 'I am watching.', askMany: '{n} new things. What are they for?' };
 /** Items the person agreed to put back: when one leaves the cart, she is proud, once. */
 const putBack = new Map<string, number>();
 // Mirrors the worker's per browser session lists (storage.session) on every judgement, so Start over in the
@@ -163,13 +163,15 @@ async function talk() {
       const next = nextCard(reply.verdicts, handled);
       if (!next) return;
       // The same card twice on an unchanged cart means a mark did not land. Never loop on her.
-      const stamp = `${next.kind}:${next.verdict.key}:${readKey(read)}`;
+      const keys = next.kind === 'askMany' ? next.verdicts.map((v) => v.key).join(',') : next.verdict.key;
+      const stamp = `${next.kind}:${keys}:${readKey(read)}`;
       if (stamp === lastShown) return;
       lastShown = stamp;
-      discussing = next.verdict.name;
+      discussing = next.kind === 'askMany' ? null : next.verdict.name;
       try {
-        if (next.kind === 'react') await react(g, reply.week, next.verdict);
-        else await ask(g, reply.week, next.verdict);
+        if (next.kind === 'react') await react(g, reply.week, next.verdict, next.also);
+        else if (next.kind === 'ask') await ask(g, reply.week, next.verdict);
+        else await askMany(g, reply.week, next.verdicts);
       } finally {
         discussing = null;
       }
@@ -216,10 +218,34 @@ async function ask(g: Grandma, week: Week, v: Verdict) {
   showWeek(g, week);
 }
 
-/** A want she has the right to react to. Once per item. Buy anyway always works and touches nothing on the store. */
-async function react(g: Grandma, week: Week, v: Verdict) {
+/** Several new items at once: one card. Each answer is saved the moment it is tapped. */
+async function askMany(g: Grandma, week: Week, vs: Verdict[]) {
+  for (const v of vs) handled.asked.add(v.key);
+  await Promise.all(vs.map((v) => send({ type: 'MARK', kind: 'asked', key: v.key })));
+  showWeek(g, week, 'watching');
+  panel?.close();
+  const line = askManyLine(lines.askMany, vs.length);
+  remember(line);
+  let answered = 0;
+  await card!.askMany({
+    grandma: g, line,
+    rows: vs.map((v) => ({ key: v.key, short: v.short, price: v.price, wantLabel: wantLabel(v.short) })),
+    onAnswer: (key, answer) => { answered++; void send({ type: 'ANSWER', key, answer }); },
+  });
+  // The next judgement acknowledges one answer; with several, the reaction (if any) or the fresh badge is the answer.
+  if (answered === 1) justAnswered = vs.find((v) => handled.asked.has(v.key))?.key ?? null;
+  showWeek(g, week);
+}
+
+/**
+ * A want she has the right to react to. Once per item, and once per round: other reactable wants in the same cart
+ * ride along as already reacted, so three admitted wants get one card, about the dearest.
+ * Buy anyway always works and touches nothing on the store.
+ */
+async function react(g: Grandma, week: Week, v: Verdict, also: Verdict[] = []) {
   handled.reacted.add(v.key);
-  await send({ type: 'MARK', kind: 'reacted', key: v.key });
+  for (const o of also) handled.reacted.add(o.key);
+  await Promise.all([v, ...also].map((x) => send({ type: 'MARK', kind: 'reacted', key: x.key })));
   showWeek(g, week, v.mood);
   badge!.shake();
   await card!.ask({

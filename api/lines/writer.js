@@ -19,6 +19,7 @@ const MAMA = {
   ackFits: ['Ehen. Carry on.', 'Okay. It fits. Carry on.'],
   agreed: ['Good. I am watching the cart.'],
   bought: ['Noted. It is in the book.'],
+  askMany: ['{n} new things. What are they for?'],
   family: ['That one is not waste. Greet them for me.'],
   statementClose: ['Good week. Keep going.', 'Better than last week. I noticed.', 'We will do better. I am not angry.'],
 };
@@ -38,6 +39,7 @@ const NANA = {
   ackFits: ['Okay, hon. That fits.'],
   agreed: ['Good call, hon.'],
   bought: ['Alright. Noted.'],
+  askMany: ['{n} new things, hon. What are they for?'],
   family: ['That’s family. That doesn’t count.'],
   statementClose: ['Good week.', 'Better than last week. I noticed.', 'We’ll get there.'],
 };
@@ -115,7 +117,7 @@ function buyText(week, it, who = 'mama') {
 // Small acknowledgements the card needs on hand: "You're right, Mama", and the item leaving the cart.
 function smallLines(who = 'mama') {
   const bank = who === 'nana' ? NANA : MAMA;
-  return { agreed: bank.agreed[0], proud: bank.proud[0], watching: bank.watching[0] };
+  return { agreed: bank.agreed[0], proud: bank.proud[0], watching: bank.watching[0], askMany: bank.askMany[0] };
 }
 
 // The sub line under her quote. Numbers, not character.

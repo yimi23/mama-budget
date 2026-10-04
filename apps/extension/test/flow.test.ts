@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { MAX_ASKS, ackSub, crossedIntoWatching, nextCard, wantLabel } from '../lib/flow.ts';
+import { MAX_ASKS, ackSub, askManyLine, crossedIntoWatching, nextCard, wantLabel } from '../lib/flow.ts';
 import type { Verdict } from '@mama/shared/types';
 
 const v = (key: string, label: Verdict['label'], react = false): Verdict => ({
@@ -15,7 +15,8 @@ test('needs and small wants never open the card', () => {
 test('a new item over the line gets one ask', () => {
   const h = fresh();
   const n = nextCard([v('rice', 'need'), v('airpods pro', 'ask')], h);
-  assert.deepEqual([n?.kind, n?.verdict.key], ['ask', 'airpods pro']);
+  assert.equal(n?.kind, 'ask');
+  if (n?.kind === 'ask') assert.equal(n.verdict.key, 'airpods pro');
   h.asked.add('airpods pro');
   assert.equal(nextCard([v('rice', 'need'), v('airpods pro', 'ask')], h), null, 'never asks twice');
 });
@@ -23,16 +24,34 @@ test('a new item over the line gets one ask', () => {
 test('a remembered want reacts once, before any ask', () => {
   const h = fresh();
   const n = nextCard([v('camera', 'ask'), v('airpods pro', 'want', true)], h);
-  assert.deepEqual([n?.kind, n?.verdict.key], ['react', 'airpods pro']);
+  assert.equal(n?.kind, 'react');
+  if (n?.kind === 'react') assert.equal(n.verdict.key, 'airpods pro');
   h.reacted.add('airpods pro');
-  assert.equal(nextCard([v('camera', 'ask'), v('airpods pro', 'want', true)], h)?.verdict.key, 'camera');
+  const after = nextCard([v('camera', 'ask'), v('airpods pro', 'want', true)], h);
+  assert.equal(after?.kind, 'ask');
+  if (after?.kind === 'ask') assert.equal(after.verdict.key, 'camera');
 });
 
-test('three asks per session, the rest stay quiet', () => {
-  const h = fresh();
+test('several admitted wants: she reacts once, to the dearest, the rest ride along', () => {
+  const n = nextCard([{ ...v('book', 'want', true), price: 27 }, { ...v('chair', 'want', true), price: 88 }, { ...v('pods', 'want', true), price: 179 }], fresh());
+  assert.equal(n?.kind, 'react');
+  if (n?.kind === 'react') {
+    assert.equal(n.verdict.key, 'pods');
+    assert.deepEqual(n.also.map((x) => x.key), ['chair', 'book']);
+  }
+});
+
+test('several new items: one card listing them, within the ask budget', () => {
   const cart = ['a', 'b', 'c', 'd', 'e'].map((k) => v(k, 'ask'));
-  for (let i = 0; i < MAX_ASKS; i++) h.asked.add(nextCard(cart, h)!.verdict.key);
-  assert.equal(nextCard(cart, h), null);
+  const n = nextCard(cart, fresh());
+  assert.equal(n?.kind, 'askMany');
+  if (n?.kind === 'askMany') assert.deepEqual(n.verdicts.map((x) => x.key), ['a', 'b', 'c']);
+  const h = fresh(); h.asked.add('x'); h.asked.add('y');
+  const one = nextCard(cart, h);
+  assert.equal(one?.kind, 'ask', 'one slot left means one plain ask');
+  h.asked.add('z');
+  assert.equal(nextCard(cart, h), null, 'budget spent: quiet');
+  assert.equal(askManyLine('{n} new things. What are they for?', 3), 'Three new things. What are they for?');
 });
 
 test('the want button fits the item', () => {
