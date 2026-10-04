@@ -24,7 +24,7 @@ async function tick() {
   if (reading) return;
   reading = true;
   try {
-    const read: CartRead | null = await readCart(document);
+    const read: CartRead | null = await readCart(document, location.href);
     const key = readKey(read);
     if (key === lastKey) return;
     lastKey = key;

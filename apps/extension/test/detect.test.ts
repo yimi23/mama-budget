@@ -34,6 +34,8 @@ test('ordinary pages stay shut', () => {
     { url: 'https://www.amazon.com/dp/B0D1XD1ZV3', text: 'AirPods Pro 2 Add to Cart Buy Now' },
     { url: 'https://docs.google.com/document/d/1', text: 'Untitled document' },
     { url: 'https://twitter.com/home', text: 'What is happening' },
+    // Zara favorites, from the live page Oct 3: a wishlist with a Bag link in the header is not a cart.
+    { url: 'https://www.zara.com/us/en/wishlist', title: 'Favorites | ZARA United States', text: 'Skip to main content Search Bag0 Help WOMAN MAN KIDS NEW ARRIVALS' },
   ];
   for (const p of no) assert.equal(isCartPage(page(p)), false, `${p.url} had ${cartSignalCount(page(p))} signals`);
 });

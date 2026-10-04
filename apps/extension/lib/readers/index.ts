@@ -1,13 +1,25 @@
 // Readers in order, first one with items wins.
 // 1 platform JSON, 2 site adapters, 3 JSON-LD on product pages, 4 cart text to /extract.
-// Layers 2 to 4 land next; until then a page with no platform cart reads as null.
+// Layers 3 and 4 land next; until then a page no reader knows reads as null.
 
 import type { CartRead } from '@mama/shared/types';
+import { storeKey } from '@mama/shared/store-key';
 import { readPlatform } from './platform';
+import { runAdapter, type AdapterSpec } from './adapter';
+import { amazon } from './sites/amazon';
 
-export async function readCart(doc: Document): Promise<CartRead | null> {
+const HAND_WRITTEN: AdapterSpec[] = [amazon];
+
+export async function readCart(doc: Document, url: string): Promise<CartRead | null> {
   const platform = await readPlatform(doc);
   if (platform && platform.items.length) return platform;
+
+  const store = storeKey(url);
+  for (const spec of HAND_WRITTEN) {
+    if (spec.host !== store) continue;
+    const read = runAdapter(spec, doc);
+    if (read && read.items.length) return read;
+  }
   return null;
 }
 
