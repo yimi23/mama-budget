@@ -82,16 +82,41 @@ const EXTRACT_SYSTEM = `You read the visible text of a page where someone is abo
 A subscription or plan is one item: name is the plan ("ChatGPT Plus"), unitPrice is the amount per period, period is month or year (or week). A one time purchase has period "once".
 On a pricing page with several plans and one selected or highlighted, return only the selected plan; if none is selected, return nothing.
 Rules: only items in the active cart or bag; never "saved for later", "recently viewed", "you may also like" or recommendations.
+Offers next to an item (protection plans, warranties, "add plans or services", memberships, financing) are not items unless the page shows them as chosen. The first price on an item's row is its current price; a "Was", "reg" or struck price is wasPrice. The cart lines times their quantities add up to the subtotal; if yours do not, you have the wrong lines.
 qty is the quantity shown (default 1). unitPrice is the price of one unit in the store's currency, as a number.
 subtotal is the cart subtotal or total if shown, else null. currency from the symbols on the page. confidence is 0 to 1:
 how sure you are that these are exactly the cart lines. Return JSON only.`;
 
 /** Cart text -> items. Null when the model is off or unsure past repair. */
-/** The items add up to the page's own subtotal, or there is no subtotal and the model is sure. The arithmetic is the check. */
-function verified(out) {
+const PRICE_RE = '(?:US\\$|CA\\$|C\\$|[$£€₦])\\s?\\d[\\d,]*(?:\\.\\d{1,2})?';
+const money = (p) => Number(String(p).replace(/[^\d.,]/g, '').replace(/,(?=\d{3}\b)/g, '').replace(',', '.'));
+
+/** What the page itself states: the subtotal (the last "subtotal" with a price after it, else the last total) and the item count ("Subtotal (3 items)", "Items (3)"). */
+function pageFacts(text) {
+  const t = String(text || '');
+  const re = new RegExp(`\\b(subtotal|sub-total|order total|estimated total|cart total|basket total|total)\\b(?:\\s*\\([^)]{0,30}\\))?[^$£€₦\\d]{0,40}(${PRICE_RE})`, 'gi');
+  let sub = null, total = null, m;
+  while ((m = re.exec(t))) { const n = money(m[2]); if (!(n > 0)) continue; if (/^sub/i.test(m[1])) sub = n; else total = n; }
+  const c = /\((\d{1,3}) items?\)|\bitems? \((\d{1,3})\)|\b(\d{1,3}) items? in (?:your )?(?:cart|bag|basket)/i.exec(t);
+  const count = c ? Number(c[1] ?? c[2] ?? c[3]) : null;
+  return { subtotal: sub ?? total, count: count && count > 0 ? count : null };
+}
+
+const NOT_AN_ITEM = /\b(sub-?total|total|cart|bag|basket|checkout|order summary)\b|\(\d+ items?\)/i;
+
+/**
+ * The items add up to the page's own subtotal (never the model's: a wrong read invents the subtotal that fits it)
+ * and the quantities match the page's count when it states one; or the page shows no subtotal and the model is
+ * sure. No item may be the cart itself. The arithmetic is the check.
+ */
+function verified(out, facts = {}) {
   if (!out || !Array.isArray(out.items) || !out.items.length) return false;
+  if (out.items.some((i) => NOT_AN_ITEM.test(String(i.name || '')))) return false;
   const sum = out.items.reduce((s, i) => s + Number(i.unitPrice || 0) * Number(i.qty || 1), 0);
-  if (out.subtotal != null && Number.isFinite(Number(out.subtotal))) return Math.abs(sum - Number(out.subtotal)) < 0.02;
+  const qty = out.items.reduce((s, i) => s + Number(i.qty || 1), 0);
+  if (facts.count != null && qty !== facts.count && out.items.length !== facts.count) return false;
+  const subtotal = facts.subtotal ?? (out.subtotal != null && Number.isFinite(Number(out.subtotal)) ? Number(out.subtotal) : null);
+  if (subtotal != null) return Math.abs(sum - subtotal) < 0.02;
   return Number(out.confidence) >= 0.85;
 }
 
@@ -104,7 +129,7 @@ function verified(out) {
 async function extractItems(text, images = []) {
   if (!ready()) return null;
   const fast = await extractWith(FAST_MODEL, text, images, true).catch(() => null);
-  if (verified(fast)) return fast;
+  if (verified(fast, pageFacts(text))) return fast;
   return extractWith(MODEL, text, images, false);
 }
 
@@ -228,4 +253,6 @@ async function cheaperOption({ name, price, currency = 'USD', store }) {
   }
 }
 
-module.exports = { say, extractItems, classifyItem, classifyReason, cheaperOption, ready, MODEL, FAST_MODEL, WARM_TIMEOUT_MS };
+module.exports = {
+  verified,
+  pageFacts, say, extractItems, classifyItem, classifyReason, cheaperOption, ready, MODEL, FAST_MODEL, WARM_TIMEOUT_MS };

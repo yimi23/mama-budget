@@ -37,7 +37,7 @@ The intervention happens at the only moment that changes behaviour: between the 
 - **A stateless service worker.** All state in `chrome.storage` (memory keyed by normalised name so a want admitted on Amazon is remembered on Target, reasons, what was reacted to this week, what was posted). Audio from an offscreen document, `browser.tts` as fallback. The API fails twice in a row and the badge hides; a store page never shows an error.
 - **Pre-written speech.** While the ask card is on screen she already writes both possible reactions and warms the voice, so the moment you answer she speaks.
 - **The claim is a test, not a sentence.** `api/test/invariance.test.js` swaps the model for one that returns garbage and asserts all 50 frozen verdicts are byte for byte unchanged; then, for every case in every memory state, week, loudness and watched flag (over 10,000 situations), that whether she reacts is identical for every value the model could return, that a garbage answer behaves exactly like no answer, that family money is always protected, and that the model can only ever make her quieter.
-- **144 tests**, 73 on the API (judge v1 and v2, invariance, reasons, the text reader, the no repeat picker, the ledger questions, Photon gate and echoes) and 71 on the extension (detector, each reader against saved real carts and product pages, flow, badge, week math, onboarding, and a source reading guard that fails if a shipped feature is not wired into the session).
+- **149 tests**, 77 on the API (judge v1 and v2, invariance, reasons, the extraction check, the text reader, the no repeat picker, the ledger questions, Photon gate and echoes) and 72 on the extension (detector, each reader against saved real carts and product pages, flow, badge, week math, onboarding, and a source reading guard that fails if a shipped feature is not wired into the session).
 
 ### Usability
 
@@ -61,7 +61,7 @@ store tab                              service worker                    api (lo
 detect.ts (pure gate, <5ms)
   two signals ----> import session ---> JUDGE / ANSWER / PLAN / FUND --> /v2/judge  rules_v2 + model
   readers: platform JSON, adapters,     BUY / PUT_BACK / CONFIRM ------> /v2/buy, /v2/putback   Nessie ledger
-           cart text -> EXTRACT ------> /extract                        model, JSON schema
+           cart rows -> EXTRACT ------> /extract                        fast model, checked by arithmetic
   badge, card, bubble, panel, mark      SPEAK ----> offscreen audio <--- /tts                   ElevenLabs
                                         storage: memory, reasons, posted, settings                Photon texts
 ```
@@ -74,7 +74,9 @@ detect.ts (pure gate, <5ms)
 
 ### What the model does, and what it never does
 
-The model (`claude-opus-5-5`, official SDK, structured JSON output) does four things: turns cart text into items, says whether an unknown item is an obvious necessity given the item and the store, reads what a typed reason means (an occasion, a need, or just a want), and writes her lines from the whole situation. Lines go through must include checks: the price, the item and what is left have to be in a loud line or the fixed pool is used instead.
+The model (`claude-opus-5-5`, official SDK, structured JSON output; `claude-haiku-4-5` for the first pass at extraction and classification) does four things: turns cart text into items, says whether an unknown item is an obvious necessity given the item and the store, reads what a typed reason means (an occasion, a need, or just a want), and writes her lines from the whole situation. Lines go through must include checks: the price, the item and what is left have to be in a loud line or the fixed pool is used instead.
+
+Extraction on an unknown store is checked by arithmetic, not trusted. The text reader finds the order summary, reads the subtotal, then sends the group of page elements whose prices add up to it (items nest under pickup and shipping headers on big retailers, so rows are matched by class across the page, not by parent) plus the summary, and nothing else. The fast model reads first; its items are kept only when they add up to the page's own subtotal and match the page's item count. When they do not (a Target page where it added a protection plan nobody chose, and invented a subtotal to fit), Opus reads. Measured cold on saved carts: Walmart 1.5 s and three right items where both models used to find none, Target 1.4 s, Zara 2.4 s with six.
 
 The model never decides whether she reacts. Family money is protected before any model call. A first sighting is a question no matter what the model thinks. A planned item is never scolded. The week's numbers set the volume. With no key, every one of those promises still holds and she speaks from the pool.
 

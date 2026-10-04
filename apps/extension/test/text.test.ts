@@ -23,3 +23,11 @@ test('a plan page: the region is the plan and its recurring price, not the whole
   const text = cartRegionText(new JSDOM(html).window.document)!;
   assert.ok(text && /Plus/.test(text) && /\$20 per month/.test(text), text);
 });
+
+test('the Walmart cart: the rows that add up to the subtotal, then the summary; the recommendation shelves stay behind', () => {
+  const html = readFileSync(new URL('./fixtures/carts/walmart_cart.html', import.meta.url), 'utf8');
+  const text = cartRegionText(new JSDOM(html).window.document)!;
+  for (const price of ['$2.50', '$6.78', '$1,260.65', '$1,269.93']) assert.ok(text.includes(price), price);
+  assert.ok(!text.includes('$5.58'), 'no shelf prices');
+  assert.ok(text.length < 2000, String(text.length));
+});
