@@ -16,6 +16,8 @@ const MAMA = {
   ask: ['{item}? Tell me the story first.', 'Before I talk, explain {item} to me.'],
   ackNeed: ['Okay. I will remember.'],
   ackFits: ['Ehen. Carry on.', 'Okay. It fits. Carry on.'],
+  agreed: ['Good. I am watching the cart.'],
+  bought: ['Noted. It is in the book.'],
   family: ['That one is not waste. Greet them for me.'],
   statementClose: ['Good week. Keep going.', 'Better than last week. I noticed.', 'We will do better. I am not angry.'],
 };
@@ -32,6 +34,8 @@ const NANA = {
   ask: ['Hold on a sec, hon. What’s {item} for?'],
   ackNeed: ['Okay. Noted.'],
   ackFits: ['Okay, hon. That fits.'],
+  agreed: ['Good call, hon.'],
+  bought: ['Alright. Noted.'],
   family: ['That’s family. That doesn’t count.'],
   statementClose: ['Good week.', 'Better than last week. I noticed.', 'We’ll get there.'],
 };
@@ -76,6 +80,29 @@ function ackLine(verdict, it, who = 'mama') {
   if (verdict.label === 'need' && tags.includes('remembered')) return fill(bank.ackNeed[0], it);
   if (verdict.label === 'want' && tags.includes('fits')) return fill(bank.ackFits[(it.item || '').length % bank.ackFits.length], it);
   return null;
+}
+
+// After a charge lands. The week's own ratio decides: past the envelope is Gele down and she says so with the
+// naira; inside it she only notes it. Nothing about the person, ever.
+function buyLine(week, it, who = 'mama') {
+  const bank = who === 'nana' ? NANA : MAMA;
+  if ((week.ratio || 0) >= 1) {
+    const base = fill(bank.down[(it.item || '').length % bank.down.length], it);
+    return who === 'mama' && it.price && it.currency !== 'NGN' ? `${base} That is ${Math.round(it.price * NGN).toLocaleString()} naira.` : base;
+  }
+  return fill(bank.bought[0], it);
+}
+
+// The one line text after a charge: her line, then the numbers. Short enough for a lock screen.
+function buyText(week, it, who = 'mama') {
+  const left = Math.max(0, week.budget - week.spent);
+  return `${buyLine(week, it, who)}\n$${Math.round(it.price || 0)} on ${it.item}. $${week.spent} of $${week.budget} fun money gone this week. $${left} left.`;
+}
+
+// Small acknowledgements the card needs on hand: "You're right, Mama", and the item leaving the cart.
+function smallLines(who = 'mama') {
+  const bank = who === 'nana' ? NANA : MAMA;
+  return { agreed: bank.agreed[0], proud: bank.proud[0] };
 }
 
 // The sub line under her quote. Numbers, not character.
@@ -163,4 +190,4 @@ async function modelLine(verdict, it, month, who = 'mama') {
   return j.content?.[0]?.text?.trim() || null;
 }
 
-module.exports = { lineFor, ackLine, subLine, weeklyStatement, monthlyStatement, watchLines, whatsLeft, modelLine, MAMA, NANA };
+module.exports = { lineFor, ackLine, buyLine, buyText, smallLines, subLine, weeklyStatement, monthlyStatement, watchLines, whatsLeft, modelLine, MAMA, NANA };

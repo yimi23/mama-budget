@@ -1,6 +1,7 @@
 // Runs on every page but does nothing until the gate fires: an add to cart click, or a cart page by two signals.
 
-import { clickLabel, isAddToCartLabel, liveCartSignalCount } from '../lib/detect';
+import { clickLabel, isAddToCartLabel, isConfirmationPage, liveCartSignalCount, looksLikeConfirmationUrl, orderIdFrom, readSignals } from '../lib/detect';
+import { storeKey } from '@mama/shared/store-key';
 
 // Carts built by script after load (Target) show one signal at idle and the rest a moment later.
 // Throttled, not per mutation: Shopify themes keep a hidden cart drawer, so every page shows one signal.
@@ -51,7 +52,22 @@ export default defineContentScript({
       ctx.onInvalidated(() => watcher?.disconnect());
     };
 
+    // A real order landed. The URL is the cheap test; the page text confirms. The worker charges that store's last
+    // cart. Checked again shortly after, because confirmation pages often render their thank you late.
+    const confirmed = new Set<string>();
+    const checkConfirmation = (attempt = 0) => {
+      if (!looksLikeConfirmationUrl(location.href) || attempt > 4) return;
+      const signals = readSignals(document, location.href);
+      if (!isConfirmationPage(signals)) return void ctx.setTimeout(() => checkConfirmation(attempt + 1), 1500);
+      const orderId = orderIdFrom(signals.text, location.href);
+      if (confirmed.has(orderId)) return;
+      confirmed.add(orderId);
+      console.info(`[mama] order confirmed on ${location.hostname}`);
+      browser.runtime.sendMessage({ type: 'CONFIRM', store: storeKey(location.href), orderId }).catch(() => {});
+    };
+
     const onPage = () => {
+      checkConfirmation();
       // Once awake, a navigation re arms the session (it may have gone to sleep on an empty page).
       if (open) return wake('cart');
       if (check() === 1) watchForLateCart();

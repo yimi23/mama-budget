@@ -1,7 +1,7 @@
 // Loaded only after detect.ts fires. Reads the cart, watches for changes, judges through the worker, and holds
 // at most one conversation at a time. Never caches DOM nodes: every tick re queries from the document.
 
-import type { CartRead, JudgeReply, Mood, Verdict, Week } from '@mama/shared/types';
+import type { BuyReply, CartRead, JudgeReply, Mood, Verdict, Week } from '@mama/shared/types';
 import type { HandledLists, Message } from '@mama/shared/messages';
 import { mountBadge, type Badge, type Grandma } from './ui/badge';
 import { mountCard, type Card } from './ui/card';
@@ -43,6 +43,9 @@ let talking = false;
 let discussing: string | null = null;
 let lastLog = '';
 let lastShown = '';
+let lines: JudgeReply['lines'] = { agreed: 'Good.', proud: 'Good.' };
+/** Items the person agreed to put back: when one leaves the cart, she is proud, once. */
+const putBack = new Map<string, number>();
 // Mirrors the worker's per browser session lists (storage.session) on every judgement, so Start over in the
 // popup reaches open tabs and other tabs never repeat her. Answers themselves are durable in storage.local.
 const handled: Handled = { asked: new Set(), reacted: new Set() };
@@ -114,6 +117,7 @@ async function talk() {
         return hideAll();
       }
       logJudgement(reply);
+      lines = reply.lines;
       handled.asked = new Set(reply.handled.asked);
       handled.reacted = new Set(reply.handled.reacted);
       showWeek(g, reply.week);
@@ -149,6 +153,11 @@ async function talk() {
 function onRead(read: CartRead | null) {
   lastRead = read;
   if (read?.items.length) lastItemsAt = Date.now();
+  for (const [name, price] of putBack) {
+    if (read?.items.some((i) => i.name === name)) continue;
+    putBack.delete(name);
+    bubble?.say(lines.proud, `$${Math.round(price)} stays in the week.`);
+  }
   if (talking) {
     if (discussing && card?.open && !read?.items.some((i) => i.name === discussing)) card.close();
     return;

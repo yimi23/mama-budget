@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const { judge, remember } = require('../judge/rules_v2');
-const { lineFor, ackLine } = require('../lines/writer');
+const { lineFor, ackLine, buyLine, buyText, smallLines } = require('../lines/writer');
 
 const week = { budget: 75, spent: 50 }; // the demo seed: $25 left
 
@@ -67,4 +67,16 @@ test('every answer gets an acknowledgement; a declared need gets no comment on i
   const blown = judge({ item: 'AirPods Pro', price: 179 }, week, remember({}, { item: 'AirPods Pro' }, 'want'));
   assert.equal(ackLine(blown, { item: 'AirPods Pro', price: 179 }), null, 'a blown want gets the card, not a bubble');
   assert.equal(ackLine(judge({ item: 'Rice', price: 20 }, week), { item: 'Rice' }), null, 'protected needs were never asked');
+});
+
+test('after a charge: Gele down past the envelope, a note inside it, numbers in the text', () => {
+  const blown = { budget: 75, spent: 229, ratio: 229 / 75 };
+  const inside = { budget: 75, spent: 70, ratio: 70 / 75 };
+  const pods = { item: 'AirPods Pro', price: 179, currency: 'USD' };
+  assert.match(buyLine(blown, pods), /naira/);
+  assert.doesNotMatch(buyLine(blown, { ...pods, currency: 'NGN' }), /naira/);
+  assert.doesNotMatch(buyLine(inside, { item: 'Desk lamp', price: 20 }), /naira/);
+  assert.match(buyText(blown, pods), /\$179 on AirPods Pro\. \$229 of \$75 fun money gone this week\. \$0 left\./);
+  assert.ok(smallLines().agreed && smallLines().proud && smallLines('nana').agreed);
+  for (const l of [buyLine(blown, pods), buyLine(inside, pods), smallLines().agreed, smallLines().proud]) assert.doesNotMatch(l, /[-–—]/, 'no dashes in copy');
 });

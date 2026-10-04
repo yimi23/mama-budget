@@ -1,7 +1,7 @@
 // Service worker. Stateless: everything lives in chrome.storage. Every listener is top level and synchronous.
 
 import type { HandledLists, Message } from '@mama/shared/messages';
-import type { Answer, CartItem, CurrencyCode, JudgeReply, Week } from '@mama/shared/types';
+import type { Answer, BuyReply, CartItem, CartRead, CurrencyCode, JudgeReply, Week } from '@mama/shared/types';
 import { apiUp, call } from '../lib/api';
 import { weekKey } from '@mama/shared/week';
 
@@ -62,9 +62,69 @@ async function mark(kind: keyof HandledLists, key: string) {
   await browser.storage.local.set({ reacted: { ...kept, [key]: week } });
 }
 
+// Charges posted this envelope week, by item name, so Buy anyway on the card and a later confirmation page for the
+// same order never both post the same item. The API is idempotent per requestId; this guards across requestIds.
+const postedKey = (name: string) => name.trim().toLowerCase();
+
+async function postedThisWeek(): Promise<Set<string>> {
+  const { posted = {} } = await browser.storage.local.get('posted');
+  const week = weekKey();
+  return new Set(Object.entries(posted as Record<string, string>).filter(([, w]) => w === week).map(([k]) => k));
+}
+
+async function markPosted(name: string) {
+  const { posted = {} } = await browser.storage.local.get('posted');
+  const week = weekKey();
+  const kept = Object.fromEntries(Object.entries(posted as Record<string, string>).filter(([, w]) => w === week));
+  await browser.storage.local.set({ posted: { ...kept, [postedKey(name)]: week } });
+}
+
+async function grandmaSetting(): Promise<string> {
+  const { settings = {} } = await browser.storage.local.get('settings');
+  return (settings as { grandma?: string }).grandma ?? 'mama';
+}
+
+async function buyItem(msg: Extract<Message, { type: 'BUY' }>) {
+  if (!(await apiUp())) return { ok: false as const };
+  const reply = await call<BuyReply>('/v2/buy', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      ...msg.item, store: msg.store, currency: msg.currency, tag: 'want', grandma: await grandmaSetting(),
+      // One charge per item per week from the card, however many times the card is answered.
+      requestId: `card:${weekKey()}:${postedKey(msg.item.name)}`,
+    }),
+  });
+  if (!reply) return { ok: false as const };
+  await markPosted(msg.item.name);
+  return { ok: true as const, ...reply };
+}
+
+/** A real order went through: charge what was in that store's cart, skipping anything the card already posted. */
+async function confirmOrder(msg: Extract<Message, { type: 'CONFIRM' }>) {
+  const { lastCart = {} } = await browser.storage.session.get('lastCart');
+  const entry = (lastCart as Record<string, { read: CartRead }>)[msg.store];
+  if (!entry || !(await apiUp())) return { ok: true as const, posted: 0 };
+  const [posted, { memory = {} }, grandma] = await Promise.all([postedThisWeek(), browser.storage.local.get('memory'), grandmaSetting()]);
+  let n = 0;
+  for (const item of entry.read.items) {
+    if (posted.has(postedKey(item.name))) continue;
+    const reply = await call<BuyReply>('/v2/buy', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        name: item.name, price: item.unitPrice * item.qty, store: msg.store, currency: entry.read.currency, memory, grandma,
+        requestId: `order:${msg.orderId}:${postedKey(item.name)}`,
+      }),
+    });
+    if (reply) { n++; await markPosted(item.name); }
+  }
+  return { ok: true as const, posted: n };
+}
+
 /** The popup's Start over: she forgets every answer and asks again, as on a fresh install. */
 async function startOver() {
-  await browser.storage.local.remove(['memory', 'reacted']);
+  await browser.storage.local.remove(['memory', 'reacted', 'posted']);
   await browser.storage.session.remove('asked');
 }
 
@@ -91,6 +151,12 @@ export default defineBackground(() => {
         return true;
       case 'MARK':
         mark(msg.kind, msg.key).then(() => sendResponse({ ok: true }), () => sendResponse({ ok: true }));
+        return true;
+      case 'BUY':
+        buyItem(msg).then(sendResponse, () => sendResponse({ ok: false }));
+        return true;
+      case 'CONFIRM':
+        confirmOrder(msg).then(sendResponse, () => sendResponse({ ok: true, posted: 0 }));
         return true;
       case 'START_OVER':
         startOver().then(() => sendResponse({ ok: true }), () => sendResponse({ ok: true }));

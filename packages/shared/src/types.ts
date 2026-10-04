@@ -63,4 +63,16 @@ export interface JudgeReply {
   week: Week;
   mood: Mood;
   verdicts: Verdict[];
+  /** Small lines the card needs on hand: after "You're right", and when the item leaves the cart. */
+  lines: { agreed: string; proud: string };
+}
+
+/** POST /v2/buy: the charge landed (or was already recorded under that requestId). */
+export interface BuyReply {
+  week: Week;
+  mood: Mood;
+  line: string;
+  sub: string;
+  texted: boolean;
+  tag: 'need' | 'want';
 }

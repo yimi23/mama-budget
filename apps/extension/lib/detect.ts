@@ -51,6 +51,21 @@ export function isConfirmationPage(p: PageSignals): boolean {
   return thanks && ORDER_NUMBER.test(p.text);
 }
 
+/** Pure, cheap: does the URL alone look like an order confirmation. The full check reads the page text. */
+export function looksLikeConfirmationUrl(url: string): boolean {
+  try { const u = new URL(url); return CONFIRM_PATH.test(u.pathname + u.search); } catch { return false; }
+}
+
+/**
+ * Pure: an id for this order, so a reload of the confirmation page never posts twice. The order number when the page
+ * shows one; otherwise the URL without its hash, which on Amazon and Shopify already carries the order.
+ */
+export function orderIdFrom(text: string, url: string): string {
+  const m = text.match(ORDER_NUMBER);
+  if (m) return m[0].replace(/\s+/g, ' ').trim();
+  return url.split('#')[0]!;
+}
+
 /** Pure: does this clicked label read as add to cart or buy now. */
 export function isAddToCartLabel(label: string): boolean {
   return ADD_WORDS.test(label.replace(/\s+/g, ' ').trim());

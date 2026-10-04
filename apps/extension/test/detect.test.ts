@@ -98,3 +98,14 @@ test('the live fast path agrees with the full count on every saved page', async 
   const plain = new JSDOM('<body><p>Weekly news</p></body>').window.document;
   assert.equal(liveCartSignalCount(plain, 'https://example.com/'), 0);
 });
+
+test('confirmation pages get a stable order id, so a reload never posts twice', async () => {
+  const { looksLikeConfirmationUrl, orderIdFrom } = await import('../lib/detect.ts');
+  assert.ok(looksLikeConfirmationUrl('https://www.amazon.com/gp/buy/thankyou/handlers/display.html?purchaseId=123'));
+  assert.ok(looksLikeConfirmationUrl('https://shop.example.com/checkouts/abc/thank_you'));
+  assert.ok(looksLikeConfirmationUrl('https://www.target.com/co-thankyou?orderId=9'));
+  assert.equal(looksLikeConfirmationUrl('https://www.amazon.com/gp/cart/view.html'), false);
+  assert.equal(orderIdFrom('Thank you! Order number: 112-4455667-8899000 placed', 'https://x/thank-you'), 'Order number: 112-4455667-8899000');
+  assert.equal(orderIdFrom('Thanks for your order', 'https://x/thank-you?o=5#top'), 'https://x/thank-you?o=5');
+  assert.equal(orderIdFrom('Thanks', 'https://x/thank-you?o=5'), orderIdFrom('Thanks', 'https://x/thank-you?o=5'));
+});

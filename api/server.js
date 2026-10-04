@@ -9,13 +9,14 @@
 //   GET  /month                                                 -> the 30 day read for onboarding: true line, watches, proposed envelope
 //   GET  /month?history=30                                      -> same
 //   POST /v2/judge  { items:[{name,qty,unitPrice,store}], memory, grandma, currency } -> v2 verdict per item (ask, remember), lines, week
+//   POST /v2/buy    { name, short, price, store, requestId, tag?, memory?, grandma, currency } -> charge posted (idempotent by requestId), week, her line, text sent or not
 //   GET  /health
 
 const http = require('node:http');
 const { judge } = require('./judge/rules');
 const v2 = require('./judge/rules_v2');
 const nessie = require('./nessie/client');
-const { lineFor, ackLine, subLine } = require('./lines/writer');
+const { lineFor, ackLine, buyLine, buyText, smallLines, subLine } = require('./lines/writer');
 const { speak } = require('./voice/elevenlabs');
 const { text } = require('./photon/text');
 
@@ -54,7 +55,32 @@ const routes = {
       return { name: it.name, short: spoken.item, price: item.price, ...v, line: lineFor(v, spoken, w, who), ack: ackLine(v, spoken, who), sub: subLine(w) };
     });
     const loud = verdicts.find((v) => v.react) || verdicts.find((v) => v.label === 'ask');
-    return { week: w, mood: loud ? loud.mood : w.mood, verdicts };
+    return { week: w, mood: loud ? loud.mood : w.mood, verdicts, lines: smallLines(who) };
+  },
+
+  // A charge lands: "Buy anyway" on the card, or a real order confirmation page. Idempotent by requestId, so a
+  // reload of a confirmation page or a double tap never posts twice. The tag comes from the caller (an admitted
+  // want from the card) or from the rules over the caller's memory (a confirmation page lists needs too).
+  'POST /v2/buy': async (body) => {
+    const who = body.grandma === 'nana' ? 'nana' : 'mama';
+    const name = String(body.name || '');
+    const short = body.short || shortName(name);
+    const price = Number(body.price || 0);
+    if (!name || !(price > 0) || !body.requestId) throw new Error('name, price and requestId are required');
+    let tag = body.tag;
+    if (tag !== 'need' && tag !== 'want') {
+      const memory = body.memory && typeof body.memory === 'object' ? body.memory : {};
+      tag = v2.judge({ item: name, price, merchant: body.store || '' }, nessie.week(), memory).label === 'need' ? 'need' : 'want';
+    }
+    await nessie.purchase({ item: short, price, merchant: body.store || 'Store', tag, requestId: String(body.requestId) });
+    const w = nessie.week();
+    const it = { item: short, price, merchant: body.store || '', currency: body.currency || 'USD' };
+    const line = tag === 'need' ? smallLines(who).agreed : buyLine(w, it, who);
+    const left = Math.max(0, w.budget - w.spent);
+    const sub = `$${Math.round(price)} on ${short}. $${w.spent} of $${w.budget} gone this week. $${left} left.`;
+    // Only an actual send counts as texted. Photon unset or down: the card says nothing about a text.
+    const sent = tag === 'want' ? await text(buyText(w, it, who)).catch(() => null) : null;
+    return { week: w, mood: w.mood, line, sub, texted: !!sent, tag };
   },
 
   'POST /buy': async (body) => {
