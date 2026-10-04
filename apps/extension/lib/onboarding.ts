@@ -218,4 +218,6 @@ export interface Settings {
   onboarded?: boolean;
   /** The API's address when it is not this machine (a teammate's laptop on the hotspot, or a hosted one). */
   apiUrl?: string;
+  /** Paused: she leaves every page and stays away until this is turned off. */
+  paused?: boolean;
 }

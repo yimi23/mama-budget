@@ -91,6 +91,8 @@ async function judge(read: CartRead): Promise<JudgeResult | null> {
 async function grandma(): Promise<Grandma | null> {
   try {
     const { settings } = await browser.storage.local.get('settings');
+    // Paused reads as no grandma: the badge hides and nothing wakes until the switch is turned off.
+    if ((settings as { paused?: boolean } | undefined)?.paused) return null;
     const g = (settings as { grandma?: string } | undefined)?.grandma;
     return GRANDMAS.includes(g as Grandma) ? (g as Grandma) : null;
   } catch {

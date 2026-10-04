@@ -3,13 +3,13 @@
 Read docs/PLAN.md (what we are building and why), docs/DESIGN.md (every size, color and rule), docs/ARCHITECTURE.md (how the code is laid out and why), docs/ONBOARDING.md (what she says and does on every onboarding screen) before touching anything. The screens are in design/screens: numbered PNGs are the source of truth for how every state looks, the HTML next to each is the exact markup and CSS to lift.
 
 ## Stack
-WXT (Manifest V3, TypeScript) for the extension. Hono on Node 24 for the API. node:test for tests. npm workspaces. No other frameworks without saying why.
+WXT (Manifest V3, TypeScript) for the extension. Plain Node 22 `http` for the API (`api/server.js`, a routes map, no framework). node:test for tests. npm workspaces. No other frameworks without saying why.
 
 ## Commands
 - `npm run dev` runs the extension and the api together. There is no fake shop. Test on amazon.com, target.com and one Shopify store (gymshark.com), logged in, with saved carts.
-- `npm test` runs the rules engine tests. `npm run test:update` regenerates goldens (review the diff).
+- `npm test` runs the API tests (judge v1 and v2, the invariance proof, reasons, the text reader, the picker, the ledger questions, Photon) and the extension tests (detector, readers on saved real carts and product pages, flow, badge, week, onboarding, wiring). `npm run score` prints the 50 case score.
 - `npm run typecheck`.
-- Load unpacked from `apps/extension/.output/chrome-mv3`. After reloading the extension, hard refresh the Amazon tab (old content scripts are orphaned).
+- `npm run build:ext`, then load unpacked from `apps/extension/build/chrome-mv3`. After reloading the extension, hard refresh the store tab (old content scripts are orphaned). `npm run update` pulls, installs and builds for a teammate.
 
 ## Architecture rules
 - The service worker is stateless. Every piece of state lives in `chrome.storage` through `packages/store`. Globals die after 30 seconds.
@@ -17,17 +17,17 @@ WXT (Manifest V3, TypeScript) for the extension. Hono on Node 24 for the API. no
 - All calls to our API go through the service worker. The only fetch a content script makes is to the page's own origin for platform cart JSON.
 - All messages are typed in `packages/shared/messages.ts`. Add the case to the union before writing the handler. `onMessage` listeners are never `async`: return true and call `sendResponse`.
 - The content script matches `<all_urls>` but `lib/detect.ts` is the gate: under 5ms, no DOM writes, no imports. The UI and readers load by dynamic `import()` only after it fires (add to cart click, or cart/checkout page by two signals).
-- Readers in `lib/readers/` all return `CartRead` and are tried in order: platform JSON (Shopify `/cart.js`, WooCommerce, BigCommerce, same origin fetch from the content script is allowed), site adapters (one generic `runAdapter(spec)` over `AdapterSpec`; Amazon and Target hand written, every other store learned once via `/learn` from a DOM outline, validated against the text read, saved per host and shared through `/adapters`), JSON-LD Product on product pages, cart text to `/extract` through the worker. The judge never knows which reader fired. Never add an adapter when fixing the detector or the text reader would do.
+- Readers in `lib/readers/` all return `CartRead` and are tried in order: platform JSON (Shopify `/cart.js`, WooCommerce, BigCommerce, same origin fetch from the content script is allowed), site adapters (one generic `runAdapter(spec)` over `AdapterSpec`; Amazon, Target and Walmart hand written), JSON-LD Product on product pages (never on cart or pay paths), cart text to `/extract` through the worker (the model, JSON schema, confidence under 0.7 asks). Reader five is a text or photo to her in Messages (`api/notify/weigh.js`), judged by the same rules. The judge never knows which reader fired. Never add an adapter when fixing the detector or the text reader would do. The per store learner (`/learn`, `/adapters`) was not built; it is the next step in ARCHITECTURE.md.
 - Never cache nodes, re query on every observer tick.
 - "Buy anyway" never clicks the store's own buttons. The ledger moves when `detect.ts` sees a real order confirmation page and `/buy` is posted with the order id as `requestId`. Fallback behind `ledgerOnConfirm=false`: post on Buy anyway.
 - Item memory is keyed by normalised name so a want admitted on one store is remembered on every store.
 - The content script owns exactly one host element on `document.documentElement` with an open shadow root and `all: initial`. It never mutates the host page's DOM. It never caches DOM references across MutationObserver ticks.
 - Audio plays from the offscreen document (`offscreen` permission, reason AUDIO_PLAYBACK). Content script `Audio` is a flagged fallback only.
-- The judge is a pure function in `packages/scoring`. Same input, same output. Rules are JSON, versioned (`rules/v1.json` frozen for the 50 case score, `rules/v2.json` is ask and remember). A rule change bumps the version and reruns goldens.
+- The judge is a pure function: `api/judge/rules.js` (v1, frozen for the 50 case score) and `api/judge/rules_v2.js` (ask and remember, what ships). `api/test/invariance.test.js` proves the model never changes a verdict; keep it green.
 - The model lives in one file, `api/lines/model.js`, and does four things: turns cart text into items (JSON schema), says whether an unknown item is an obvious necessity from the item and the store, reads what a typed reason means, and writes her lines from the whole situation. The rules keep the promises and the math and are the fallback when the model is off or slow: money to family never scolded, a first sighting only asked, she reacts only to admitted wants, planned items never scolded, the week's numbers decide the volume. Rules v1 stays frozen for the 50 case score.
-- Secrets live only in `apps/api/.env`. The extension bundle is public.
+- Secrets live only in `api/.env` (gitignored; `api/env.js` loads it). The extension bundle is public. `data/nessie-cache.json` is the live ledger mirror and is never committed.
 - Every mutating API call carries a client `requestId` and is idempotent.
-- `DEMO_MODE=1` serves recorded fixtures for extraction, scoring and TTS. The demo must run with WiFi off.
+- There is no DEMO_MODE. The product degrades by design: no Anthropic key, the pools speak and the word lists classify; no ElevenLabs key, `/tts` answers 204 and the browser voice reads the text; Nessie down, the cache answers; API down, the badge hides. Each path is tested or was drilled live.
 
 ## Product rules (do not break these in code)
 - Need never opens the card. Protected items (rules PROTECTED list) and money to family never react.
@@ -40,10 +40,10 @@ WXT (Manifest V3, TypeScript) for the extension. Hono on Node 24 for the API. no
 - Store currency first, USD after, from `packages/shared/currency.ts`. Mama adds naira unless the store is already in naira.
 - If the API fails twice in a row the badge hides. Never show an error on a store page. The page must behave as if she was never installed.
 - Amazon adapter reads the active cart only. Saved for later, Buy it again and recommendations are never items.
-- Every loud line names the amount and the item. Nothing about the person. One cultural marker per line at most. Lines live in `apps/api/src/lines/`.
-- Mama gets the naira line. Nana does not.
+- Every loud line names the amount, the item and the week's number. Nothing about the person. One cultural marker per line at most. Lines live in `api/lines/` (pools in writer.js and texts.js, the one character brief in character.js, the no repeat picker in pick.js).
+- The figure from home follows the person's region or their setting (`settings.home`), never the grandma.
 - Onboarding asks two questions (grandma, loudness) and reads everything else from the ledger. Never ask the name; Nessie has it, use it once on "Here is what I saw." Never introduce her twice. Never show a sent or done state that did not happen. Every step after grandma has a one line skip that never argues.
-- Six sounds, each under 1.2s: arrive, ask, surprised, proud, text received, kept ticked. Synthesised in the offscreen document. One toggle. None in quiet hours when quiet hours are on. No music.
+- Six sounds, each under 1.2s: arrive, ask, surprised, proud, text received, kept ticked. Synthesised in the offscreen document. One toggle, and a Pause switch that takes her off every page. None in quiet hours when quiet hours are on. No music.
 
 ## Design rules (from docs/DESIGN.md, the short version)
 Popup 400 by 560. Card 360 wide, 20px from bottom and right. Badge 64 circle, gold ring, gele meter bar on the left. Cream ground, ink buttons, color only on her. System font for UI, Bricolage Grotesque 800 for headlines only. Radius 8 inputs, 12 lists, pill buttons. Tabular digits on money. Sentence case. One primary button per screen. Motion 150 to 300ms, decelerate in, accelerate out, no bounce, only on user action or mood change. She is never on the bank screen.

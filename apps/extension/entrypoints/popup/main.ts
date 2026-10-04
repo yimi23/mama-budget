@@ -352,10 +352,11 @@ const homeNote = $('#home-note');
 function paintHome() {
   const g = grandma();
   $('#home-title').textContent = `${COPY[g].name} is in your cart.`;
-  $('#home-status').textContent = settings.loudness ? `${TIERS[g].find((t) => t.key === settings.loudness)?.name ?? ''}. ${settings.sounds === false ? 'Muted.' : 'Sound on.'}` : 'Pick how loud below.';
+  $('#home-status').textContent = settings.paused ? 'Paused. She is off every page until you turn her back on.' : settings.loudness ? `${TIERS[g].find((t) => t.key === settings.loudness)?.name ?? ''}. ${settings.sounds === false ? 'Muted.' : 'Sound on.'}` : 'Pick how loud below.';
   for (const b of document.querySelectorAll<HTMLButtonElement>('#home-grandma button')) b.setAttribute('aria-pressed', String(b.dataset.v === g));
   $('#home-loud').replaceChildren(...TIERS[g].map((t) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t.name; b.setAttribute('aria-pressed', String(settings.loudness === t.key)); b.addEventListener('click', async () => { await saveSettings({ loudness: t.key }); paintHome(); void speak(t.line); }); return b; }));
   ($('#home-sounds') as HTMLInputElement).checked = settings.sounds !== false;
+  ($('#home-paused') as HTMLInputElement).checked = settings.paused === true;
   const cur = $('#home-currency') as HTMLSelectElement;
   if (!cur.options.length) cur.replaceChildren(...HOMES.map((h) => { const o = document.createElement('option'); o.value = h.code; o.textContent = h.name; return o; }));
   cur.value = homeFor(settings);
@@ -385,6 +386,7 @@ for (const b of document.querySelectorAll<HTMLButtonElement>('#home-grandma butt
 }
 $('#home-currency').addEventListener('change', (e) => { void saveSettings({ home: (e.target as HTMLSelectElement).value as Home }).then(paintHome); });
 $('#home-sounds').addEventListener('change', (e) => { void saveSettings({ sounds: (e.target as HTMLInputElement).checked }).then(() => { paintHome(); paintMute(); }); });
+$('#home-paused').addEventListener('change', (e) => { void saveSettings({ paused: (e.target as HTMLInputElement).checked }).then(paintHome); });
 $('#home-over').addEventListener('click', async () => {
   // Start over is a fresh install: the worker clears every store, and this popup goes straight back to Welcome.
   const r = await send({ type: 'START_OVER' });

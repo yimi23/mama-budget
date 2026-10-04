@@ -16,7 +16,7 @@ Everything else is a bonus. There is no fake store. If the reader does not work 
 
 | Situation | What she does | Where |
 |---|---|---|
-| Install, first run | Popup onboarding in the new order: she arrives, grandma (Hear her), connect bank, she reads your month, one true line plus proposed weekly envelope, three watches, phone, first statement arrives, loudness, Kept this week. Practice cart is the finale and ends with "Open a real store." | Onboarding block, screens 01 to 09, docs/research_clicky_onboarding.md |
+| Install, first run | Popup onboarding in her own voice (docs/ONBOARDING.md), in the new order: she arrives, grandma (Hear her), connect bank, she reads your month, one true line plus proposed weekly envelope, three watches, phone, first statement arrives, loudness, Kept this week. Practice cart is the finale and ends with "Open a real store." | Onboarding block, screens 01 to 09, docs/research_clicky_onboarding.md |
 | Product page, add to cart or buy now clicked | Reads JSON-LD, asks right there if the item is new and over $15 | `readers/jsonld.ts`, click hook |
 | Cart page, protected item (rice, soap, textbook, medicine, money to family) | Nothing. Badge calm. Never moves the meter. | rules PROTECTED, `spent` counts wants only |
 | Cart page, unknown item over $15 | One neutral Ask, two buttons, remembered forever | rules v2 |
@@ -75,7 +75,7 @@ If the brief's split (Ugonna on design, Praise on code) is what you two agreed, 
 
 **7:50pm to 9:00pm. Set up and read real carts.**
 Both: `npx wxt@latest init` into apps/extension, Hono into apps/api, workspaces root, `.gitignore` with `.env` and `.output` before the first commit, `npm run dev` runs both. First commit after the opening ceremony timestamp.
-Praise: `readers/platform.ts` first, the cheapest win: on allbirds.com add anything (gymshark.com is headless, /cart.js 404s), `fetch('/cart.js')` from the console, confirm the JSON, write the reader. Then Amazon cart in DevTools: the active cart container (not Saved for later), item row, title, price, quantity, subtotal, `readers/sites/amazon.ts` logging `{items, subtotal}`. Then Target. Save the cart HTML of each as a reader fixture and the `innerText` as an extract fixture. Note the confirmation page URL shape on all three. Turn off Amazon 1-Click on the demo account and remove the default card.
+Praise: `readers/platform.ts` first, the cheapest win: on gymshark.com add a hoodie, `fetch('/cart.js')` from the console, confirm the JSON, write the reader. Then Amazon cart in DevTools: the active cart container (not Saved for later), item row, title, price, quantity, subtotal, `readers/sites/amazon.ts` logging `{items, subtotal}`. Then Target. Save the cart HTML of each as a reader fixture and the `innerText` as an extract fixture. Note the confirmation page URL shape on all three. Turn off Amazon 1-Click on the demo account and remove the default card.
 Ugonna: Nessie key, hit customers and accounts, confirm bills and transfers endpoint paths. Photon kit installed on the demo Mac, Full Disk Access, spare Apple ID signed in, one test send to the demo iPhone. Create the free Shopify dev store with one $0.50 product.
 Checkpoint 9:00: the console prints the right items and prices on a Shopify store and on amazon.com. If not, Praise stays on it and Ugonna takes the badge mount.
 Cut line: if Photon does not send a test message by 9:30, Photon becomes stretch and the demo's beat 3 is the card only.
@@ -130,21 +130,20 @@ Devpost: team members added, title, tagline (She grows with you), description, v
 
 ## The pitch, 90 seconds
 
-Open: "Budget apps tell you after the money is gone. We built someone who says something before." Install in front of them: she reads the month, says the one true line, the phone buzzes. Twenty seconds. Then: "Now name a store." Open whatever they say. Hand the judge the laptop. Beats 1 to 5 from DEMO.md, judge drives, you narrate only the rule being shown. Close on the score slide, say the real numbers, then: "She protects the obvious, asks about the rest, and remembers. She grows with you." Ten seconds on growth: every store one person shops at, she learns and shares, so she gets faster for everyone. Twenty seconds on real world use: international students who send money home, free with a Sunday statement, $2.99 a month (about N4,800) for voice and texts, and she is already headed into a remittance product on WhatsApp. Then stop talking.
+Open: "You set one number for the week. She holds you to it, from inside your cart, before you pay, and she never touches what you need. Every other money app tells you after." Install in front of them: she reads the month, says the one true line, the phone buzzes. Twenty seconds. Then: "Now name a store." Open whatever they say. Hand the judge the laptop. Beats 1 to 5 from DEMO.md, judge drives, you narrate only the rule being shown. Close on the score slide, say the real numbers, then: "She protects the obvious, asks about the rest, and remembers. She grows with you." Ten seconds on growth: every store one person shops at, she learns and shares, so she gets faster for everyone. Twenty seconds on real world use: international students who send money home, free with a Sunday statement, $2.99 a month (about N4,800) for voice and texts, and she is already headed into a remittance product on WhatsApp. Then stop talking.
 
 Admit one limit before they ask: a simulated bank, one envelope, and on stores she has never seen the model reads the cart, so she asks rather than scolds. On purpose.
 
-## Submission checklist
+## Submission checklist (state at 10:30am Sunday)
 
-- [ ] Devpost: team members, four criteria as headings, theme line, named user, quantified score, admitted limit
-- [ ] Onboarding in the video: she reads the month, the true line, the three watches, the phone buzzes. Twenty seconds.
-- [ ] Video 60 to 90 seconds, shot on amazon.com, target.com and a store nobody wrote code for, her voice audible, phone buzz visible
-- [ ] Repo public, `.env` never committed, README runs, `npm test` green (rules, detector, readers), `npm run score` output pasted, built zip in Releases
-- [ ] data/ has cases, labels, protocol, synthetic quarantined with its methodology
-- [ ] Seven Nessie resources listed
-- [ ] Photon two way clip
-- [ ] ElevenLabs voice credited
-- [ ] Figma link, mamabudget.com and mamabudget.tech live with the privacy section, Notability screenshots
-- [ ] Tracks ticked: FinTech, Useless AI, Dumbest Idea, Judged by an LLM, Nessie, Photon, ElevenLabs, Figma, .tech, Notability
-- [ ] Second laptop runs the demo
-- [ ] Submitted by 11:30am
+- [x] Devpost text written for the four criteria with the theme line, named user, quantified score, admitted limit: `docs/DEVPOST.md`. Pasting it is Praise's step.
+- [ ] Video: not required by this year's rules (in person judging at the table); a 60 second screen recording stays a nice to have.
+- [x] Repo public, `.env` never committed, README runs, `npm test` green (144), `npm run score` reproduces the numbers, built zip in Releases (v0.1.0 and the rolling `latest`).
+- [x] data/ has cases, labels, protocol, synthetic quarantined.
+- [x] Nessie resources listed in README (customers, accounts, purchases, deposits, withdrawals, bills; transfers are deposit and withdrawal pairs).
+- [x] Photon two way, live over Spectrum: texts in, texts out, photos, the purchase breakdown text, the Sunday statement. A clip is still to be recorded.
+- [x] ElevenLabs credited; four voices.
+- [x] mamabudget.com live with the privacy page. Figma: faces and badges exported as SVG in `design/figma/`, no Figma file link. mamabudget.tech: not registered. Notability: not done.
+- [ ] Tracks ticked on Devpost: FinTech, Useless AI, Dumbest Idea, Judged by an LLM, Nessie, Photon, ElevenLabs.
+- [ ] Second laptop runs the demo (Ugonna: `npm run update`, keys in `api/.env`, or point "Where she runs" at the first laptop).
+- [ ] Submitted before 12:00pm.
