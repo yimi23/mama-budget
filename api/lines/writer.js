@@ -487,13 +487,13 @@ For an ACKNOWLEDGEMENT: one sentence, warm, that confirms you heard and what it 
 For AFTER A CHARGE past the week: name how far over the week is and the item; no lecture.
 For A PLAN (the person gave a reason that is an occasion): say the occasion back, say it is a plan and not a want, and if a plan to fund it from savings is given, offer it as one question with the amount; if none is given, say it stays off the meter.
 For FUNDED: confirm the money moved and what the week is now, one sentence.
-Quote a remembered reason when it is relevant ("you said the chair was for your back").`;
+Quote a remembered reason when it is relevant ("you said the chair was for your back"). You may use what else is in the cart, the day and\ntime, or the last time this item came up, as plain fact; never as a pantry joke and never to compare one purchase to another.`;
 
 /**
  * Her line written from the whole situation: the verdict the rules reached, the week, the month's habits, the bills, what
  * she remembers, the store. The rules decided; this only words it. Returns null on any failure so the fixed pools take over.
  */
-async function contextLine({ kind, who = 'mama', verdict, it, week, month, memory, store, warm = false, reason = null, reasons = null, proposal = null, savings = null, deadline = null }) {
+async function contextLine({ kind, who = 'mama', verdict, it, week, month, memory, store, warm = false, reason = null, reasons = null, proposal = null, savings = null, deadline = null, cart = null, seen = null, now = new Date() }) {
   const model = require('./model');
   // The cache key is the situation, not the prompt: the same item, price, week and store gives the same line whether
   // it was written ahead of time (while the ask was on screen) or at the moment of the card.
@@ -502,7 +502,14 @@ async function contextLine({ kind, who = 'mama', verdict, it, week, month, memor
   const habits = (month && month.topWants ? month.topWants : []).slice(0, 3).map((w) => `$${w.amount} at ${w.merchant} (${w.category})`).join(', ');
   const bill = (week.bills || [])[0];
   const remembered = memory && Object.keys(memory).length ? Object.entries(memory).slice(0, 8).map(([k, v]) => `${k}: ${v}${reasons && reasons[k] ? ` (they said: "${reasons[k]}")` : ''}`).join('; ') : 'nothing yet';
-  const prompt = `${kind.toUpperCase()}.
+  const DAY = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const h = now.getHours();
+  const when = `${DAY[now.getDay()]} ${h < 5 ? 'night' : h < 12 ? 'morning' : h < 17 ? 'afternoon' : h < 21 ? 'evening' : 'night'}`;
+  const others = cart && cart.others && cart.others.length ? `Also in the cart: ${cart.others.slice(0, 4).join(', ')}${cart.others.length > 4 ? ` and ${cart.others.length - 4} more` : ''}. Cart total $${Math.round(cart.total || 0)}.` : cart ? 'Nothing else in the cart.' : '';
+  const ago = seen && seen.last ? Math.round((now - seen.last) / 86400000) : null;
+  const before = seen && seen.count ? `This item has come up ${seen.count} time${seen.count === 1 ? '' : 's'} before, last ${ago === 0 ? 'today' : ago === 1 ? 'yesterday' : `${ago} days ago`}${seen.store ? ` at ${shopName(seen.store)}` : ''}.` : '';
+  const prompt = `${kind.toUpperCase()}. It is ${when}.
+${others}${before ? `\n${before}` : ''}
 Item: ${it.item}. Price: $${Math.round(it.price || 0)}${it.qty > 1 ? ` (${it.qty} of them)` : ''}. Store: ${shopName(store || it.merchant)}.
 Verdict from the rules: ${verdict.label}${verdict.react ? ', she reacts' : ''}${verdict.tags && verdict.tags.length ? ` (${verdict.tags.join(', ')})` : ''}.
 This week: $${Math.round(week.spent || 0)} of $${Math.round(week.budget || 0)} fun money spent, $${left} left, ${week.daysLeft ?? '?'} day(s) to go${week.ratio >= 1 ? `, the week is already over by $${Math.round(week.spent - week.budget)}` : ''}.

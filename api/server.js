@@ -129,7 +129,9 @@ const routes = {
     const listProtected = (item) => v2.PROTECTED.some((wd) => v2.keyOf(item).includes(wd));
     for (const item of items) {
       if (known(item) || item.price < v2.ASK_LINE || listProtected(item)) continue; // rice gets no speculative line: it will be a need
-      void contextLine({ kind: 'ask', who, verdict: { label: 'ask', react: false, mood: 'watching', tags: watched ? ['ask', 'watched'] : ['ask'] }, it: spokenOf(item), week: w, month: monthNow, memory, reasons: saidReasons, store, warm: true }).catch(() => null);
+      const cartCtx = { others: items.filter((x) => x !== item).map((x) => shortName(x.item)), total: items.reduce((t, x) => t + (x.price || 0), 0) };
+      const seenCtx = (require('./notify/memory').read().sightings || {})[v2.keyOf(item)] || null;
+      void contextLine({ kind: 'ask', who, verdict: { label: 'ask', react: false, mood: 'watching', tags: watched ? ['ask', 'watched'] : ['ask'] }, it: spokenOf(item), week: w, month: monthNow, memory, reasons: saidReasons, store, warm: true, cart: cartCtx, seen: seenCtx }).catch(() => null);
     }
     // How long a verdict may wait for the model: nothing for a small item (a nod either way), a short wait for one
     // the word list already protects (the model can only overrule it), the full race for a real unknown.
@@ -138,7 +140,7 @@ const routes = {
       if (known(item)) return undefined;
       const waitMs = waitFor(item);
       if (waitMs === 0) return undefined;
-      const c = await model.classifyItem({ name: item.item, price: item.price, store, habits, waitMs }).catch(() => null);
+      const c = await model.classifyItem({ name: item.item, price: item.price, store, habits, waitMs, others: items.filter((x) => x !== item).map((x) => shortName(x.item)) }).catch(() => null);
       if (!c || c.kind === 'unsure' || Number(c.confidence) < 0.8) return undefined;
       return c.kind === 'necessity';
     }));
@@ -159,7 +161,9 @@ const routes = {
       const isCard = v.label === 'ask' || v.react;
       if (isCard && budgetLeft-- > 0) {
         const kind = v.react ? 'react' : 'ask';
-        const written = await contextLine({ kind, who, verdict: v, it: spoken, week: w, month: monthNow, memory, reasons: saidReasons, store, deadline }).catch(() => null);
+        const cart = { others: items.filter((x) => x !== item).map((x) => shortName(x.item)), total: items.reduce((t, x) => t + (x.price || 0), 0) };
+        const seen = require('./notify/memory').noteSighting(v2.keyOf(item), store);
+        const written = await contextLine({ kind, who, verdict: v, it: spoken, week: w, month: monthNow, memory, reasons: saidReasons, store, deadline, cart, seen }).catch(() => null);
         if (written) line = v.react ? written + backHome(item.price, item) : written;
       }
       if (v.label === 'ask') {

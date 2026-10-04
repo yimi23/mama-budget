@@ -10,13 +10,13 @@ const FILE = path.join(__dirname, '..', '..', 'data', 'mama-memory.json');
 const MAX_HISTORY = 40;
 
 function empty() {
-  return { history: [], promises: [], commented: [], lastInboundAt: null, items: {}, reasons: {}, pending: null, grandma: null, defaultGrandma: null };
+  return { history: [], promises: [], commented: [], lastInboundAt: null, items: {}, reasons: {}, pending: null, grandma: null, defaultGrandma: null, sightings: {} };
 }
 
 function read() {
   try {
     const m = JSON.parse(fs.readFileSync(FILE, 'utf8'));
-    return { history: m.history || [], promises: m.promises || [], commented: m.commented || [], lastInboundAt: m.lastInboundAt || null, items: m.items || {}, reasons: m.reasons || {}, pending: m.pending || null, grandma: m.grandma || null, defaultGrandma: m.defaultGrandma || null };
+    return { history: m.history || [], promises: m.promises || [], commented: m.commented || [], lastInboundAt: m.lastInboundAt || null, items: m.items || {}, reasons: m.reasons || {}, pending: m.pending || null, grandma: m.grandma || null, defaultGrandma: m.defaultGrandma || null, sightings: m.sightings || {} };
   } catch {
     return empty();
   }
@@ -83,4 +83,14 @@ function whoSpeaks(m) { return m.grandma || m.defaultGrandma || 'mama'; }
 /** The extension's pick, remembered as the default for texts until they text for someone else. */
 function setDefaultGrandma(who) { const m = read(); if (who && m.defaultGrandma !== who) { m.defaultGrandma = who; write(m); } }
 
-module.exports = { read, write, reset, addHistory, addPromise, activePromises, findBrokenPromise, markBroken, noteCommented, whoSpeaks, setDefaultGrandma };
+/** An item came up again (a card about it): count, where, when. Read back as "the last time this came up". */
+function noteSighting(key, store) {
+  const m = read();
+  const prev = m.sightings[key] || { count: 0 };
+  m.sightings[key] = { count: prev.count + 1, store: store || prev.store || '', last: Date.now(), first: prev.first || Date.now() };
+  if (Object.keys(m.sightings).length > 200) { const oldest = Object.entries(m.sightings).sort((a, b) => a[1].last - b[1].last)[0][0]; delete m.sightings[oldest]; }
+  write(m);
+  return prev.count ? prev : null;
+}
+
+module.exports = { read, write, reset, addHistory, addPromise, activePromises, findBrokenPromise, markBroken, noteCommented, whoSpeaks, setDefaultGrandma, noteSighting };

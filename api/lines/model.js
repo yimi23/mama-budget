@@ -152,8 +152,8 @@ const ITEM_SCHEMA = { type: 'object', additionalProperties: false, required: ['k
   properties: { kind: { type: 'string', enum: ['necessity', 'discretionary', 'unsure'] }, confidence: { type: 'number' }, why: { type: 'string' } } };
 
 /** Is this item an obvious necessity? { kind, confidence, why } or null when the model is off or slow. */
-async function classifyItem({ name, price, store, habits, waitMs }) {
-  const prompt = `Item: ${name}. Price: $${Math.round(price || 0)}. Store: ${store || 'unknown'}.${habits ? ` This person's recent habits: ${habits}.` : ''}`;
+async function classifyItem({ name, price, store, habits, waitMs, others }) {
+  const prompt = `Item: ${name}. Price: $${Math.round(price || 0)}. Store: ${store || 'unknown'}.${habits ? ` This person's recent habits: ${habits}.` : ''}${others && others.length ? ` Also in the cart: ${others.slice(0, 4).join(', ')}.` : ''}`;
   return classifyJSON({ system: ITEM_SYSTEM, prompt, schema: ITEM_SCHEMA, key: `${name}|${store}`, waitMs });
 }
 
