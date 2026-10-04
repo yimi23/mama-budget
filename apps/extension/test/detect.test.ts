@@ -76,3 +76,22 @@ test('real Zara bag wakes her by the URL and the total, not by its scripts', asy
   assert.equal(s.hasCheckoutNode || /check ?out/i.test(s.text), false, 'no checkout word on the visible page');
   assert.ok(isCartPage(s));
 });
+
+test('the live fast path agrees with the full count on every saved page', async () => {
+  const { JSDOM } = await import('jsdom');
+  const { readFileSync } = await import('node:fs');
+  const { readSignals, liveCartSignalCount } = await import('../lib/detect.ts');
+  const pages: [string, string][] = [
+    ['amazon_cart.html', 'https://www.amazon.com/gp/cart/view.html'],
+    ['target_cart.html', 'https://www.target.com/cart'],
+    ['walmart_cart.html', 'https://www.walmart.com/cart'],
+    ['zara_cart.html', 'https://www.zara.com/us/en/shop/cart'],
+    ['zara_cart.html', 'https://www.zara.com/us/en/product/123'],
+  ];
+  for (const [file, url] of pages) {
+    const doc = new JSDOM(readFileSync(new URL(`./fixtures/carts/${file}`, import.meta.url), 'utf8')).window.document;
+    assert.equal(liveCartSignalCount(doc, url) >= 2, isCartPage(readSignals(doc, url)), `${file} at ${url}`);
+  }
+  const plain = new JSDOM('<body><p>Weekly news</p></body>').window.document;
+  assert.equal(liveCartSignalCount(plain, 'https://example.com/'), 0);
+});

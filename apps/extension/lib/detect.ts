@@ -66,6 +66,27 @@ function visibleText(doc: Document, root: Element, cap: number): string {
   return out.slice(0, cap);
 }
 
+/**
+ * The gate's fast path on a live page. Same signals as cartSignalCount(readSignals()), cheapest first:
+ * URL and title, then two selector lookups, and the text walk only when it could still reach two signals.
+ * Returns early once two are found; the count is only exact below two.
+ */
+export function liveCartSignalCount(doc: Document, url: string): number {
+  let path = '';
+  try { path = new URL(url).pathname; } catch { /* keep empty */ }
+  let n = CART_PATH.test(path) || /\b(cart|basket|bag)\b/i.test(doc.title) ? 1 : 0;
+  const subNode = !!doc.querySelector(SUBTOTAL_SELECTOR);
+  const chkNode = !!doc.querySelector(CHECKOUT_SELECTOR);
+  n += (subNode ? 1 : 0) + (chkNode ? 1 : 0);
+  if (n >= 2) return n;
+  const textCouldAdd = (subNode ? 0 : 1) + (chkNode ? 0 : 1);
+  if (n + textCouldAdd < 2 || !doc.body) return n;
+  const text = visibleText(doc, doc.body, 20000);
+  if (!subNode && SUBTOTAL_WORDS.test(text)) n++;
+  if (!chkNode && CHECKOUT_WORDS.test(text)) n++;
+  return n;
+}
+
 /** Reads the live page into PageSignals. Read only. */
 export function readSignals(doc: Document, url: string): PageSignals {
   const body = doc.body;

@@ -1,10 +1,12 @@
 // Runs on every page but does nothing until the gate fires: an add to cart click, or a cart page by two signals.
 
-import { cartSignalCount, clickLabel, isAddToCartLabel, readSignals } from '../lib/detect';
+import { clickLabel, isAddToCartLabel, liveCartSignalCount } from '../lib/detect';
 
 // Carts built by script after load (Target) show one signal at idle and the rest a moment later.
+// Throttled, not per mutation: Shopify themes keep a hidden cart drawer, so every page shows one signal.
 const RECHECK_FOR_MS = 20_000;
-const RECHECK_DEBOUNCE_MS = 400;
+const RECHECK_EVERY_MS = 1000;
+const RECHECK_MAX = 12;
 
 export default defineContentScript({
   matches: ['<all_urls>'],
@@ -24,7 +26,7 @@ export default defineContentScript({
     const check = (): number => {
       if (open) return 2;
       const t0 = performance.now();
-      const n = cartSignalCount(readSignals(document, location.href));
+      const n = liveCartSignalCount(document, location.href);
       if (n >= 1) console.info(`[mama] gate ${n >= 2 ? 'open' : 'one signal'} in ${(performance.now() - t0).toFixed(1)}ms`);
       if (n >= 2) wake('cart');
       return n;
@@ -32,10 +34,16 @@ export default defineContentScript({
 
     const watchForLateCart = () => {
       if (open || watcher) return;
-      let timer: ReturnType<typeof setTimeout> | undefined;
+      let pending = false;
+      let checks = 0;
       watcher = new MutationObserver(() => {
-        clearTimeout(timer);
-        timer = setTimeout(check, RECHECK_DEBOUNCE_MS);
+        if (pending) return;
+        pending = true;
+        ctx.setTimeout(() => {
+          pending = false;
+          if (++checks > RECHECK_MAX) watcher?.disconnect();
+          else check();
+        }, RECHECK_EVERY_MS);
       });
       watcher.observe(document.body, { childList: true, subtree: true });
       ctx.setTimeout(() => { watcher?.disconnect(); watcher = undefined; }, RECHECK_FOR_MS);
