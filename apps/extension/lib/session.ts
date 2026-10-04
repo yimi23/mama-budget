@@ -29,7 +29,11 @@ async function tick() {
     if (key === lastKey) return;
     lastKey = key;
     if (!read) return;
-    console.info('[mama] cart', { via: read.via, items: read.items, subtotal: read.subtotal, currency: read.currency });
+    // Plain text so a copied console line shows the whole read.
+    console.info(
+      `[mama] cart via ${read.via}, subtotal ${read.subtotal ?? '?'} ${read.currency}\n` +
+        read.items.map((i) => `  ${i.qty} x ${i.unitPrice}  ${i.name}`).join('\n'),
+    );
     send({ type: 'CART_READ', store: storeKey(location.href), url: location.origin + location.pathname, read });
   } finally {
     reading = false;
