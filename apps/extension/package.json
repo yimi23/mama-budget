@@ -1,0 +1,24 @@
+{
+  "name": "@mama/extension",
+  "description": "Mama Budget Chrome extension",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "build": "wxt build",
+    "zip": "wxt zip",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/*.test.ts",
+    "postinstall": "wxt prepare"
+  },
+  "dependencies": {
+    "@mama/shared": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "typescript": "^5.9.3",
+    "vite": "^8.1.5",
+    "wxt": "^0.21.3"
+  }
+}

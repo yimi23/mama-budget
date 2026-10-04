@@ -4,12 +4,23 @@
   "private": true,
   "description": "Mama lives in your browser. She reads your cart item by item and stops the waste before you pay.",
   "scripts": {
+    "dev": "concurrently -n ext,api -c green,yellow \"npm run dev -w @mama/extension\" \"npm run api\"",
+    "dev:ext": "npm run dev -w @mama/extension",
+    "build:ext": "npm run build -w @mama/extension",
     "api": "node api/server.js",
     "seed": "node api/nessie/seed.js",
     "score": "node scoring/score.js",
-    "test": "node --test api/test/judge.test.js"
+    "test": "node --test api/test/judge.test.js && npm test -w @mama/extension",
+    "typecheck": "npm run typecheck -w @mama/extension"
   },
   "engines": {
     "node": ">=20"
+  },
+  "workspaces": [
+    "apps/extension",
+    "packages/*"
+  ],
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }

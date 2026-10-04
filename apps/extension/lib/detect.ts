@@ -1,0 +1,76 @@
+// The gate. Runs on every page, decides in under 5ms whether this page matters.
+// No imports, no DOM writes. Two signals wake her on a cart page, one does not.
+
+const CART_PATH = /(^|[\/_.-])(cart|checkout|bag|basket|order)s?([\/_.?#-]|$)/i;
+const CONFIRM_PATH = /(thank[-_]?you|order[-_]?confirmation|order[-_]?placed|confirmation)/i;
+const ADD_WORDS = /\b(add to (cart|bag|basket|trolley)|buy now|add to order|ajouter au panier|in den warenkorb|añadir a la cesta|agregar al carrito)\b/i;
+const SUBTOTAL_WORDS = /\b(subtotal|sub-total|order total|estimated total|cart total|basket total)\b/i;
+const CHECKOUT_WORDS = /\b(check ?out|proceed to (checkout|payment)|place (your )?order)\b/i;
+const ORDER_NUMBER = /\border\s*(number|no\.?|#)\s*[:#]?\s*[A-Z0-9-]{5,}/i;
+
+const SUBTOTAL_SELECTOR =
+  '[id*="subtotal" i],[class*="subtotal" i],[data-test*="subtotal" i],[data-testid*="subtotal" i],[id*="sub-total" i],[class*="sub-total" i]';
+const CHECKOUT_SELECTOR =
+  'a[href*="checkout" i],button[name*="checkout" i],input[name*="checkout" i],[id*="checkout" i],[class*="checkout-button" i],[data-test*="checkout" i]';
+
+export interface PageSignals {
+  url: string;
+  title: string;
+  /** First 20k chars of body text. Bounded so the gate stays cheap on huge pages. */
+  text: string;
+  hasSubtotalNode: boolean;
+  hasCheckoutNode: boolean;
+}
+
+/** Pure: how many cart signals does this page show. */
+export function cartSignalCount(p: PageSignals): number {
+  let path = '';
+  try { path = new URL(p.url).pathname; } catch { /* keep empty */ }
+  let n = 0;
+  if (CART_PATH.test(path) || /\b(cart|basket|bag)\b/i.test(p.title)) n++;
+  if (p.hasSubtotalNode || SUBTOTAL_WORDS.test(p.text)) n++;
+  if (p.hasCheckoutNode || CHECKOUT_WORDS.test(p.text)) n++;
+  return n;
+}
+
+export function isCartPage(p: PageSignals): boolean {
+  return cartSignalCount(p) >= 2;
+}
+
+/** Pure: is this an order confirmation page. URL plus a thank you, or an order number near a thank you. */
+export function isConfirmationPage(p: PageSignals): boolean {
+  let path = '';
+  try { path = new URL(p.url).pathname + new URL(p.url).search; } catch { /* keep empty */ }
+  const thanks = /thank you|thanks for your order|order (is )?(confirmed|placed)/i.test(p.text);
+  if (CONFIRM_PATH.test(path) && thanks) return true;
+  return thanks && ORDER_NUMBER.test(p.text);
+}
+
+/** Pure: does this clicked label read as add to cart or buy now. */
+export function isAddToCartLabel(label: string): boolean {
+  return ADD_WORDS.test(label.replace(/\s+/g, ' ').trim());
+}
+
+/** Reads the live page into PageSignals. Read only. */
+export function readSignals(doc: Document, url: string): PageSignals {
+  const body = doc.body;
+  return {
+    url,
+    title: doc.title,
+    text: body ? (body.textContent ?? '').slice(0, 20000) : '',
+    hasSubtotalNode: !!doc.querySelector(SUBTOTAL_SELECTOR),
+    hasCheckoutNode: !!doc.querySelector(CHECKOUT_SELECTOR),
+  };
+}
+
+/** Walks up from a click target to the nearest button or link and returns its label. */
+export function clickLabel(target: EventTarget | null): string {
+  let el = target instanceof Element ? target : null;
+  for (let i = 0; el && i < 5; i++, el = el.parentElement) {
+    const tag = el.tagName;
+    if (tag === 'BUTTON' || tag === 'A' || (tag === 'INPUT' && (el as HTMLInputElement).type === 'submit') || el.getAttribute('role') === 'button') {
+      return (el as HTMLInputElement).value || el.getAttribute('aria-label') || el.textContent || '';
+    }
+  }
+  return '';
+}

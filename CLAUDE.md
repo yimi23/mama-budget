@@ -6,7 +6,7 @@ Read docs/PLAN.md (what we are building and why), docs/DESIGN.md (every size, co
 WXT (Manifest V3, TypeScript) for the extension. Hono on Node 24 for the API. node:test for tests. npm workspaces. No other frameworks without saying why.
 
 ## Commands
-- `npm run dev` runs the extension and the api together. There is no fake shop. Test on amazon.com, target.com and one Shopify store (gymshark.com), logged in, with saved carts.
+- `npm run dev` runs the extension and the api together. There is no fake shop. Test on amazon.com, target.com and one Shopify store (allbirds.com; gymshark.com is headless and has no /cart.js), logged in, with saved carts.
 - `npm test` runs the rules engine tests. `npm run test:update` regenerates goldens (review the diff).
 - `npm run typecheck`.
 - Load unpacked from `apps/extension/.output/chrome-mv3`. After reloading the extension, hard refresh the Amazon tab (old content scripts are orphaned).
@@ -52,4 +52,4 @@ Popup 400 by 560. Card 360 wide, 20px from bottom and right. Badge 64 circle, go
 No `innerHTML` with page data. No `async` message listeners. No listeners inside async code. No cross origin fetch from content scripts. No `setTimeout` over 30 seconds in the worker (use alarms). Nothing runs on `<all_urls>` before `detect.ts` says yes. No secrets outside the api. No new dependencies without a reason in the commit. No editing fixtures to make tests pass. No emoji as icons. No gradients. No dashes in any copy.
 
 ## Verify
-After any change in `packages/scoring`: `npm test`. After any change in `apps/extension`: `npm run typecheck`, reload the extension, refresh amazon.com/cart, add rice then AirPods and confirm: rice quiet, AirPods asks, "I just want them" reacts. Then open gymshark.com, add anything, confirm she appears with the right item and price from `/cart.js`. Then a test order on the dev store moves the Nessie meter from the confirmation page.
+After any change in `packages/scoring`: `npm test`. After any change in `apps/extension`: `npm run typecheck`, reload the extension, refresh amazon.com/cart, add rice then AirPods and confirm: rice quiet, AirPods asks, "I just want them" reacts. Then open allbirds.com, add anything, confirm she appears with the right item and price from `/cart.js`. Then a test order on the dev store moves the Nessie meter from the confirmation page.

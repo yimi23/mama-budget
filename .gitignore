@@ -1,10 +1,16 @@
-node_modules/
+# secrets
 .env
-.env.*
-!.env.example
+apps/api/.env
+api/.env
+
+# builds and deps
+node_modules/
 .output/
-.wxt/
 dist/
 .cache/
-*.log
+apps/api/.cache/
+
+# local
 .DS_Store
+*.log
+data/nessie-cache.json.bak

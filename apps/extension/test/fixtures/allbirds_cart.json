@@ -1,0 +1,74 @@
+{
+ "token": "redacted",
+ "note": "",
+ "attributes": {},
+ "original_total_price": 5000,
+ "total_price": 5000,
+ "total_discount": 0,
+ "total_weight": 1188.2306,
+ "item_count": 2,
+ "items": [
+  {
+   "id": 42146889203792,
+   "properties": {},
+   "quantity": 2,
+   "variant_id": 42146889203792,
+   "key": "42146889203792:490887f0c00f0d5e39386ef3fa14c545",
+   "title": "Women&#39;s Allbirds Flip Flop - Dusty Pink - 10",
+   "price": 2500,
+   "original_price": 2500,
+   "presentment_price": 25.0,
+   "discounted_price": 2500,
+   "line_price": 5000,
+   "original_line_price": 5000,
+   "total_discount": 0,
+   "discounts": [],
+   "sku": "A12513W100",
+   "grams": 594,
+   "vendor": "Allbirds",
+   "taxable": true,
+   "product_id": 7340901859408,
+   "product_has_only_default_variant": false,
+   "gift_card": false,
+   "final_price": 2500,
+   "final_line_price": 5000,
+   "url": "/products/womens-allbirds-flip-flop-dusty-pink?variant=42146889203792",
+   "featured_image": {
+    "aspect_ratio": 1.0,
+    "alt": "Women's Allbirds Flip Flop - Dusty Pink",
+    "height": 4000,
+    "url": "https://cdn.shopify.com/s/files/1/1104/4168/files/A12513_26Q2_Allbirds-Flip-Flop-Dusty-Pink_PDP_LEFT.png?v=1774646345",
+    "width": 4000
+   },
+   "image": "https://cdn.shopify.com/s/files/1/1104/4168/files/A12513_26Q2_Allbirds-Flip-Flop-Dusty-Pink_PDP_LEFT.png?v=1774646345",
+   "handle": "womens-allbirds-flip-flop-dusty-pink",
+   "requires_shipping": true,
+   "product_type": "Shoes",
+   "product_title": "Women's Allbirds Flip Flop - Dusty Pink",
+   "product_description": "Sun on your feet. Comfort underneath. Light, easy, and made for warm weather, these flip flops bring everyday comfort to sunny days, beach walks, and everything in between. Just slip them on and go.",
+   "variant_title": "10",
+   "variant_options": [
+    "10"
+   ],
+   "options_with_values": [
+    {
+     "name": "Size",
+     "value": "10"
+    }
+   ],
+   "line_level_discount_allocations": [],
+   "line_level_total_discount": 0,
+   "quantity_rule": {
+    "min": 1,
+    "max": null,
+    "increment": 1
+   },
+   "has_components": false
+  }
+ ],
+ "requires_shipping": true,
+ "currency": "USD",
+ "items_subtotal_price": 5000,
+ "cart_level_discount_applications": [],
+ "discount_codes": []
+}

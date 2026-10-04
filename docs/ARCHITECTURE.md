@@ -77,7 +77,7 @@ Confidence: platform and adapter reads are 1.0; JSON-LD 0.9; text reads carry th
 
 **Currency.** Readers return `currency` from the symbol or code (`$ £ € ₦ NGN GBP EUR`). `packages/shared/currency.ts` holds a fixed table (USD base, NGN from `.env`) and `toUSD()`. The envelope is in USD; the line shows the store currency first and the USD after; Mama adds the naira when the store is not already in naira.
 
-**Store identity.** `storeKey(url)` returns the registrable domain (eTLD+1, small suffix list, no dependency). `lastCart` is kept per store for 30 minutes so a Shopify confirmation on `checkout.shopify.com` or `shop.app` matches the cart from `gymshark.com` through the `Referer` or the previous tab URL in `storage.session`.
+**Store identity.** `storeKey(url)` returns the registrable domain (eTLD+1, small suffix list, no dependency). `lastCart` is kept per store for 30 minutes so a Shopify confirmation on `checkout.shopify.com` or `shop.app` matches the cart from `allbirds.com` through the `Referer` or the previous tab URL in `storage.session`.
 
 **Amazon scope.** The adapter reads only inside the active cart container and skips Saved for later, Buy it again and recommendation rails. Fixture test asserts a saved for later item never appears.
 
@@ -135,6 +135,6 @@ Permissions: `storage`, `alarms`, `offscreen`, `webNavigation`. Content script m
 10. No permissions you do not use. `<all_urls>` is used, by the detector; nothing runs behind it until it fires.
 
 ## Confirm in hour one
-Shopify `/cart.js` on any Shopify store (try gymshark.com or allbirds.com) logging items in the console. Then Amazon cart selectors, then Target. All three logging before anything else is built. Confirmation page URLs for all three. Nessie bills and transfers endpoint paths. Photon kit install on the demo Mac and a test send to a second phone. Whether the venue WiFi blocks localhost traffic from Chrome (it does not, but check).
+Shopify `/cart.js` on any Shopify store (allbirds.com works; gymshark.com is headless and 404s) logging items in the console. Then Amazon cart selectors, then Target. All three logging before anything else is built. Confirmation page URLs for all three. Nessie bills and transfers endpoint paths. Photon kit install on the demo Mac and a test send to a second phone. Whether the venue WiFi blocks localhost traffic from Chrome (it does not, but check).
 
 Sources: Chrome MV3 service worker lifecycle, offscreen, messaging, permissions, alarms, storage, webNavigation docs; Chromium content script fetch policy; WXT guides; Hono CORS; Claude structured outputs; Node test runner; Photon imessage kit docs.
