@@ -5,11 +5,16 @@ import type { CartRead } from '@mama/shared/types';
 import type { Message } from '@mama/shared/messages';
 import { storeKey } from '@mama/shared/store-key';
 import { readCart, readKey } from './readers';
+import { addsUp } from './readers/settle';
 
 const DEBOUNCE_MS = 400;
 const AFTER_ADD_MS = 1200;
+// A read that does not add up to the page subtotal is a cart still rendering. Wait; accept it if it holds this long
+// (some stores show discounts that never add up).
+const SETTLE_MS = 1500;
 
 let lastKey = '(start)';
+let unsettledKey = '';
 let timer: ReturnType<typeof setTimeout> | undefined;
 let reading = false;
 let started = false;
@@ -32,6 +37,12 @@ async function tick() {
       lastKey = 'none';
       return;
     }
+    if (!addsUp(read) && key !== unsettledKey) {
+      unsettledKey = key;
+      schedule(SETTLE_MS);
+      return;
+    }
+    unsettledKey = '';
     lastKey = key;
     // Plain text so a copied console line shows the whole read.
     console.info(

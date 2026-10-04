@@ -70,3 +70,11 @@ test('real allbirds.com /cart.js, recorded Oct 3', async () => {
   assert.equal(r?.subtotal, 50);
   assert.equal(r?.currency, 'USD');
 });
+
+test('a cart still rendering does not add up to its subtotal', async () => {
+  const { addsUp } = await import('../lib/readers/settle.ts');
+  const base = { currency: 'USD' as const, source: 'adapter' as const, via: 'walmart.com', confidence: 1 };
+  assert.equal(addsUp({ ...base, subtotal: 1269.93, items: [{ name: 'Chips', qty: 1, unitPrice: 2.5 }] }), false);
+  assert.equal(addsUp({ ...base, subtotal: 9.28, items: [{ name: 'Chips', qty: 1, unitPrice: 2.5 }, { name: 'Mix', qty: 1, unitPrice: 6.78 }] }), true);
+  assert.equal(addsUp({ ...base, subtotal: null, items: [{ name: 'Chips', qty: 1, unitPrice: 2.5 }] }), true);
+});

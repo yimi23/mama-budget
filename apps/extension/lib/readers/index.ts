@@ -30,3 +30,4 @@ export function readKey(read: CartRead | null): string {
   if (!read) return '';
   return read.items.map((i) => `${i.name}|${i.qty}|${i.unitPrice}`).join(';') + `|${read.subtotal}|${read.currency}`;
 }
+
