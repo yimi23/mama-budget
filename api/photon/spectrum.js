@@ -68,24 +68,28 @@ const spaces = require('../notify/spaces');
 async function send(to, text) {
   if (!to || !text) return null;
   const ctx = await getApp();
-  if (!ctx) return null;
+  if (!ctx) {
+    console.log(`[photon] -> ${to}: not sent (no connection)`);
+    return null;
+  }
   try {
     const knownSpaceId = spaces.get(to);
     const space = knownSpaceId ? await ctx.im.space.get(knownSpaceId) : await ctx.im.space.create(await ctx.im.user(to));
     await space.send(text);
     spaces.remember(to, space.id);
+    console.log(`[photon] -> ${to}: accepted`); // one clear line per proactive send; never the secret
     return { to, text };
   } catch (e) {
-    console.log('[photon] send failed:', e.message);
+    console.log(`[photon] -> ${to}: not sent (${e.message})`);
     return null;
   }
 }
 
 // Listens for every inbound text and asks onIncoming(text, fromId) what to say back. Remembers the
 // sender's space on every message, so a later proactive text (the bank watcher notifying them) reuses
-// the same conversation instead of starting a new one. Replies on the same space it arrived on --
-// the correct way to continue a thread; a fresh send() would start a second conversation instead.
-// A no-op when credentials or the package are missing, so wiring this up unconditionally is safe.
+// the same conversation instead of starting a new one. Also remembers the sender as the demo phone
+// (notify/spaces.js) -- this is a one-student demo, so whoever just texted the line is who the
+// watcher and the statements should text back, unless DEMO_PHONE overrides that.
 // A turn is everything one person sends within DEBOUNCE_MS: a screenshot and its caption arrive as two messages and
 // must be read as one. Photos come as attachments (image/*), read into memory once. onIncoming(text, fromId,
 // messageId, { images }) returns { reply, react } or a string; a react is a tapback on their message (a thumbs up
@@ -176,7 +180,7 @@ function listen(onIncoming) {
     (async () => {
       for await (const [space, message] of ctx.app.messages) {
         const fromId = message.sender?.id;
-        if (fromId) spaces.remember(fromId, space.id);
+        if (fromId) { spaces.remember(fromId, space.id); spaces.rememberSender(fromId); }
         const c = message.content;
         const image = await imageOf(c);
         const text = c?.type === 'text' ? c.text : c?.type === 'markdown' ? c.markdown : '';

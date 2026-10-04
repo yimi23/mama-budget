@@ -16,14 +16,24 @@ const log = require('./log');
 const photon = require('../photon/spectrum');
 const kit = require('../photon/kit');
 const gate = require('../photon/gate');
+const spaces = require('./spaces');
 
 function senderName() {
   return photon.live() ? 'photon' : kit.available() ? 'imessage' : 'log';
 }
 
+// A watcher/statement notification passes no explicit `to` (there is one demo student, not a user
+// table), so this resolves who that actually is: DEMO_PHONE (api/.env) if set, else whoever last
+// texted the line (notify/spaces.js), else the legacy PHOTON_TO, else the placeholder "you" for a
+// log-only transcript. "you"/PHOTON_TO were the old fallback and are why proactive texts never
+// reached a real phone before -- Photon rejects a target it doesn't recognize.
+function resolveDest(to) {
+  return to || spaces.demoPhone() || process.env.PHOTON_TO || 'you';
+}
+
 async function notify(to, text, mood, opts = {}) {
   if (!text) return null;
-  const dest = to || process.env.PHOTON_TO || 'you';
+  const dest = resolveDest(to);
   const sender = senderName();
   const held = gate.gate({ to: dest, prompted: !!opts.prompted, important: !!opts.important });
   if (held) {
