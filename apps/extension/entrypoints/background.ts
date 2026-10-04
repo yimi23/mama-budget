@@ -26,13 +26,34 @@ async function getWeek() {
   return week ? { ok: true as const, week } : { ok: false as const };
 }
 
-async function judgeCart(store: string, currency: CurrencyCode, items: CartItem[]) {
+/** Reader 4. The text already went through the page's own gate; only the cart region's text leaves the page, never the URL beyond the host. */
+async function extract(msg: Extract<Message, { type: 'EXTRACT' }>) {
+  if (!(await apiUp())) return { ok: false as const };
+  const hash = await sha1(msg.text);
+  const { extractCache = {} } = await browser.storage.session.get('extractCache');
+  const cached = (extractCache as Record<string, CartRead>)[hash];
+  if (cached) return { ok: true as const, read: cached };
+  const out = await call<{ ok: boolean; items?: CartRead['items']; subtotal?: number | null; currency?: CurrencyCode; confidence?: number }>('/extract', {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text: msg.text, store: msg.store }),
+  });
+  if (!out?.ok || !out.items?.length) return { ok: false as const };
+  const read: CartRead = { items: out.items, subtotal: out.subtotal ?? null, currency: out.currency ?? 'USD', source: 'text', via: 'model', confidence: out.confidence ?? 0.5 };
+  await browser.storage.session.set({ extractCache: { ...(extractCache as object), [hash]: read } });
+  return { ok: true as const, read };
+}
+
+async function sha1(text: string): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(text));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function judgeCart(store: string, currency: CurrencyCode, items: CartItem[], confidence?: number) {
   if (!(await apiUp())) return { ok: false as const };
   const { memory = {}, settings = {} } = await browser.storage.local.get(['memory', 'settings']);
   const reply = await call<JudgeReply>('/v2/judge', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ items: items.map((i) => ({ ...i, store })), memory, currency, grandma: (settings as { grandma?: string }).grandma ?? 'mama', home: await homeSetting(), loudness: (settings as { loudness?: string }).loudness }),
+    body: JSON.stringify({ items: items.map((i) => ({ ...i, store })), memory, currency, confidence, grandma: (settings as { grandma?: string }).grandma ?? 'mama', home: await homeSetting(), loudness: (settings as { loudness?: string }).loudness }),
   });
   return reply ? { ok: true as const, ...reply, handled: await handledLists() } : { ok: false as const };
 }
@@ -325,7 +346,7 @@ export default defineBackground(() => {
         getWeek().then(sendResponse, () => sendResponse({ ok: false }));
         return true;
       case 'JUDGE':
-        judgeCart(msg.store, msg.currency, msg.items).then(sendResponse, () => sendResponse({ ok: false }));
+        judgeCart(msg.store, msg.currency, msg.items, msg.confidence).then(sendResponse, () => sendResponse({ ok: false }));
         return true;
       case 'MARK':
         mark(msg.kind, msg.key).then(() => sendResponse({ ok: true }), () => sendResponse({ ok: true }));
@@ -362,6 +383,9 @@ export default defineBackground(() => {
         return true;
       case 'WATCH_HERE':
         watchHere(msg).then(sendResponse, () => sendResponse({ line: null }));
+        return true;
+      case 'EXTRACT':
+        extract(msg).then(sendResponse, () => sendResponse({ ok: false }));
         return true;
       case 'START_OVER':
         startOver().then(() => sendResponse({ ok: true }), () => sendResponse({ ok: true }));

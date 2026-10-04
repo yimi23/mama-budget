@@ -25,8 +25,9 @@
     "concurrently": "^9.2.1"
   },
   "dependencies": {
-    "spectrum-ts": "^12.10.1",
+    "@anthropic-ai/sdk": "^0.131.0",
     "@photon-ai/imessage-kit": "2.1.2",
-    "better-sqlite3": "^12.5.0"
+    "better-sqlite3": "^12.5.0",
+    "spectrum-ts": "^12.10.1"
   }
 }

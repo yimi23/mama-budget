@@ -63,6 +63,12 @@ function storePriceOf(name: string): number | undefined {
   return it ? it.unitPrice * it.qty : undefined;
 }
 
+/** Reader 4 goes through the worker to the API; the worker caches by text hash. */
+async function extractViaWorker(text: string): Promise<CartRead | null> {
+  const r = await send<{ ok: true; read: CartRead } | { ok: false }>({ type: 'EXTRACT', store: storeKey(location.href), text });
+  return r?.ok ? r.read : null;
+}
+
 async function send<T>(msg: Message): Promise<T | null> {
   // After an extension reload this script is orphaned; the runtime id disappears.
   if (!browser.runtime?.id) return null;
@@ -78,7 +84,7 @@ type JudgeResult = ({ ok: true; handled: HandledLists } & JudgeReply) | { ok: fa
 async function judge(read: CartRead): Promise<JudgeResult | null> {
   // The envelope is in USD; a naira or pound cart is judged in dollars. The store currency goes along for her line.
   const items = read.items.map((i) => ({ ...i, unitPrice: Math.round(toUSD(i.unitPrice, read.currency) * 100) / 100, storeUnitPrice: i.unitPrice }));
-  return send<JudgeResult>({ type: 'JUDGE', store: storeKey(location.href), currency: read.currency, items });
+  return send<JudgeResult>({ type: 'JUDGE', store: storeKey(location.href), currency: read.currency, items, confidence: read.confidence });
 }
 
 /** The chosen grandma, or null until the person has picked one in the popup. Never defaulted (PLAN: "never defaults either"). */
@@ -301,7 +307,7 @@ async function react(g: Grandma, week: Week, v: Verdict, also: Verdict[] = []) {
 }
 
 async function readOnce() {
-  const read: CartRead | null = await readCart(document, location.href);
+  const read: CartRead | null = await readCart(document, location.href, extractViaWorker);
   const key = readKey(read);
   if (key === lastKey) return;
   if (!read) {

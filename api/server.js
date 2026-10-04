@@ -32,7 +32,9 @@ const crypto = require('node:crypto');
 const { judge } = require('./judge/rules');
 const v2 = require('./judge/rules_v2');
 const nessie = require('./nessie/client');
-const { lineFor, ackLine, buyLine, smallLines, subLine, setHome } = require('./lines/writer');
+const { lineFor, ackLine, buyLine, smallLines, subLine, setHome, contextLine, backHome } = require('./lines/writer');
+const model = require('./lines/model');
+const extractCache = new Map();
 const { speak } = require('./voice/elevenlabs');
 const { notify, getMessages, clearMessages } = require('./notify');
 const chat = require('./notify/chat');
@@ -79,7 +81,7 @@ async function scheduleRoute(body, query) {
 }
 
 const routes = {
-  'GET /health': async () => ({ ok: true }),
+  'GET /health': async () => ({ ok: true, model: model.ready() ? model.MODEL : null }),
   'GET /week': month,
   'GET /month': (body, query) => reading(query),
   // Onboarding screen 06: the weekly envelope she proposed, adjusted. Whole dollars, 25 to 500. The badge reads it next tick.
@@ -106,10 +108,35 @@ const routes = {
     const items = (body.items || []).map((it) => ({ item: String(it.name || ''), price: Number(it.unitPrice || 0) * Number(it.qty || 1), storePrice: it.storeUnitPrice != null ? Number(it.storeUnitPrice) * Number(it.qty || 1) : null, merchant: it.store || '', currency: body.currency || 'USD', home: body.home || null }));
     // The rules judge the full title (the protected word is often at the end: "...Fragrant Rice"); her line gets the short name.
     const judged = items.map((item) => ({ item, v: v2.judge(item, w, memory, { loudness: body.loudness, now: new Date() }) }));
-    const verdicts = judged.map(({ item, v }) => {
+    // Cards only (an ask or a reaction) get a line written from context, three at most per call, in parallel, each
+    // falling back to the fixed pool on timeout. Low confidence reads (the text reader) ask rather than scold.
+    const monthNow = nessie.month();
+    const store = (body.items || [])[0]?.store || '';
+    let budgetLeft = 3;
+    const verdicts = await Promise.all(judged.map(async ({ item, v }) => {
+      if (body.confidence != null && Number(body.confidence) < 0.7 && v.react) { v = { ...v, react: false, label: 'ask', mood: 'watching', reason: 'Read from page text, so she asks rather than scolds.', tags: [...v.tags, 'lowconfidence'] }; }
       const spoken = { ...item, item: shortName(item.item) };
-      return { name: item.item, short: spoken.item, price: item.price, ...v, line: lineFor(v, spoken, w, who), ack: ackLine(v, spoken, who), sub: subLine(w) };
-    });
+      let line = lineFor(v, spoken, w, who);
+      let ack = ackLine(v, spoken, who);
+      if (ack) {
+        const written = await contextLine({ kind: 'ack', who, verdict: v, it: spoken, week: w, month: monthNow, memory, store }).catch(() => null);
+        if (written) ack = written;
+      }
+      const isCard = v.label === 'ask' || v.react;
+      if (isCard && budgetLeft-- > 0) {
+        const kind = v.react ? 'react' : 'ask';
+        const written = await contextLine({ kind, who, verdict: v, it: spoken, week: w, month: monthNow, memory, store }).catch(() => null);
+        if (written) line = v.react ? written + backHome(item.price, item) : written;
+      }
+      if (v.label === 'ask') {
+        // The person is reading the question. Write what she says if they admit it, so that card is instant and hers.
+        const blown = w.spent + item.price > w.budget;
+        const next = blown ? { label: 'want', react: true, mood: 'shocked', tags: ['remembered', 'blown'] } : { label: 'want', react: false, mood: w.mood, tags: ['remembered', 'fits'] };
+        void contextLine({ kind: blown ? 'react' : 'ack', who, verdict: next, it: spoken, week: w, month: monthNow, memory, store, warm: true }).catch(() => null);
+        void contextLine({ kind: 'ack', who, verdict: { label: 'need', react: false, mood: w.mood, tags: ['remembered'] }, it: spoken, week: w, month: monthNow, memory, store, warm: true }).catch(() => null);
+      }
+      return { name: item.item, short: spoken.item, price: item.price, ...v, line, ack, sub: subLine(w) };
+    }));
     const loud = verdicts.find((v) => v.react) || verdicts.find((v) => v.label === 'ask');
     // What the bank watcher matches a later purchase against ("a cart the extension reported in the
     // last 10 minutes"). This is the only place the extension's cart reaches the API at all.
@@ -135,7 +162,11 @@ const routes = {
     const w = nessie.week();
     setHome(body.home);
     const it = { item: short, price, storePrice: body.storePrice != null ? Number(body.storePrice) : null, merchant: body.store || '', currency: body.currency || 'USD', home: body.home || null };
-    const line = tag === 'need' ? smallLines(who).agreed : buyLine(w, it, who);
+    let line = tag === 'need' ? smallLines(who).agreed : buyLine(w, it, who);
+    if (tag === 'want') {
+      const written = await contextLine({ kind: 'bought', who, verdict: { label: 'want', react: w.ratio >= 1, tags: [] }, it, week: w, month: nessie.month(), memory: body.memory, store: body.store }).catch(() => null);
+      if (written) line = written + backHome(price, it);
+    }
     const left = Math.max(0, w.budget - w.spent);
     const sub = `$${Math.round(price)} on ${short}. $${w.spent} of $${w.budget} gone this week. $${left} left.`;
     // The bank watcher (notify/watch.js) picks this purchase up on its next tick and texts if it
@@ -180,6 +211,16 @@ const routes = {
       nessie.writeCache(c);
     }
     return { ok: true, week: nessie.week() };
+  },
+
+  // Reader 4: the visible text of a cart region -> items, through the model, cached by text hash. The judge never knows.
+  'POST /extract': async (body) => {
+    const text = String(body.text || '').trim();
+    if (!text) throw new Error('text is required');
+    const key = crypto.createHash('sha1').update(text).digest('hex');
+    extractCache.has(key) || extractCache.set(key, await model.extractItems(text));
+    const out = extractCache.get(key);
+    return out ? { ok: true, ...out } : { ok: false };
   },
 
   'POST /buy': async (body) => {

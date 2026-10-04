@@ -11,7 +11,9 @@ export interface HandledLists {
 export type Message =
   | { type: 'CART_READ'; store: string; url: string; read: CartRead }
   | { type: 'GET_WEEK' }
-  | { type: 'JUDGE'; store: string; currency: CurrencyCode; items: CartItem[] }
+  | { type: 'JUDGE'; store: string; currency: CurrencyCode; items: CartItem[]; confidence?: number }
+  /** Reader 4: the cart region's text, to the model through the API. Cached by text hash. */
+  | { type: 'EXTRACT'; store: string; text: string }
   | { type: 'ANSWER'; key: string; answer: Answer }
   | { type: 'MARK'; kind: 'asked' | 'reacted'; key: string }
   /** Buy anyway on the card: the admitted want is charged now. */
@@ -44,6 +46,7 @@ export type Reply<M extends Message> =
   M extends { type: 'GET_WEEK' } ? { ok: true; week: Week } | { ok: false } :
   M extends { type: 'JUDGE' } ? ({ ok: true; handled: HandledLists } & JudgeReply) | { ok: false } :
   M extends { type: 'MARK' } ? { ok: true } :
+  M extends { type: 'EXTRACT' } ? { ok: true; read: CartRead } | { ok: false } :
   M extends { type: 'BUY' } ? ({ ok: true } & BuyReply) | { ok: false } :
   M extends { type: 'CONFIRM' } ? { ok: true; posted: number } :
   M extends { type: 'PUT_BACK' } ? { ok: true; week: Week } | { ok: false } :

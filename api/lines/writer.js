@@ -229,15 +229,41 @@ You are given a verdict and you only voice it. You never change whether somethin
 };
 
 async function callModel(system, userContent) {
-  if (!process.env.ANTHROPIC_API_KEY) return null;
-  const r = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-    body: JSON.stringify({ model: process.env.MODEL || 'claude-sonnet-4-5', max_tokens: 120, system, messages: [{ role: 'user', content: userContent }] }),
-  });
-  if (!r.ok) return null;
-  const j = await r.json();
-  return j.content?.[0]?.text?.trim() || null;
+  return require('./model').say({ system, prompt: userContent, maxLen: 400 });
+}
+
+const LINE_RULES = `
+Write exactly what she says next, one or two short sentences, first person, no quotation marks, no stage directions.
+Name the amount and the item. Use digits for numbers (another part of the system turns them into speech). Never convert
+currencies; never mention naira, dollars at home, or exchange rates (the system adds that itself when it applies).
+No dashes of any kind, no emoji, no hashtags. Do not call yourself an app or an AI. Do not invent facts beyond the context.
+For an ASK: a neutral question that names the item, nothing that judges, no mention of the budget numbers. For a REACTION:
+state the breach plainly with the numbers from the context (price, what is left this week, or the week's budget), end on care, never cruelty.
+For an ACKNOWLEDGEMENT: one sentence, warm, that confirms you heard and what it means (a need stays off the meter; a want that fits is fine).
+For AFTER A CHARGE past the week: name how far over the week is and the item; no lecture.`;
+
+/**
+ * Her line written from the whole situation: the verdict the rules reached, the week, the month's habits, the bills, what
+ * she remembers, the store. The rules decided; this only words it. Returns null on any failure so the fixed pools take over.
+ */
+async function contextLine({ kind, who = 'mama', verdict, it, week, month, memory, store, warm = false }) {
+  const model = require('./model');
+  // The cache key is the situation, not the prompt: the same item, price, week and store gives the same line whether
+  // it was written ahead of time (while the ask was on screen) or at the moment of the card.
+  const situation = [kind, who, it.item, Math.round(it.price || 0), Math.round(week.spent || 0), Math.round(week.budget || 0), shopName(store || it.merchant), verdict.react ? 1 : 0].join('|');
+  const left = Math.max(0, Math.round((week.budget || 0) - (week.spent || 0)));
+  const habits = (month && month.topWants ? month.topWants : []).slice(0, 3).map((w) => `$${w.amount} at ${w.merchant} (${w.category})`).join(', ');
+  const bill = (week.bills || [])[0];
+  const remembered = memory && Object.keys(memory).length ? Object.entries(memory).slice(0, 8).map(([k, v]) => `${k}: ${v}`).join('; ') : 'nothing yet';
+  const prompt = `${kind.toUpperCase()}.
+Item: ${it.item}. Price: $${Math.round(it.price || 0)}${it.qty > 1 ? ` (${it.qty} of them)` : ''}. Store: ${shopName(store || it.merchant)}.
+Verdict from the rules: ${verdict.label}${verdict.react ? ', she reacts' : ''}${verdict.tags && verdict.tags.length ? ` (${verdict.tags.join(', ')})` : ''}.
+This week: $${Math.round(week.spent || 0)} of $${Math.round(week.budget || 0)} fun money spent, $${left} left, ${week.daysLeft ?? '?'} day(s) to go${week.ratio >= 1 ? `, the week is already over by $${Math.round(week.spent - week.budget)}` : ''}.
+${bill ? `Bill coming: ${bill.nickname || bill.payee} $${bill.amount} in ${bill.daysUntil} day(s).` : 'No bills in the next week.'}
+Last 30 days habits: ${habits || 'not much'}.
+What she remembers about this person's answers: ${remembered}.`;
+  const must = kind === 'ask' ? [it.item.split(' ')[0]] : kind === 'react' || kind === 'bought' ? [String(Math.round(it.price || 0))] : [];
+  return model.say({ system: SYSTEM[who] + LINE_RULES, prompt, key: situation, mustInclude: must, maxLen: kind === 'ack' ? 160 : 240, timeoutMs: warm ? model.WARM_TIMEOUT_MS : undefined });
 }
 
 async function modelLine(verdict, it, month, who = 'mama') {
@@ -300,5 +326,5 @@ function modelReply({ who = 'mama', userText, week, history, promises }) {
 module.exports = {
   shopName, backHome, setHome,
   lineFor, ackLine, buyLine, buyText, smallLines, subLine, weeklyStatement, monthlyStatement, watchLines, whatsLeft,
-  modelLine, modelReply, toNaira, notifyLine, notifyText, MAMA, NANA,
+  modelLine, modelReply, contextLine, toNaira, notifyLine, notifyText, MAMA, NANA,
 };

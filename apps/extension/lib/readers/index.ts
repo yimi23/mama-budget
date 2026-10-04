@@ -13,7 +13,12 @@ import { practice } from './sites/practice';
 
 const HAND_WRITTEN: AdapterSpec[] = [amazon, target, walmart];
 
-export async function readCart(doc: Document, url: string): Promise<CartRead | null> {
+import { cartRegionText } from './text';
+
+/** Reader 4 is asynchronous and lives behind the worker, so the session hands it in. */
+export type Extractor = (text: string) => Promise<CartRead | null>;
+
+export async function readCart(doc: Document, url: string, extract?: Extractor): Promise<CartRead | null> {
   // The practice cart is our own page (chrome-extension://...), so it is known by a mark on the document, not a host.
   if (doc.documentElement.hasAttribute('data-mama-practice')) return runAdapter(practice, doc);
   const platform = await readPlatform(doc);
@@ -24,6 +29,11 @@ export async function readCart(doc: Document, url: string): Promise<CartRead | n
     if (spec.host !== store) continue;
     const read = runAdapter(spec, doc);
     if (read && read.items.length) return read;
+  }
+  // Reader 4: cart text to the model, when nobody wrote code for this store.
+  if (extract) {
+    const text = cartRegionText(doc);
+    if (text) return extract(text);
   }
   return null;
 }
