@@ -157,7 +157,14 @@ async function handleWithdrawal(w, cache) {
   await notifyMod.notify(null, text, 'proud', { important: true });
 }
 
+let inFlight = false;
 async function tick() {
+  if (inFlight) return; // a slow Nessie answer must never let two ticks text the same purchase
+  inFlight = true;
+  try { await tickOnce(); } finally { inFlight = false; }
+}
+
+async function tickOnce() {
   const cache = nessie.readCache();
   if (!cache.accountId) return; // not seeded yet
 
@@ -185,6 +192,8 @@ async function tick() {
     const id = row._id;
     if (!id || seen.has(id)) continue;
     seen.add(id); changed = true;
+    // Written before it is handled, so a restart or an overlapping reader mid text never sends it twice.
+    writeState({ ...state, seen: [...seen], bootstrapped: state.bootstrapped || bootstrap });
     if (bootstrap) continue; // pre-existing (seeded) history: recorded as seen, never texted
 
     try {
