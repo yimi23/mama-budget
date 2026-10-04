@@ -29,6 +29,7 @@ const PARSE: Record<Platform, (j: unknown) => CartRead | null> = {
 // At most one fetch per MIN_INTERVAL_MS: a tick inside the window waits out the remainder, then fetches fresh,
 // so an add to cart whose only change lands inside the window is still seen.
 const MIN_INTERVAL_MS = 800;
+const FETCH_TIMEOUT_MS = 2500;
 let lastAt = 0;
 
 export async function readPlatform(doc: Document): Promise<CartRead | null> {
@@ -42,6 +43,7 @@ export async function readPlatform(doc: Document): Promise<CartRead | null> {
       credentials: 'same-origin',
       headers: { accept: 'application/json' },
       cache: 'no-store',
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS), // a hanging cart endpoint never holds the other readers hostage
     });
     if (!res.ok) return null;
     return PARSE[platform](await res.json());

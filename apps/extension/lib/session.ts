@@ -16,7 +16,7 @@ import { addsUp } from './readers/settle';
 import { nextDelay } from './debounce';
 
 const DEBOUNCE_MS = 250;
-const AFTER_ADD_MS = 700;
+const AFTER_ADD_MS = 400; // the store's own add request usually lands inside this; the product page's JSON-LD does not need it at all
 // A read that does not add up to the page subtotal is a cart still rendering. Wait; accept it only once it has
 // held unchanged for this long (some stores show discounts that never add up).
 const SETTLE_MS = 1000;
