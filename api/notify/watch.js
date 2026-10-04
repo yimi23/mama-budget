@@ -222,4 +222,4 @@ function resetState() {
   recentCarts = [];
 }
 
-module.exports = { start, stop, resetState, recordCart, latestCart, markSeen, levelFor };
+module.exports = { start, stop, resetState, recordCart, latestCart, markSeen, levelFor, tick };

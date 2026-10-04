@@ -308,6 +308,9 @@ const routes = {
     const seed = require('./nessie/seed');
     await seed.main();
     watch.resetState();
+    // Bootstrap the watcher now, inside the reset, so a purchase made a second later is new and gets its text instead
+    // of being swallowed as seeded history.
+    await watch.tick().catch(() => {});
     clearMessages();
     require('./notify/memory').reset();
     return { ok: true, week: await month() };
