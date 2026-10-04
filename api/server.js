@@ -76,11 +76,15 @@ const routes = {
   },
 };
 
-// "Fujifilm Instax Mini 99 Instant Camera Vintage Black. + Value Pack (40 Sheets)..." -> "Fujifilm Instax Mini 99".
-// Store titles run long; her lines need the noun a person would say.
+// "Fujifilm Instax Mini 99 Instant Camera Vintage Black. + Value Pack (40 Sheets)..." -> "Fujifilm Instax Mini 99 Instant Camera".
+// Store titles run long; her lines need the noun a person would say. Up to six words, never ending on a filler word.
+const FILLER = new Set(['about', 'for', 'with', 'and', 'the', 'of', 'to', 'in', 'a', 'an', 'by', 'on', 'from', '&']);
 function shortName(name) {
-  const head = String(name || '').split(/\s[|(\[–-]\s?|[,|(\[.]\s/)[0].replace(/^\[[^\]]*\]-?/, '').trim();
-  return head.split(/\s+/).slice(0, 4).join(' ');
+  // Cut at the first separator a title uses: " - ", "- ", ",", ":", "|", "(", "[", "–", ". ". A hyphen inside a word ("35-150mm") stays.
+  const head = String(name || '').replace(/^\[[^\]]*\]\s*-?\s*/, '').split(/\s+-\s*|-\s+|[,:|(\[–]|\.\s/)[0].trim();
+  const words = head.split(/\s+/).slice(0, 6);
+  while (words.length > 1 && FILLER.has(words[words.length - 1].toLowerCase())) words.pop();
+  return words.join(' ');
 }
 
 function rank(mood) { return ['calm', 'proud', 'watching', 'shocked', 'down'].indexOf(mood); }
