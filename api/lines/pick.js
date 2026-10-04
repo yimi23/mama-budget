@@ -7,7 +7,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const FILE = path.join(__dirname, '..', '..', 'data', 'said.json');
+const FILE = process.env.MAMA_SAID_FILE || path.join(__dirname, '..', '..', 'data', 'said.json');
 const WINDOW_MAX = 6;
 
 let said = null;

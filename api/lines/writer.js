@@ -82,6 +82,9 @@ const MAMA = {
     'Ehen, {item}. Talk to me. What is it for?',
     '{item} at {price}. Tell me why, then I will talk.',
     'Oya, what is {item} for? I am listening.',
+    '{item} at {merchant}? Tell me the story first.',
+    'Ehen. {item}, {price}, from {merchant}. What is it for?',
+    '{merchant} today, and {item} in the cart. Talk to me. What for?',
   ],
   askWatched: [
     '{item}? {watchedMerchant} again. {habit} dollars here last month.',
@@ -148,7 +151,7 @@ const NANA = {
     'A penny saved. Good.',
   ],
   rare: ['Oh for fun. I’m gonna brag about this at church.', 'Don’t that beat all. You kept it. Hotdish on me.', 'You betcha I noticed. Kept.'],
-  ask: ['Hold on a sec, hon. What’s {item} for?', '{item}? What’s that for?', '{item}, {price}. What’s the occasion?', 'Okay, {item}. Tell me what it’s for first.', 'Before I say anything. {item}. What for?'],
+  ask: ['Hold on a sec, hon. What’s {item} for?', '{item}? What’s that for?', '{item}, {price}. What’s the occasion?', 'Okay, {item}. Tell me what it’s for first.', 'Before I say anything. {item}. What for?', '{item} from {merchant}, hon. What’s that for?', 'Well. {item}, {price}, at {merchant}. What’s the story?'],
   askWatched: ['{item}, hon? {watchedMerchant} again. {habit} dollars here last month.', '{watchedMerchant} again. {habit} dollars last month. What’s {item} for?'],
   ackNeed: ['Okay. Noted.', 'Alright. A need. I won’t ask again.', 'Fine by me. Yours.'],
   ackFits: ['Okay, hon. That fits.', 'That fits. Go on.', 'Yep. Inside the week. Enjoy it.', 'That’ll do. Fits.'],
@@ -206,7 +209,7 @@ const ABUELA = {
     'Ándale. That is how we did it with less than this.',
   ],
   rare: ['Mija, I am telling the whole family on Sunday. Kept it.', 'Más sabe el diablo por viejo. And this old woman says: well done.'],
-  ask: ['{item}? What is it for, mija?', '{item}, {price}. Tell me what for.', 'Hold on, mi cielo. {item}. What is it for?', '{item} at {price}. What is the occasion?', 'Before anything. {item}. What for?'],
+  ask: ['{item}? What is it for, mija?', '{item}, {price}. Tell me what for.', 'Hold on, mi cielo. {item}. What is it for?', '{item} at {price}. What is the occasion?', 'Before anything. {item}. What for?', '{item} at {merchant}, mija. What for?', 'Dime. {item}, {price}, from {merchant}. What is it for?'],
   askWatched: ['{item}, mija? {watchedMerchant} again. {habit} dollars here last month.', '{watchedMerchant} again. {habit} dollars last month. What is {item} for?'],
   ackNeed: ['Okay, mija. Noted.', 'A need. I will not ask again.', 'Fine. That one is yours, mi cielo.'],
   ackFits: ['Okay. It fits. Go on.', 'Órale. Within the week.', 'That one fits, mija. Enjoy it.', 'Fine. It fits.'],
@@ -242,7 +245,7 @@ const WONG = {
   down: ['{over} dollars over. The week is finished. Eat at home.', 'Over by {over} dollars, on {item}. We talk on Sunday.', 'That is the week. {over} dollars over. I am not angry, I am counting.', '{over} dollars past the week, on {item}. Mm. Monday.'],
   proud: ['Good. Kept it.', 'Mm. That one I like.', 'You put it back. Hou lek.', 'Kept, not spent. That is how. Gwaai.', 'Good. One less thing to dust.', 'Zik siu sing do. Little adds up. Good.'],
   rare: ['I am telling the mahjong table about this. Kept.', 'Your grandfather would have nodded. I am nodding.'],
-  ask: ['{item}? What is it for?', '{item}. Tell me what for.', '{item}, {price}. What for?', 'Hold on. {item}. What is it for?'],
+  ask: ['{item}? What is it for?', '{item}. Tell me what for.', '{item}, {price}. What for?', 'Hold on. {item}. What is it for?', '{item}, {price}, {merchant}. What for?', '{merchant}. {item}. Tell me what for.'],
   askWatched: ['{watchedMerchant} again. {habit} dollars here last month. What is {item} for?', 'Back at {watchedMerchant}. I counted: {habit} dollars last month. {item}, what for?'],
   ackNeed: ['Okay. Noted.', 'A need. I will not ask again.', 'Fine. Yours.'],
   ackFits: ['Fine. That one fits.', 'Okay. Small one.', 'Mm. Within the week.'],
@@ -508,7 +511,10 @@ ${it.watched ? `This store is one she promised to watch: $${Math.round(it.watche
   const must = kind === 'ask' ? [it.item.split(' ')[0]] : kind === 'react' || kind === 'bought' ? [String(Math.round(it.price || 0))] : kind === 'plan' && proposal ? [String(proposal.amount)] : [];
   // A typed reason earns a few seconds for her answer; a card on a cart gets the short inline budget.
   const patient = kind === 'plan' || kind === 'funded';
-  return model.say({ system: SYSTEM[who] + LINE_RULES, prompt, key: situation, mustInclude: must, maxLen: kind === 'ack' ? 160 : 260, timeoutMs: warm ? model.WARM_TIMEOUT_MS : patient ? 4500 : undefined });
+  // A first sighting can wait a breath: the badge is already on screen, and a line that names the store and the
+  // cart beats a pool line that could be said about any item.
+  const budget = warm ? model.WARM_TIMEOUT_MS : patient ? 4500 : kind === 'ask' ? 2600 : undefined;
+  return model.say({ system: SYSTEM[who] + LINE_RULES, prompt, key: situation, mustInclude: must, maxLen: kind === 'ack' ? 160 : 260, timeoutMs: budget });
 }
 
 // A text can afford a few seconds (she types while she thinks); 1.8s was never enough and every text fell back to the pool.
