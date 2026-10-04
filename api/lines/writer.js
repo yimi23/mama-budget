@@ -50,9 +50,14 @@ const NGN = Number(process.env.USD_NGN || 1600); // update before demo
 const HOME = {
   NGN: [NGN, 'naira'], GHS: [15.5, 'cedis'], KES: [129, 'shillings'], INR: [84, 'rupees'], PHP: [57, 'pesos'], MXN: [18, 'pesos'],
 };
+// The last home currency the extension sent (settings.home via /v2/judge, /v2/buy). The bank watcher composes
+// texts with no request in hand, so it uses this. One person per API, by design.
+let currentHome = null;
+function setHome(code) { currentHome = code || null; }
+
 /** " That is 286,400 naira." or '' when there is nothing to add (no home currency, or the store already prices in it). */
 function backHome(usd, it) {
-  const code = it.home;
+  const code = it.home === undefined ? currentHome : it.home;
   if (!code || !HOME[code] || it.currency === code || !usd) return '';
   const [rate, name] = HOME[code];
   return ` That is ${Math.round(usd * rate).toLocaleString()} ${name}.`;
@@ -233,10 +238,10 @@ function toNaira(usd) {
 // Her line for a bank-watcher notification. Reuses the exact same voice pools lineFor/buyLine already
 // use for the matching mood, so a new want-at-75% notification sounds exactly like the card's own
 // "watching" mood, over-budget sounds like "down", and proud reuses the proud bank -- no new wording.
-function notifyLine(level, it, who = 'mama') {
+function notifyLine(level, it, who = 'mama', week = {}) {
   const bank = who === 'nana' ? NANA : MAMA;
   const pool = level === 'warning' ? bank.watching : level === 'over' ? bank.down : level === 'proud' ? bank.proud : bank.bought;
-  return fill(pool[(it.item || '').length % pool.length], it);
+  return fill(pool[(it.item || '').length % pool.length], it, week);
 }
 
 // The full text: her line, then the numbers (amount, what's left, days to the next bill, naira),
@@ -245,14 +250,14 @@ function notifyText(level, week, it, who = 'mama', cartItemNames) {
   const left = Math.max(0, week.budget - week.spent);
   const bill = (week.bills || [])[0];
   const billPart = bill ? ` ${bill.nickname || bill.payee} in ${bill.daysUntil} day${bill.daysUntil === 1 ? '' : 's'}.` : '';
-  const naira = who === 'mama' && it.currency !== 'NGN' ? toNaira(it.price) : null;
-  const nairaPart = naira != null ? ` ${naira.toLocaleString()} naira.` : '';
+  // The figure back home follows the person's setting (see backHome), not the grandma.
+  const nairaPart = backHome(it.price, it);
   const what = it.item || it.merchant || 'this';
   const cartPart = cartItemNames && cartItemNames.length ? `\nCart: ${cartItemNames.join(', ')}.` : '';
   // A transfer is not a thing you bought: "$50 sent home." not "$50 on Sent home."
   const moved = level === 'proud' && /^(sent home|moved to savings)$/i.test(what);
   const amountPart = moved ? `$${Math.round(it.price || 0)} ${what.toLowerCase()}.` : `$${Math.round(it.price || 0)} on ${what}.`;
-  return `${notifyLine(level, it, who)}\n${amountPart} $${left} left this week.${billPart}${moved ? '' : nairaPart}${cartPart}`;
+  return `${notifyLine(level, it, who, week)}\n${amountPart} $${left} left this week.${billPart}${moved ? '' : nairaPart}${cartPart}`;
 }
 
 // A conversational reply to an arbitrary incoming text (not a purchase verdict): uses the same
@@ -277,7 +282,7 @@ function modelReply({ who = 'mama', userText, week, history, promises }) {
 }
 
 module.exports = {
-  shopName, backHome,
+  shopName, backHome, setHome,
   lineFor, ackLine, buyLine, buyText, smallLines, subLine, weeklyStatement, monthlyStatement, watchLines, whatsLeft,
   modelLine, modelReply, toNaira, notifyLine, notifyText, MAMA, NANA,
 };

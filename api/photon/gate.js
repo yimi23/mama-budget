@@ -18,7 +18,8 @@ function readState() { try { return JSON.parse(fs.readFileSync(STATE, 'utf8')); 
 function writeState(s) { try { fs.writeFileSync(STATE, JSON.stringify(s, null, 2)); } catch {} }
 function reset() { writeState({}); }
 
-function quiet(now = new Date()) { const h = now.getHours(); return h >= 23 || h < 7; }
+// Quiet hours are opt in for the hackathon (Praise, Oct 4): PHOTON_QUIET=1 turns the 11pm to 7am hold back on.
+function quiet(now = new Date()) { if (process.env.PHOTON_QUIET !== '1') return false; const h = now.getHours(); return h >= 23 || h < 7; }
 const dayKey = (now) => `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
 
 // Why a text is held back, or null when it may go.

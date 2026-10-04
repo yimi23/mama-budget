@@ -4,6 +4,8 @@ const test = require('node:test');
 const assert = require('node:assert');
 const { parse } = require('../notify/parse');
 const { gate, quiet } = require('../photon/gate');
+// Quiet hours are opt in for the hackathon (PHOTON_QUIET=1). These tests exercise the rule, so they turn it on.
+process.env.PHOTON_QUIET = '1';
 const { due, weeklyText, nextSunday7, nextMonthEnd7 } = require('../photon/schedule');
 const { textLine } = require('../lines/texts');
 const { weeklyStatement, whatsLeft } = require('../lines/writer');
@@ -147,7 +149,11 @@ test('Gele down and proud skip the daily cap, never quiet hours or the gap', () 
   const capped = { sent: { '+1': { at: '2026-10-04T08:00:00', day: '2026-10-4', count: 1 } } };
   assert.equal(gate({ to: '+1', state: capped, now }), 'daily');
   assert.equal(gate({ to: '+1', important: true, state: capped, now }), null);
+  process.env.PHOTON_QUIET = '1';
   assert.equal(gate({ to: '+1', important: true, state: capped, now: at('2026-10-04T23:30:00') }), 'quiet');
+  delete process.env.PHOTON_QUIET;
+  assert.equal(gate({ to: '+1', important: true, state: capped, now: at('2026-10-04T23:30:00') }), null, 'quiet hours are opt in for the hackathon');
+  process.env.PHOTON_QUIET = '1';
   const justSent = { sent: { '+1': { at: '2026-10-04T11:59:00', day: '2026-10-4', count: 1 } } };
   assert.equal(gate({ to: '+1', important: true, state: justSent, now }), 'gap');
 });
@@ -157,9 +163,13 @@ test('a transfer text reads as a transfer, not a purchase, and skips the naira',
   const home = notifyText('proud', week, { item: 'Sent home', price: 50 }, 'mama');
   assert.match(home, /\n\$50 sent home\. \$25 left this week\./);
   assert.doesNotMatch(home, /naira|on Sent home/);
+  // The figure back home follows the person's setting, which the extension sends with every judgement.
+  require('../lines/writer').setHome('NGN');
   const bought = notifyText('note', week, { item: 'Latte', price: 6 }, 'mama');
+  require('../lines/writer').setHome(null);
   assert.match(bought, /\$6 on Latte\. \$25 left this week\./);
   assert.match(bought, /naira/);
+  assert.doesNotMatch(notifyText('note', week, { item: 'Latte', price: 6 }, 'mama'), /naira/, 'no home currency set: no figure');
 });
 
 test('two weeks of silence earns one goodbye line, then nothing until they text again', () => {

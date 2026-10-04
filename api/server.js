@@ -32,7 +32,7 @@ const crypto = require('node:crypto');
 const { judge } = require('./judge/rules');
 const v2 = require('./judge/rules_v2');
 const nessie = require('./nessie/client');
-const { lineFor, ackLine, buyLine, smallLines, subLine } = require('./lines/writer');
+const { lineFor, ackLine, buyLine, smallLines, subLine, setHome } = require('./lines/writer');
 const { speak } = require('./voice/elevenlabs');
 const { notify, getMessages, clearMessages } = require('./notify');
 const chat = require('./notify/chat');
@@ -102,6 +102,7 @@ const routes = {
     const w = nessie.week();
     const who = body.grandma === 'nana' ? 'nana' : 'mama';
     const memory = body.memory && typeof body.memory === 'object' ? body.memory : {};
+    setHome(body.home);
     const items = (body.items || []).map((it) => ({ item: String(it.name || ''), price: Number(it.unitPrice || 0) * Number(it.qty || 1), merchant: it.store || '', currency: body.currency || 'USD', home: body.home || null }));
     // The rules judge the full title (the protected word is often at the end: "...Fragrant Rice"); her line gets the short name.
     const judged = items.map((item) => ({ item, v: v2.judge(item, w, memory) }));
@@ -132,6 +133,7 @@ const routes = {
     }
     await nessie.purchase({ item: short, price, merchant: body.store || 'Store', tag, requestId: String(body.requestId) });
     const w = nessie.week();
+    setHome(body.home);
     const it = { item: short, price, merchant: body.store || '', currency: body.currency || 'USD', home: body.home || null };
     const line = tag === 'need' ? smallLines(who).agreed : buyLine(w, it, who);
     const left = Math.max(0, w.budget - w.spent);
