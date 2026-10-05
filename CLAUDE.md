@@ -1,6 +1,6 @@
 # Mama Budget: build guide for Claude Code
 
-Read docs/PLAN.md (what we are building and why), docs/DESIGN.md (every size, color and rule), docs/ARCHITECTURE.md (how the code is laid out and why), docs/ONBOARDING.md (what she says and does on every onboarding screen) before touching anything. The screens are in design/screens: numbered PNGs are the source of truth for how every state looks, the HTML next to each is the exact markup and CSS to lift.
+Read docs/PLAN.md (what we are building and why), docs/DESIGN.md (every size, color and rule), docs/ARCHITECTURE.md (how the code is laid out and why), docs/ONBOARDING.md (what she says and does on every onboarding screen), and docs/BUDGET.md (the budgeting core, the page-type rules and the definition of done for the next build) before touching anything. The screens are in design/screens: numbered PNGs are the source of truth for how every state looks, the HTML next to each is the exact markup and CSS to lift.
 
 ## Stack
 WXT (Manifest V3, TypeScript) for the extension. Plain Node 22 `http` for the API (`api/server.js`, a routes map, no framework). node:test for tests. npm workspaces. No other frameworks without saying why.
