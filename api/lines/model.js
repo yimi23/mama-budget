@@ -83,7 +83,7 @@ A subscription or plan is one item: name is the plan ("ChatGPT Plus"), unitPrice
 On a pricing page with several plans and one selected or highlighted, return only the selected plan; if none is selected, return nothing.
 Rules: only items in the active cart or bag; never "saved for later", "recently viewed", "you may also like" or recommendations.
 Offers next to an item (protection plans, warranties, "add plans or services", memberships, financing) are not items unless the page shows them as chosen. The first price on an item's row is its current price; a "Was", "reg" or struck price is wasPrice. The cart lines times their quantities add up to the subtotal; if yours do not, you have the wrong lines.
-qty is the quantity shown (default 1). unitPrice is the price of one unit in the store's currency, as a number.
+qty is the quantity shown (default 1). unitPrice is the price of ONE unit in the store's currency, as a number: a row with a quantity of 4 and a line total of $476 is qty 4 at unitPrice 119, never qty 1 at 476.
 subtotal is the cart subtotal or total if shown, else null. currency from the symbols on the page. confidence is 0 to 1:
 how sure you are that these are exactly the cart lines. Return JSON only.`;
 
@@ -128,8 +128,31 @@ function verified(out, facts = {}) {
  * against 6.5 s with the same six items; on a Target page the fast read invented a protection plan, the sum missed
  * the subtotal, and the main model took over. Arithmetic, not trust.
  */
+const RECURRING_PRICE = /(?:US\$|[$£€])\s?\d[\d,]*(?:\.\d{1,2})?\s*(?:\/|per|a)\s*(?:mo\b|month|yr\b|year|wk\b|week)/gi;
+const CHOSEN = /\b(current plan|your plan|you'?re on|selected|chosen|order summary|subtotal|total due|due today|billed today|pay now|place order|confirm (?:and )?pay|checkout)\b/i;
+
+/**
+ * A pricing page is not a cart. When every line is a plan, the page shows two or more recurring prices and nothing
+ * says one is chosen or being paid for, the person is comparing, not buying, and she has nothing to judge. Seen
+ * live on a pricing grid: she nodded at the $6 plan, then asked about the $22 plan, then nodded again as the page
+ * changed under her. A checkout for a plan (one price, a subtotal or a pay control) still reads.
+ */
+function comparingPlans(text, out) {
+  if (!out || !Array.isArray(out.items) || !out.items.length) return false;
+  if (!out.items.every((i) => i.period && i.period !== 'once')) return false;
+  if (out.subtotal != null) return false;
+  const prices = new Set((String(text).match(RECURRING_PRICE) || []).map((p) => p.replace(/\s+/g, '').toLowerCase()));
+  return prices.size >= 2 && !CHOSEN.test(String(text));
+}
+
 async function extractItems(text, images = []) {
   if (!ready()) return null;
+  const out = await extractItemsRaw(text, images);
+  if (comparingPlans(text, out)) return { ...out, items: [], confidence: 0.2, comparing: true };
+  return out;
+}
+
+async function extractItemsRaw(text, images = []) {
   const facts = pageFacts(text);
   const fast = await extractWith(FAST_MODEL, text, images, true).catch(() => null);
   if (verified(fast, facts)) return fast;
@@ -262,4 +285,5 @@ async function cheaperOption({ name, price, currency = 'USD', store }) {
 
 module.exports = {
   verified,
-  pageFacts, say, extractItems, classifyItem, classifyReason, cheaperOption, ready, MODEL, FAST_MODEL, WARM_TIMEOUT_MS };
+  pageFacts,
+  comparingPlans, say, extractItems, classifyItem, classifyReason, cheaperOption, ready, MODEL, FAST_MODEL, WARM_TIMEOUT_MS };
