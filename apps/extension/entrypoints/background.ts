@@ -374,7 +374,7 @@ export default defineBackground(() => {
   // For the hackathon a reload of the extension is a clean slate, the same as Start over: her memory, the pick, the
   // onboarding and the bank's week all go back to the seed, and nothing has a budget until the slider sets one. Then
   // the first run tab opens. Turn RESET_ON_RELOAD off before a store release, or a Chrome update would wipe a user.
-  const RESET_ON_RELOAD = true;
+  const RESET_ON_RELOAD = false; // off since Oct 5: the demo is over, a reload keeps the person's week and memory
   browser.runtime.onInstalled.addListener((details) => {
     const clean = RESET_ON_RELOAD || details.reason === 'install' ? startOver() : Promise.resolve();
     clean.catch(() => {}).then(() => browser.storage.local.get('settings')).then(({ settings = {} }) => {

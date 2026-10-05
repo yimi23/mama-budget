@@ -199,7 +199,20 @@ The core is done when, on the fixture and on Praise's real SimpleFIN link:
 - **Friday:** `kinds.js`, `reconcile.js`, `plan.js`, `week.js`. Swap the judge's week source. "Here is what I saw" on real data.
 - **Saturday:** Sunday close with sweep, carry and grace; the corpus to 30 pages; page-type rules in the detector; speed budget in the harness; the texts for overspend and streak.
 
-## 9. Decisions that are Praise's
+## 9. Decisions, settled Oct 5 (Praise)
+- **Overspend carry cap:** half the next envelope.
+- **Grace:** one a month, and good weeks earn more: every four weeks kept in a row banks one extra grace, at most two banked. Grace never covers a week more than 25% over.
+- **Savings default:** 10% of net pay when none is detected, noted at once on first run and changeable in one tap.
+- **Restricting purchases when things get bad:** on ice. The idea has cases that go wrong (emergencies, needs, shared cards); she never blocks, she speaks. Revisit only with evidence from real weeks.
+- **Watcher (one person who gets a weekly line):** yes in principle; needs its own research pass on consent, wording and what the watcher can see before it is built.
+- **Kept jar:** a number she narrates at launch; a real transfer when a bank with transfers exists.
+- **Name:** Mama Budget. Settled.
+- **Who builds:** Praise builds all of it. Ugonna's role is testing on his Mac and the demo setup.
+- **Hosting:** EC2 with Docker, like Remi, before anyone else uses the API.
+- **Resets:** none. RESET_ON_RELOAD is off from Oct 5; the demo is over.
+- **Design pass before Thursday:** the envelope and the surfaces the loop needs (kept moments, the shelf, the Sunday report card, the jar), with the chosen avatar's miniature uses. Screens first, then code.
+
+## 9b. Open
 - Overspend carry cap: half the envelope (proposed) or a third.
 - Grace: one a month (proposed) or one a quarter.
 - Savings default when none is detected: 10% of net pay (proposed) or ask.
