@@ -57,7 +57,7 @@ export interface Week {
 /** What she saw in a real bank (GET /bank/saw): paychecks, bills with confirm flags, cards, unsure merchants, the plan. */
 export interface Saw {
   paychecks: { from: string; amount: number; cadence: string; next: string | null; variable: boolean }[];
-  bills: { merchant: string; amount: number; cadence: string; next: string | null; confirm: boolean; kind: string; variable: boolean; changed: { from: number; to: number } | null }[];
+  bills: { key: string; merchant: string; amount: number; cadence: string; next: string | null; confirm: boolean; kind: string; variable: boolean; changed: { from: number; to: number } | null }[];
   cards: { name: string; owed: number }[];
   transfers: number;
   unsure: { merchant: string; amount: number }[];
@@ -87,6 +87,18 @@ export interface Month extends Week {
 
 /** The six cue sounds (docs/research_clicky_onboarding.md section 4.7). Synthesised in the offscreen document. */
 export type Cue = 'arrive' | 'ask' | 'surprised' | 'proud' | 'text' | 'tick';
+
+/** One thing put back after she spoke (GET /shelf): the kept moment, newest first. */
+export interface ShelfItem {
+  requestId: string;
+  item: string;
+  amount: number;
+  store: string | null;
+  /** YYYY-MM-DD of the put-back. */
+  date: string;
+  /** "Still want it" was tapped: remembered as planned, so she will not scold it when it comes back. */
+  still: boolean;
+}
 
 export type Label = 'need' | 'want' | 'ask';
 export type Answer = 'need' | 'want';

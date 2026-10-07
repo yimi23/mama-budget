@@ -60,7 +60,7 @@ function clusterAmounts(rows, loose) {
  * Streams from posted, non-transfer rows. Each: { id, merchant, key, direction: 'in'|'out', kind: 'income'|'bill'|'subscription'|'habit',
  * cadence, hits, amount, variable, lastAt, nextAt, status: 'mature'|'early'|'missed'|'inactive', amountChanged }.
  */
-function streams(rows, now, { notRecurring = [] } = {}) {
+function streams(rows, now, { notRecurring = [], confirmed = [] } = {}) {
   const usable = rows.filter((r) => !r.pending && r.posted > 0 && r.kind !== 'transfer' && r.kind !== 'cash' && r.kind !== 'refund' && !r.hidden);
   const groups = new Map();
   for (const r of usable) {
@@ -94,7 +94,7 @@ function streams(rows, now, { notRecurring = [] } = {}) {
       const marked = dated.some((r) => RECURRING_WORDS.test(r.description));
       const needed = cad.name === 'quarterly' || cad.name === 'annual' || marked ? 2 : 3;
       const kind = g.direction === 'in' ? 'income' : (!shop && (loose || (cad.name === 'monthly' && cl.center >= 150)) ? 'bill' : 'subscription');
-      out.push(stream(g, cl, dated, kind, cad, now, dated.length >= needed ? 'mature' : 'early'));
+      out.push(stream(g, cl, dated, kind, cad, now, dated.length >= needed || confirmed.includes(g.key) ? 'mature' : 'early'));
     }
   }
   // Income needs to look like income: payroll words, or a mature recurring inflow of $200 or more.

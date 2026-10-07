@@ -247,11 +247,12 @@ const routes = {
     const name = String(body.name || '');
     const amount = Math.round(Number(body.price || 0));
     if (!name || !(amount > 0) || !body.requestId) throw new Error('name, price and requestId are required');
-    if (nessie.live(u)) { nessie.putBack({ requestId: String(body.requestId), item: name, amount }, u); return { ok: true, week: nessie.week(undefined, u) }; }
+    const store = body.store ? String(body.store) : null;
+    if (nessie.putBack({ requestId: String(body.requestId), item: name, amount, store }, u) != null) return { ok: true, week: nessie.week(undefined, u) };
     const c = nessie.readCache();
     c.putBack = c.putBack || [];
     if (!c.putBack.some((p) => p.requestId === body.requestId)) {
-      c.putBack.push({ item: name, amount, date: new Date().toISOString().slice(0, 10), requestId: String(body.requestId) });
+      c.putBack.push({ item: name, amount, store, date: new Date().toISOString().slice(0, 10), requestId: String(body.requestId) });
       nessie.writeCache(c);
     }
     return { ok: true, week: nessie.week() };
@@ -371,7 +372,10 @@ const routes = {
   },
   'GET /bank/saw': async (body, query, ctx) => { const u = ctx && ctx.userId; return { ok: true, live: nessie.live(u), saw: nessie.saw(u), week: nessie.live(u) ? nessie.week(undefined, u) : null }; },
   'POST /bank/refresh': async (body, query, ctx) => { const u = ctx && ctx.userId; await nessie.refresh(true, u); return { ok: true, live: nessie.live(u), week: nessie.week(undefined, u) }; },
-  'POST /bank/correct': async (body, query, ctx) => { const u = ctx && ctx.userId; return { ok: true, corrections: nessie.correct(String(body.merchantKey || ''), String(body.kind || ''), u), week: nessie.week(undefined, u) }; },
+  'POST /bank/correct': async (body, query, ctx) => { const u = ctx && ctx.userId; const corrections = nessie.correct(String(body.merchantKey || ''), String(body.kind || ''), u); return { ok: true, corrections, week: nessie.week(undefined, u), saw: nessie.saw(u) }; },
+  // The shelf: what was put back and not let go. "still" marks it wanted (the extension remembers it as planned); "let-go" clears the row, the kept credit stays.
+  'GET /shelf': (body, query, ctx) => ({ ok: true, shelf: nessie.shelf(ctx && ctx.userId) }),
+  'POST /shelf': (body, query, ctx) => { if (!body.requestId || !['still', 'let-go'].includes(body.action)) throw new Error('requestId and action (still | let-go) are required'); return { ok: true, shelf: nessie.shelve({ requestId: String(body.requestId), action: body.action }, ctx && ctx.userId) }; },
   'POST /bank/close': async (body, query, ctx) => { const u = ctx && ctx.userId; return { ok: true, close: nessie.closeWeek({ useGrace: !!body.useGrace }, u), week: nessie.week(undefined, u) }; },
 
   'GET /bank': async () => {

@@ -8,7 +8,7 @@ import { mountCard, type Card } from './ui/card';
 import { mountBubble, type Bubble } from './ui/bubble';
 import { mountPanel, type Panel } from './ui/panel';
 import { mountMark, type Mark } from './ui/mark';
-import { ackSub, askManyLine, crossedIntoWatching, nextCard, spoken, wantLabel, type Handled } from './flow';
+import { ackSub, askManyLine, crossedIntoWatching, keptSub, nextCard, spoken, wantLabel, type Handled } from './flow';
 import { storeKey } from '@mama/shared/store-key';
 import { toUSD } from '@mama/shared/currency';
 import { locateRow, readCart, readKey } from './readers';
@@ -223,8 +223,11 @@ function onRead(read: CartRead | null) {
     bubble?.say(lines.proud, `$${Math.round(price)} stays in the week.`);
     void send({ type: 'CUE', cue: 'proud' });
     // The money stays in the week: Kept goes up in the ledger and the badge shows the new week.
-    void send<{ ok: true; week: Week } | { ok: false }>({ type: 'PUT_BACK', name, price }).then((r) => {
-      if (r?.ok && lastWeek) { const g = lastGrandma; if (g) showWeek(g, r.week); }
+    void send<{ ok: true; week: Week } | { ok: false }>({ type: 'PUT_BACK', name, price, store: storeKey(location.href) }).then((r) => {
+      if (!r?.ok) return;
+      // The kept moment, with the week's numbers: what stayed, what the week has kept, the jar when there is one.
+      bubble?.say(lines.proud, keptSub(price, r.week));
+      if (lastWeek) { const g = lastGrandma; if (g) showWeek(g, r.week); }
     });
   }
   if (talking) {

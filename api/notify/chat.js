@@ -8,7 +8,7 @@
 // just made). Anything else goes to the model if ANTHROPIC_API_KEY is set, else a fallback that
 // still answers from the live numbers, detects an apology, and stores a promise when one is made.
 
-const nessie = require('../nessie/client');
+const nessie = require('../ledger');
 const writer = require('../lines/writer');
 const { textLine } = require('../lines/texts');
 const { parse } = require('./parse');

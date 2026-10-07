@@ -1,6 +1,6 @@
 // Every message between content script, popup and worker. Add the case here before writing the handler.
 
-import type { Answer, BuyReply, CartItem, CartRead, Cue, CurrencyCode, Grandma, JudgeReply, Month, PlanReply, Week } from './types.ts';
+import type { Answer, BuyReply, CartItem, CartRead, Cue, CurrencyCode, Grandma, JudgeReply, Month, PlanReply, Saw, ShelfItem, Week } from './types.ts';
 
 /** What she already asked about or reacted to this browser session, across every tab and reload. */
 export interface HandledLists {
@@ -25,7 +25,13 @@ export type Message =
   /** A real order confirmation page: charge what was paid. The page's order total when it shows one, else the store's last cart, minus anything already posted. */
   | { type: 'CONFIRM'; store: string; orderId: string; total: number | null }
   /** The item you agreed to put back left the cart: the money stays in the week, Kept goes up. */
-  | { type: 'PUT_BACK'; name: string; price: number }
+  | { type: 'PUT_BACK'; name: string; price: number; store?: string }
+  /** The shelf: what was put back and not let go. */
+  | { type: 'SHELF' }
+  /** A shelf row answered: still wanted (remembered as planned) or let go (the row leaves the shelf, the kept credit stays). */
+  | { type: 'SHELVE'; requestId: string; action: 'still' | 'let-go' }
+  /** Onboarding 06: a bill she was not sure of. "confirmed" makes the early stream a bill; "not-recurring" drops it. */
+  | { type: 'CORRECT'; merchantKey: string; kind: 'confirmed' | 'not-recurring' }
   | { type: 'START_OVER' }
   /** Her voice for one line. Fire and forget: the card never waits on audio. */
   | { type: 'SPEAK'; text: string; grandma: Grandma; mood?: 'calm' | 'shocked' | 'down' }
@@ -56,6 +62,9 @@ export type Reply<M extends Message> =
   M extends { type: 'BUY' } ? ({ ok: true } & BuyReply) | { ok: false } :
   M extends { type: 'CONFIRM' } ? { ok: true; posted: number } :
   M extends { type: 'PUT_BACK' } ? { ok: true; week: Week } | { ok: false } :
+  M extends { type: 'SHELF' } ? { ok: true; shelf: ShelfItem[] } | { ok: false } :
+  M extends { type: 'SHELVE' } ? { ok: true; shelf: ShelfItem[] } | { ok: false } :
+  M extends { type: 'CORRECT' } ? { ok: true; saw: Saw | null; week: Week | null } | { ok: false } :
   M extends { type: 'START_OVER' } ? { ok: true } :
   M extends { type: 'SPEAK' } ? { ok: boolean; duration: number | null } :
   M extends { type: 'MONTH' } ? { ok: true; month: Month } | { ok: false } :

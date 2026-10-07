@@ -48,8 +48,18 @@ export function wantLabel(short: string): string {
 export function ackSub(v: Verdict, week: Week): string | null {
   const price = Math.round(v.price);
   if (v.label === 'need' && v.tags.includes('remembered')) return `$${price}. Needs stay off the meter.`;
-  if (v.label === 'want' && v.tags.includes('fits')) return `$${price} against $${Math.round(week.left)} left this week. It fits.`;
+  if (v.label === 'want' && v.tags.includes('fits')) return `$${price} against $${Math.round(week.left)} left this week. It fits.${week.kept ? ` $${Math.round(week.kept)} kept so far.` : ''}`;
   return null;
+}
+
+/** The numbers under a kept moment: what stayed, what the week has kept, the jar when the bank keeps one. */
+export function keptSub(price: number, week: Week): string {
+  const kept = Math.round(week.kept || 0);
+  const parts = [`$${Math.round(price)} stays in the week.`];
+  if (kept > Math.round(price)) parts.push(`$${kept} kept this week.`);
+  if (week.jar) parts.push(`Jar $${Math.round(week.jar)}.`);
+  if (week.streak && week.streak >= 2) parts.push(`${week.streak} weeks in a row.`);
+  return parts.join(' ');
 }
 
 /** Screen 11: the first time the week turns to watching on a page, she says so, once. Not on the way back down. */

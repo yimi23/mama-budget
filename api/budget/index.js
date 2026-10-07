@@ -34,7 +34,7 @@ const nowSec = () => Math.floor(Date.now() / 1000);
 /** Callers pass a Date (schedule.js), milliseconds, or seconds. */
 const toSec = (t) => (t == null ? nowSec() : t instanceof Date ? Math.floor(t.getTime() / 1000) : Number(t) > 1e11 ? Math.floor(Number(t) / 1000) : Number(t));
 
-const FRESH_STATE = () => ({ envelope: null, closes: [], graces: { used: [], banked: 0 }, jar: 0, corrections: { kinds: {}, notRecurring: [] }, posted: [], putBacks: [] });
+const FRESH_STATE = () => ({ envelope: null, closes: [], graces: { used: [], banked: 0 }, jar: 0, corrections: { kinds: {}, notRecurring: [], confirmed: [] }, posted: [], putBacks: [] });
 const isAccess = (u) => /^https:\/\/[^@\s]+:[^@\s]+@/.test(u || '');
 function accessFor(userId) { return isOwner(userId) ? process.env.SIMPLEFIN_ACCESS_URL : db.bankLink.get(userId); }
 function live(userId) { return isAccess(accessFor(userId)); }
@@ -78,7 +78,7 @@ function compute(cache, st, now = nowSec()) {
   if (!cache) return null;
   const bankRows = reconcile(cache.rows, now);
   const resolved = transfers.resolve(bankRows, cache.accounts);
-  const streams = recurring.streams(resolved, now, { notRecurring: st.corrections.notRecurring });
+  const streams = recurring.streams(resolved, now, { notRecurring: st.corrections.notRecurring, confirmed: st.corrections.confirmed || [] });
   let rows = classify(resolved, streams, st.corrections);
   // Posted orders: matched to a bank row by amount within $1 and three days, else kept as a pending want.
   const unmatched = [];
@@ -154,7 +154,7 @@ function saw(at, userId) {
   for (const r of s.rows) if (r.unsure && r.amount < 0) unsure[r.merchantName] = (unsure[r.merchantName] || 0) + -r.amount;
   return {
     paychecks: s.streams.filter((x) => x.kind === 'income').map((x) => ({ from: x.merchant, amount: x.amount, cadence: x.cadence, next: x.nextAt ? week.key(x.nextAt) : null, variable: x.variable })),
-    bills: s.streams.filter((x) => x.direction === 'out' && x.kind !== 'habit').map((x) => ({ merchant: x.merchant, amount: x.amount, cadence: x.cadence, next: x.nextAt ? week.key(x.nextAt) : null, confirm: x.status === 'early', kind: x.kind, variable: x.variable, changed: x.amountChanged })),
+    bills: s.streams.filter((x) => x.direction === 'out' && x.kind !== 'habit').map((x) => ({ key: x.key, merchant: x.merchant, amount: x.amount, cadence: x.cadence, next: x.nextAt ? week.key(x.nextAt) : null, confirm: x.status === 'early', kind: x.kind, variable: x.variable, changed: x.amountChanged })),
     cards: s.accounts.filter((a) => transfers.isCard(a)).map((a) => ({ name: a.name, owed: Math.max(0, -a.balance) })),
     transfers: s.rows.filter((r) => r.kind === 'transfer' && r.pairId).length / 2,
     unsure: Object.entries(unsure).map(([m, a]) => ({ merchant: m, amount: Math.round(a * 100) / 100 })).sort((a, b) => b.amount - a.amount).slice(0, 10),
@@ -163,10 +163,28 @@ function saw(at, userId) {
 }
 
 function setEnvelope(amount, userId) { const st = state(userId); st.envelope = Math.max(25, Math.min(500, Math.round(Number(amount) || 0))); saveState(st, userId); return st.envelope; }
-function correct(merchantKey, kind, userId) { const st = state(userId); if (kind === 'not-recurring') st.corrections.notRecurring = [...new Set([...st.corrections.notRecurring, merchantKey])]; else st.corrections.kinds[merchantKey] = kind; saveState(st, userId); return st.corrections; }
+/** A correction, kept forever: a kind for a merchant, "not a bill" (the stream is dropped), or "confirmed" (an early stream is a bill now). */
+function correct(merchantKey, kind, userId) {
+  const st = state(userId);
+  st.corrections.confirmed = st.corrections.confirmed || [];
+  if (kind === 'not-recurring') { st.corrections.notRecurring = [...new Set([...st.corrections.notRecurring, merchantKey])]; st.corrections.confirmed = st.corrections.confirmed.filter((k) => k !== merchantKey); }
+  else if (kind === 'confirmed') { st.corrections.confirmed = [...new Set([...st.corrections.confirmed, merchantKey])]; st.corrections.notRecurring = st.corrections.notRecurring.filter((k) => k !== merchantKey); }
+  else st.corrections.kinds[merchantKey] = kind;
+  saveState(st, userId);
+  return st.corrections;
+}
 /** An order the extension saw land: kept until the bank shows it. */
 function postOrder({ requestId, item, price, store, tag }, userId) { const st = state(userId); if (!(st.posted || []).some((o) => o.requestId === requestId)) { st.posted = [...(st.posted || []), { requestId, item, price: Number(price), store, tag, at: nowSec() }].slice(-200); saveState(st, userId); } return st.posted.length; }
-function putBack({ requestId, item, amount }, userId) { const st = state(userId); if (!(st.putBacks || []).some((k) => k.requestId === requestId)) { st.putBacks = [...(st.putBacks || []), { requestId, item, amount: Number(amount), date: week.key(nowSec()) }].slice(-500); saveState(st, userId); } return st.putBacks.length; }
+function putBack({ requestId, item, amount, store }, userId) { const st = state(userId); if (!(st.putBacks || []).some((k) => k.requestId === requestId)) { st.putBacks = [...(st.putBacks || []), { requestId, item, amount: Number(amount), store: store || null, date: week.key(nowSec()) }].slice(-500); saveState(st, userId); } return st.putBacks.length; }
+/** The shelf: what was put back, newest first. The kept credit never leaves the week; "let go" only clears the row from the shelf. */
+function shelf(userId) { return shelfRows(state(userId).putBacks || []); }
+function shelfRows(list) { return list.filter((k) => k.gone !== 'let').slice().reverse().map((k) => ({ requestId: k.requestId, item: k.item, amount: k.amount, store: k.store || null, date: k.date, still: !!k.still })); }
+function shelve({ requestId, action }, userId) {
+  const st = state(userId);
+  st.putBacks = (st.putBacks || []).map((k) => (k.requestId !== requestId ? k : action === 'let-go' ? { ...k, gone: 'let' } : action === 'still' ? { ...k, still: true } : k));
+  saveState(st, userId);
+  return shelfRows(st.putBacks);
+}
 function closeWeek({ useGrace = false } = {}, at, userId) {
   const now = toSec(at);
   const s = snapshot(now, userId);
@@ -179,4 +197,4 @@ function closeWeek({ useGrace = false } = {}, at, userId) {
 
 function ready(userId) { return live(userId) && !!readCache(userId); }
 
-module.exports = { live, ready, refresh, snapshot, ownerId, claimOwner, isOwner, linkAccess, week: weekView, month: monthView, saw, setEnvelope, correct, postOrder, putBack, closeWeek, state, compute };
+module.exports = { live, ready, refresh, snapshot, ownerId, claimOwner, isOwner, linkAccess, week: weekView, month: monthView, saw, setEnvelope, correct, postOrder, putBack, shelf, shelfRows, shelve, closeWeek, state, compute };

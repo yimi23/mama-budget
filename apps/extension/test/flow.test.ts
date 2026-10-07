@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { MAX_ASKS, ackSub, askManyLine, crossedIntoWatching, nextCard, spoken, wantLabel } from '../lib/flow.ts';
+import { MAX_ASKS, ackSub, keptSub, askManyLine, crossedIntoWatching, nextCard, spoken, wantLabel } from '../lib/flow.ts';
 import type { Verdict } from '@mama/shared/types';
 
 const v = (key: string, label: Verdict['label'], react = false): Verdict => ({
@@ -64,7 +64,8 @@ test('the want button fits the item', () => {
 test('the acknowledgement names the number and what it did to the meter', () => {
   const week = { budget: 75, spent: 50, left: 25, kept: 40, ratio: 0.67, mood: 'calm' as const, daysLeft: 2, bills: [] };
   assert.equal(ackSub({ ...v('lens', 'need'), price: 1260.65, tags: ['remembered'] }, week), '$1261. Needs stay off the meter.');
-  assert.equal(ackSub({ ...v('lamp', 'want'), price: 20, tags: ['remembered', 'fits'] }, week), '$20 against $25 left this week. It fits.');
+  assert.equal(ackSub({ ...v('lamp', 'want'), price: 20, tags: ['remembered', 'fits'] }, week), '$20 against $25 left this week. It fits. $40 kept so far.');
+  assert.equal(ackSub({ ...v('lamp', 'want'), price: 20, tags: ['remembered', 'fits'] }, { ...week, kept: 0 }), '$20 against $25 left this week. It fits.');
   assert.equal(ackSub({ ...v('pods', 'want', true), price: 179, tags: ['remembered', 'blown'] }, week), null);
   assert.equal(ackSub({ ...v('rice', 'need'), price: 25, tags: ['protected'] }, week), null);
 });
@@ -86,4 +87,10 @@ test('her voice gets words, never digits', () => {
     'We said seventy five dollars for the week. AirPods Pro alone is one hundred and seventy nine. That is two hundred and eighty six thousand four hundred naira.');
   assert.equal(spoken('$25 left.'), 'twenty five dollars left.');
   assert.doesNotMatch(spoken('154 dollars past the week. $0 left.'), /\d/);
+});
+
+test('the kept moment names what stayed, the week\'s kept total, the jar and a streak of two or more', () => {
+  const week = { budget: 300, spent: 50, left: 250, kept: 349, ratio: 0.17, mood: 'calm' as const, daysLeft: 4, bills: [], jar: 120, streak: 3 };
+  assert.equal(keptSub(100, week), '$100 stays in the week. $349 kept this week. Jar $120. 3 weeks in a row.');
+  assert.equal(keptSub(100, { ...week, kept: 100, jar: 0, streak: 1 }), '$100 stays in the week.');
 });

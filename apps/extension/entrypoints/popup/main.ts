@@ -4,7 +4,7 @@
 // Her voice and the cue sounds come from the worker (SPEAK, CUE), which honours the sounds toggle and quiet hours.
 
 import type { Message, Reply } from '@mama/shared/messages';
-import type { Cue, Month, Week } from '@mama/shared/types';
+import type { Cue, Month, Saw, Week } from '@mama/shared/types';
 import type { Grandma } from '../../lib/ui/badge';
 import { COPY, DOTS, HOMES, MOTHERS_LINE, TIERS, countUp, homeFor, dotIndex, formatPhone, inHome, next, skip, speechSeconds, toE164, words, type Home, type Loudness, type Progress, type Settings, type Step } from '../../lib/onboarding';
 
@@ -247,24 +247,44 @@ SHOW.saw = async () => {
   range.value = String(Math.max(25, Math.min(500, m.proposedEnvelope || 75)));
   paintEnvelope();
   // A real bank: her reason for the number, and the bills she saw, early ones marked to confirm.
-  const bills = $('#saw-bills');
-  bills.replaceChildren(); bills.hidden = true;
-  if (m.live && m.saw) {
-    if (m.reason) envelopeSub.textContent = `${m.reason} Slide it if I am wrong.`;
-    for (const b of m.saw.bills.slice(0, 5)) {
-      const li = document.createElement('li'); li.className = 'row';
-      const name = document.createElement('span'); name.className = 'row-title'; name.textContent = `${b.merchant}, $${b.amount}${b.variable ? ' about' : ''} ${b.cadence}`;
-      if (b.confirm) { const c = document.createElement('span'); c.className = 'confirm'; c.textContent = 'confirm?'; name.append(c); }
-      const next = document.createElement('span'); next.className = 'row-sub'; next.textContent = b.next ? `next ${b.next}` : '';
-      li.append(name, next); bills.append(li);
-    }
-    bills.hidden = m.saw.bills.length === 0;
-  }
+  if (m.live && m.saw && m.reason) envelopeSub.textContent = `${m.reason} Slide it if I am wrong.`;
+  paintBills(m.live ? m.saw ?? null : null);
   const marker = $('#saw-speaking');
   const ok = await speak(tl.spoken, marker);
   // Shocked while the line plays, then Watching.
   setTimeout(() => { face.src = `/faces/${g}/watching.svg`; }, ok ? speechSeconds(tl.spoken) * 1000 : 1200);
 };
+// The bills she saw, early ones with two answers. A tap is a correction the API keeps forever; the list repaints
+// from what she sees after it, so a confirmed bill loses its flag and a dropped one leaves.
+function paintBills(saw: Saw | null) {
+  const bills = $('#saw-bills');
+  bills.replaceChildren(); bills.hidden = true;
+  if (!saw) return;
+  for (const b of saw.bills.slice(0, 6)) {
+    const li = document.createElement('li'); li.className = 'row';
+    const name = document.createElement('span'); name.className = 'row-title'; name.textContent = `${b.merchant}, $${b.amount}${b.variable ? ' about' : ''} ${b.cadence}`;
+    if (b.confirm) { const c = document.createElement('span'); c.className = 'confirm'; c.textContent = 'confirm?'; name.append(c); }
+    const next = document.createElement('span'); next.className = 'row-sub'; next.textContent = b.next ? `next ${b.next}` : '';
+    li.append(name, next);
+    if (b.confirm) {
+      const decide = document.createElement('div'); decide.className = 'decide';
+      const yes = document.createElement('button'); yes.type = 'button'; yes.className = 'yes'; yes.textContent = 'Yes, a bill';
+      const no = document.createElement('button'); no.type = 'button'; no.textContent = 'Not a bill';
+      const answer = async (kind: 'confirmed' | 'not-recurring') => {
+        yes.disabled = no.disabled = true;
+        const done = document.createElement('span'); done.className = 'decided'; done.textContent = kind === 'confirmed' ? 'A bill. Noted.' : 'Not a bill. Dropped.';
+        decide.replaceWith(done);
+        const r = await send({ type: 'CORRECT', merchantKey: b.key, kind });
+        if (r?.ok && r.saw) { if (flow.month) flow.month.saw = r.saw; paintBills(r.saw); }
+      };
+      yes.addEventListener('click', () => void answer('confirmed'));
+      no.addEventListener('click', () => void answer('not-recurring'));
+      decide.append(yes, no); li.append(decide);
+    }
+    bills.append(li);
+  }
+  bills.hidden = saw.bills.length === 0;
+}
 $('#saw-fair').addEventListener('click', async () => {
   const amount = Number(range.value);
   const r = await send({ type: 'SET_ENVELOPE', amount });
@@ -422,7 +442,38 @@ async function paintWeek() {
     $('#home-bank').textContent = `Read ${ago == null ? 'recently' : ago < 1 ? 'this hour' : `${ago} hour${ago === 1 ? '' : 's'} ago`}${w.payday ? `. Payday in ${w.payday.daysUntil} day${w.payday.daysUntil === 1 ? '' : 's'}` : ''}.`;
   }
 }
-SHOW.home = () => { homeNote.textContent = ''; paintHome(); void paintWeek(); };
+// The shelf: every kept moment, newest first. "Still want it" remembers the item as planned, so she lets it through
+// when it comes back; "Let it go" clears the row. The kept credit stays in the week either way.
+async function paintShelf() {
+  const r = await send({ type: 'SHELF' }).catch(() => null);
+  const rows = r && r.ok ? r.shelf : [];
+  $('#home-shelf-wrap').hidden = rows.length === 0;
+  const ul = $('#home-shelf');
+  ul.replaceChildren(...rows.slice(0, 8).map((s) => {
+    const li = document.createElement('li'); li.className = 'row';
+    const what = document.createElement('div'); what.className = 'what';
+    const name = document.createElement('span'); name.textContent = s.item; name.title = s.item;
+    const amt = document.createElement('span'); amt.textContent = `$${Math.round(s.amount)}`;
+    what.append(name, amt);
+    const sub = document.createElement('span'); sub.className = 'row-sub';
+    sub.textContent = `${s.store ? `${s.store}, ` : ''}${shelfDay(s.date)}`;
+    li.append(what, sub);
+    if (s.still) { const st = document.createElement('span'); st.className = 'still'; st.textContent = 'Still wanted. Planned, so she lets it through.'; li.append(st); return li; }
+    const decide = document.createElement('div'); decide.className = 'decide';
+    const still = document.createElement('button'); still.type = 'button'; still.className = 'yes'; still.textContent = 'Still want it';
+    const go = document.createElement('button'); go.type = 'button'; go.textContent = 'Let it go';
+    const act = async (action: 'still' | 'let-go') => { still.disabled = go.disabled = true; const x = await send({ type: 'SHELVE', requestId: s.requestId, action }); if (x?.ok) void paintShelf(); };
+    still.addEventListener('click', () => void act('still'));
+    go.addEventListener('click', () => void act('let-go'));
+    decide.append(still, go); li.append(decide);
+    return li;
+  }));
+}
+function shelfDay(date: string): string {
+  const d = new Date(`${date}T12:00:00`); const days = Math.round((Date.now() - d.getTime()) / 86400000);
+  return days <= 0 ? 'today' : days === 1 ? 'yesterday' : days < 7 ? `${days} days ago` : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+SHOW.home = () => { homeNote.textContent = ''; paintHome(); void paintWeek(); void paintShelf(); };
 for (const b of document.querySelectorAll<HTMLButtonElement>('#home-grandma button')) b.addEventListener('click', async () => { await saveSettings({ grandma: b.dataset.v as Grandma }); paintHome(); });
 // The API address: saved on change, checked at once, so a wrong address shows before a judge does.
 {

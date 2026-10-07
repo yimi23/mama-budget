@@ -172,5 +172,21 @@ input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--ink); ma
 .field { width: 100%; margin-top: 8px; font: 14px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; padding: 10px 12px; border: 1.5px solid #D0CCD8; border-radius: 8px; background: #fff; color: inherit; }
 .field:focus { outline: none; border-color: #22172A; }
 .saw-bills { margin-top: 12px; }
-.saw-bills .row { justify-content: space-between; }
+.saw-bills .row { justify-content: space-between; flex-wrap: wrap; }
+.saw-bills .confirm { margin-left: 8px; font-size: 12px; font-weight: 600; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; vertical-align: middle; }
+.saw-bills .decide { display: flex; gap: 8px; width: 100%; }
+.saw-bills .decide button, .shelf .decide button { all: unset; box-sizing: border-box; flex: 1; min-height: 36px; padding: 0 10px; border-radius: 8px; border: 1.5px solid var(--line); text-align: center; font-size: 13px; font-weight: 600; cursor: pointer; }
+.saw-bills .decide button.yes, .shelf .decide button.yes { border-color: var(--ink); background: var(--ink); color: var(--cream); }
+.saw-bills .decide button:focus-visible, .shelf .decide button:focus-visible { outline: 3px solid var(--green); outline-offset: 2px; }
+.saw-bills .decided { font-size: 13px; color: var(--muted); }
+/* The shelf (home): one row per kept moment, the item and its amount, two answers. */
+.shelf-title { margin: 22px 0 0; font-size: 16px; font-weight: 600; }
+.shelf-sub { margin: 2px 0 0; }
+.shelf { margin-top: 10px; }
+.shelf .row { flex-direction: column; align-items: stretch; gap: 6px; }
+.shelf .what { display: flex; justify-content: space-between; gap: 8px; font-size: 15px; font-weight: 600; min-width: 0; }
+.shelf .what span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shelf .what span:last-child { font-variant-numeric: tabular-nums; color: var(--muted); flex-shrink: 0; }
+.shelf .decide { display: flex; gap: 8px; }
+.shelf .still { font-size: 13px; color: var(--muted); }
 .saw-bills .confirm { font-size: 12px; color: #93370D; background: #FEF0C7; border-radius: 999px; padding: 3px 8px; margin-left: 8px; }

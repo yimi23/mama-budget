@@ -1,7 +1,7 @@
 // Service worker. Stateless: everything lives in chrome.storage. Every listener is top level and synchronous.
 
 import type { HandledLists, Message } from '@mama/shared/messages';
-import type { Answer, BuyReply, CartItem, CartRead, CurrencyCode, JudgeReply, Month, PlanReply, Week } from '@mama/shared/types';
+import type { Answer, BuyReply, CartItem, CartRead, CurrencyCode, JudgeReply, Month, PlanReply, Saw, ShelfItem, Week } from '@mama/shared/types';
 import { apiBase, apiUp, authHeaders, call } from '../lib/api';
 import { weekKey } from '@mama/shared/week';
 import { regionHome } from '../lib/onboarding';
@@ -102,6 +102,8 @@ async function mark(kind: keyof HandledLists, key: string) {
 // Charges posted this envelope week, by item name, so Buy anyway on the card and a later confirmation page for the
 // same order never both post the same item. The API is idempotent per requestId; this guards across requestIds.
 const postedKey = (name: string) => name.trim().toLowerCase();
+// The judge's memory key (api/judge/rules_v2.js key): lowercase, nothing after a comma, letters, digits and spaces only.
+const memoryKey = (name: string) => name.toLowerCase().replace(/,.*$/, '').replace(/[^a-z0-9 ]/g, '').trim();
 
 async function postedThisWeek(): Promise<Set<string>> {
   const { posted = {} } = await browser.storage.local.get('posted');
@@ -296,9 +298,29 @@ async function putBack(msg: Extract<Message, { type: 'PUT_BACK' }>) {
   if (!(await apiUp())) return { ok: false as const };
   const reply = await call<{ ok: true; week: Week }>('/v2/putback', {
     method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ name: msg.name, price: msg.price, requestId: `putback:${weekKey()}:${postedKey(msg.name)}` }),
+    body: JSON.stringify({ name: msg.name, price: msg.price, store: msg.store, requestId: `putback:${weekKey()}:${postedKey(msg.name)}` }),
   });
   return reply ? { ok: true as const, week: reply.week } : { ok: false as const };
+}
+
+async function shelf() {
+  if (!(await apiUp())) return { ok: false as const };
+  const r = await call<{ ok: true; shelf: ShelfItem[] }>('/shelf');
+  return r ? { ok: true as const, shelf: r.shelf } : { ok: false as const };
+}
+
+// "Still want it" is also an answer: the item is remembered as planned, so she lets it through when it comes back.
+async function shelve(msg: Extract<Message, { type: 'SHELVE' }>) {
+  if (!(await apiUp())) return { ok: false as const };
+  const r = await call<{ ok: true; shelf: ShelfItem[] }>('/shelf', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ requestId: msg.requestId, action: msg.action }) });
+  if (r && msg.action === 'still') { const row = r.shelf.find((s) => s.requestId === msg.requestId); if (row) await remember(memoryKey(row.item), 'planned'); }
+  return r ? { ok: true as const, shelf: r.shelf } : { ok: false as const };
+}
+
+async function correct(msg: Extract<Message, { type: 'CORRECT' }>) {
+  if (!(await apiUp())) return { ok: false as const };
+  const r = await call<{ ok: true; saw: Saw | null; week: Week | null }>('/bank/correct', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ merchantKey: msg.merchantKey, kind: msg.kind }) });
+  return r ? { ok: true as const, saw: r.saw, week: r.week } : { ok: false as const };
 }
 
 // The watches from screen 06b, kept: when a watched merchant's site opens she says so, once per session per store.
@@ -444,6 +466,15 @@ export default defineBackground(() => {
         return true;
       case 'PUT_BACK':
         putBack(msg).then(sendResponse, () => sendResponse({ ok: false }));
+        return true;
+      case 'SHELF':
+        shelf().then(sendResponse, () => sendResponse({ ok: false }));
+        return true;
+      case 'SHELVE':
+        shelve(msg).then(sendResponse, () => sendResponse({ ok: false }));
+        return true;
+      case 'CORRECT':
+        correct(msg).then(sendResponse, () => sendResponse({ ok: false }));
         return true;
       case 'WATCH_HERE':
         watchHere(msg).then(sendResponse, () => sendResponse({ line: null }));
