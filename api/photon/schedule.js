@@ -9,7 +9,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const nessie = require('../nessie/client');
+const nessie = require('../ledger');
 const { weeklyStatement, monthlyStatement } = require('../lines/writer');
 const { notify } = require('../notify');
 const memory = require('../notify/memory');
@@ -83,7 +83,11 @@ async function send(kind, { now = new Date(), to, grandma: g } = {}) {
   if (g && require('../lines/character').GRANDMAS[g]) writeState({ grandma: g });
   if (to) writeState({ to }); // the number from onboarding screen 07 is where the Sunday statements go from now on
   const who = grandma();
-  const body = kind === 'monthly' ? monthlyText(now, who) : weeklyText(now, who);
+  // Live bank: Sunday close first (sweep, carry, streak), so the statement reads the closed week.
+  let closed = null;
+  if (kind === 'weekly' && nessie.live && nessie.live()) { try { closed = nessie.closeWeek({}); } catch (e) { console.log('[schedule] close failed:', e.message); } }
+  let body = kind === 'monthly' ? monthlyText(now, who) : weeklyText(now, who);
+  if (closed && closed.text) body += `\n${closed.text}`;
   const result = await notify(to, body, 'calm', { prompted: true }); // statements skip the gate: PLAN allows them on top of the daily text
   const sent = !!(result && result.sent);
   if (sent) writeState({ ...(kind === 'monthly' ? { monthlySentFor: monthKey(now), lastMonthlyAt: now.toISOString() } : { weeklySentFor: weekKey(now), lastWeeklyAt: now.toISOString() }), ...(readState().firstStatementAt ? {} : { firstStatementAt: now.toISOString() }) });

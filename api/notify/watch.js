@@ -16,7 +16,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const nessie = require('../nessie/client');
+const nessie = require('../ledger');
 const { judge } = require('../judge/rules');
 const writer = require('../lines/writer');
 const memory = require('./memory');
@@ -142,6 +142,31 @@ async function handlePurchase(p, cache) {
   await notifyMod.notify(null, text, level, { important: important(level) });
 }
 
+/**
+ * Live bank mode: an order the extension saw land is announced at once (the bank will not show it until the next
+ * pull). The same words, level and memory as a watched purchase; dedupe by the order id.
+ */
+const announced = new Set();
+async function announce({ id, item, amount, merchant, tag }) {
+  if (!id || announced.has(id)) return null;
+  announced.add(id);
+  const weekAfter = nessie.week();
+  const amountNum = Number(amount || 0);
+  const beforeRatio = weekAfter.budget ? Math.max(0, weekAfter.spent - (tag === 'want' ? amountNum : 0)) / weekAfter.budget : 0;
+  const level = levelFor(tag, weekAfter.ratio, beforeRatio);
+  if (!level) return null;
+  const cart = matchCart(merchant, amountNum);
+  const mem = memory.read();
+  const who = memory.whoSpeaks(mem);
+  let text = writer.notifyText(level, weekAfter, { item, price: amountNum, merchant }, who, cart ? cart.items.map((i) => i.name) : null);
+  const broken = memory.findBrokenPromise(mem, item, merchant);
+  if (broken) { memory.markBroken(mem, broken, item); text += `\nYou said "${broken.text}."`; }
+  memory.addHistory(mem, 'mama', text);
+  memory.write(mem);
+  await notifyMod.notify(null, text, level, { important: important(level) });
+  return text;
+}
+
 async function handleWithdrawal(w, cache) {
   const tagged = parseTagged(w.description);
   if (!tagged || (tagged.tag !== 'family' && tagged.tag !== 'saved')) return; // not ours to narrate
@@ -231,4 +256,4 @@ function resetState() {
   recentCarts = [];
 }
 
-module.exports = { start, stop, resetState, recordCart, latestCart, markSeen, levelFor, tick };
+module.exports = { start, stop, resetState, recordCart, latestCart, markSeen, levelFor, tick, announce };

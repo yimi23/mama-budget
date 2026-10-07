@@ -21,7 +21,7 @@ test('a setup token decodes to a claim URL, the claim answers with an access URL
   await assert.rejects(sync.claim('not-base64-of-a-url', fetchImpl), /https/);
 });
 
-test('pull asks for version 2 and pending rows, sends basic auth, never a window over 90 days', async () => {
+test('pull asks for version 2 and pending rows, sends basic auth, never a window over the limit', async () => {
   let seen;
   const fetchImpl = async (url, init) => { seen = { url, init }; return { ok: true, status: 200, json: async () => demo }; };
   const body = await sync.pull('https://u1:p1@beta-bridge.simplefin.org/simplefin', { start: 1_790_000_000, end: 1_791_000_000 }, fetchImpl);
@@ -33,7 +33,7 @@ test('pull asks for version 2 and pending rows, sends basic auth, never a window
   assert.ok(!seen.url.includes('p1'), 'credentials travel in the header, not the URL');
   assert.equal(body.accounts.length, 3);
   assert.deepEqual(body.errlist, []);
-  await assert.rejects(sync.pull('https://u1:p1@x.org/simplefin', { start: 0, end: 91 * DAY }, fetchImpl), /90 days/);
+  await assert.rejects(sync.pull('https://u1:p1@x.org/simplefin', { start: 0, end: (sync.WINDOW_DAYS + 1) * DAY }, fetchImpl), /days/);
 });
 
 test('rows: one flat list, newest first, numbers as numbers, payee, memo and mcc kept, pending from posted 0', () => {
@@ -60,15 +60,15 @@ test('accounts: cash balances, holdings kept apart so stock never reads as spend
   assert.equal(a.find((x) => x.name === 'SimpleFIN Empty Account').transactions, 0);
 });
 
-test('windows: 90-day slices with a 5-day overlap, oldest first, covering the days asked', () => {
+test('windows: bounded slices with a 5-day overlap, oldest first, covering the days asked', () => {
   const now = 1_791_000_000;
   const w = sync.windows(30, now);
   assert.equal(w.length, 1);
   assert.equal(w[0].end, now);
   assert.equal((w[0].end - w[0].start) / DAY, 35);
   const w2 = sync.windows(180, now);
-  assert.equal(w2.length, 3);
-  for (const x of w2) assert.ok((x.end - x.start) / DAY <= 90);
+  assert.ok(w2.length >= 3);
+  for (const x of w2) assert.ok((x.end - x.start) / DAY <= sync.WINDOW_DAYS);
   for (let i = 1; i < w2.length; i++) assert.ok(w2[i - 1].end - w2[i].start >= 5 * DAY, 'consecutive windows overlap');
   assert.ok(w2[0].start <= now - 180 * DAY);
 });

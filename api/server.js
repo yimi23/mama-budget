@@ -34,7 +34,7 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const { judge } = require('./judge/rules');
 const v2 = require('./judge/rules_v2');
-const nessie = require('./nessie/client');
+const nessie = require('./ledger'); // live bank when linked, the Nessie sandbox otherwise
 const { lineFor, ackLine, buyLine, smallLines, subLine, setHome, contextLine, backHome, planLine, fundedLine } = require('./lines/writer');
 const reasons = require('./judge/reasons');
 const model = require('./lines/model');
@@ -197,6 +197,7 @@ const routes = {
       tag = v2.judge({ item: name, price, merchant: body.store || '' }, nessie.week(), memory).label === 'need' ? 'need' : 'want';
     }
     await nessie.purchase({ item: short, price, merchant: body.store || 'Store', tag, requestId: String(body.requestId) });
+    if (nessie.live()) watch.announce({ id: String(body.requestId), item: short, amount: price, merchant: body.store || '', tag }).catch((e) => console.log('[buy] announce failed:', e.message));
     const w = nessie.week();
     setHome(body.home);
     const it = { item: short, price, storePrice: body.storePrice != null ? Number(body.storePrice) : null, merchant: body.store || '', currency: body.currency || 'USD', home: body.home || null };
@@ -242,6 +243,7 @@ const routes = {
     const name = String(body.name || '');
     const amount = Math.round(Number(body.price || 0));
     if (!name || !(amount > 0) || !body.requestId) throw new Error('name, price and requestId are required');
+    if (nessie.live()) { nessie.putBack({ requestId: String(body.requestId), item: name, amount }); return { ok: true, week: nessie.week() }; }
     const c = nessie.readCache();
     c.putBack = c.putBack || [];
     if (!c.putBack.some((p) => p.requestId === body.requestId)) {
@@ -323,8 +325,7 @@ const routes = {
 
   'POST /reset': async () => {
     require('./lines/pick').reset();
-    const seed = require('./nessie/seed');
-    await seed.main();
+    if (!nessie.live()) { const seed = require('./nessie/seed'); await seed.main(); }
     watch.resetState();
     // Bootstrap the watcher now, inside the reset, so a purchase made a second later is new and gets its text instead
     // of being swallowed as seeded history.
@@ -346,6 +347,25 @@ const routes = {
   },
 
   'GET /photon/health': async () => ({ sender: require('./notify').senderName(), spectrum: photon.live(), spectrumKeys: !!photon.credentials(), imessage: await kit.status() }),
+
+  // The real bank. Link once with a SimpleFIN Setup Token (pasted on onboarding screen 04); the Access URL it becomes
+  // lives only in api/.env. Then: what she saw, a pull on demand, a correction, the Sunday close.
+  'POST /bank/link': async (body) => {
+    const sync = require('./budget/sync');
+    const access = await sync.claim(String(body.token || ''));
+    const envPath = require('node:path').join(__dirname, '.env');
+    const fs = require('node:fs');
+    const cur = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf8') : '';
+    const line = `SIMPLEFIN_ACCESS_URL=${access}`;
+    fs.writeFileSync(envPath, /^SIMPLEFIN_ACCESS_URL=.*$/m.test(cur) ? cur.replace(/^SIMPLEFIN_ACCESS_URL=.*$/m, line) : `${cur.replace(/\n?$/, '\n')}${line}\n`);
+    process.env.SIMPLEFIN_ACCESS_URL = access;
+    await nessie.refresh(true);
+    return { ok: true, live: nessie.live(), saw: nessie.saw() };
+  },
+  'GET /bank/saw': async () => ({ ok: true, live: nessie.live(), saw: nessie.saw(), week: nessie.live() ? nessie.week() : null }),
+  'POST /bank/refresh': async () => { await nessie.refresh(true); return { ok: true, live: nessie.live(), week: nessie.week() }; },
+  'POST /bank/correct': async (body) => ({ ok: true, corrections: nessie.correct(String(body.merchantKey || ''), String(body.kind || '')), week: nessie.week() }),
+  'POST /bank/close': async (body) => ({ ok: true, close: nessie.closeWeek({ useGrace: !!body.useGrace }), week: nessie.week() }),
 
   'GET /bank': async () => {
     const cache = nessie.readCache();
@@ -432,6 +452,9 @@ http.createServer(async (req, res) => {
 // The bank watcher is the only source of after-purchase notifications; see notify/watch.js.
 watch.start();
 schedule.startScheduler();
+// The real bank, when linked: a pull at boot and every six hours (the Bridge refreshes about daily).
+nessie.refresh().then((c) => { if (c) console.log(`[budget] bank ledger ready: ${c.rows.length} rows`); }).catch(() => {});
+setInterval(() => nessie.refresh().catch(() => {}), 6 * 3600 * 1000).unref();
 // Two-way texting over real iMessage, only once SPECTRUM_PROJECT_ID/SPECTRUM_PROJECT_SECRET (or the
 // PHOTON_ prefixed fallback) are set -- a no-op otherwise, so this is always safe to call.
 // spectrum.js sends the reply itself (same space, continuing the thread), so this just logs that leg

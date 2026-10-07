@@ -4,11 +4,11 @@
 // (api/test/fixtures/simplefin-demo-v2.json): transactions carry payee, memo and an mcc code, which the protocol page
 // does not promise, so every field is read defensively.
 //
-// Limits the Bridge states: about daily refresh, 24 requests a day per Access URL, 90 days per request, and the
+// Limits the Bridge states: about daily refresh, 24 requests a day per Access URL, 90 days per request (45 recommended), and the
 // errlist must be shown to the person. A window overlaps the previous one by 5 days because posted rows change.
 
 const DAY = 86400;
-const WINDOW_DAYS = 90;
+const WINDOW_DAYS = 45; // the Bridge allows 90 but recommends 45 and says it may cap there
 const OVERLAP_DAYS = 5;
 const DAILY_CAP = 24;
 

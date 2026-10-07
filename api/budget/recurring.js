@@ -72,7 +72,12 @@ function streams(rows, now, { notRecurring = [] } = {}) {
     groups.set(k, g);
   }
   const out = [];
+  const SHOP_MCC = /^(?:5[3-9]\d\d|4121|7\d\d\d)$/; // retail, food, services: a purchase, never a bill
   for (const g of groups.values()) {
+    // A shop visited six or more times in a month is a habit, whatever its amounts do.
+    const recent = g.rows.filter((r) => now - r.posted <= 30 * DAY).length;
+    if (recent >= HABIT_PER_30 && g.direction === 'out') { out.push(stream(g, { center: median(g.rows.map((r) => Math.abs(r.amount))), rows: g.rows }, g.rows.slice().sort((a, b) => a.posted - b.posted), 'habit', null, now)); continue; }
+    const shop = g.rows.some((r) => SHOP_MCC.test(String(r.mcc || '')));
     // Utilities vary with the season; pay varies with overtime and a bonus month. Both cluster loosely.
     const loose = g.direction === 'in' || UTILITY.test(g.rows[0].description) || UTILITY.test(g.name);
     for (const cl of clusterAmounts(g.rows, loose)) {
@@ -88,7 +93,7 @@ function streams(rows, now, { notRecurring = [] } = {}) {
       if (!regular) continue;
       const marked = dated.some((r) => RECURRING_WORDS.test(r.description));
       const needed = cad.name === 'quarterly' || cad.name === 'annual' || marked ? 2 : 3;
-      const kind = g.direction === 'in' ? 'income' : (loose || cad.name === 'monthly' && cl.center >= 150 ? 'bill' : 'subscription');
+      const kind = g.direction === 'in' ? 'income' : (!shop && (loose || (cad.name === 'monthly' && cl.center >= 150)) ? 'bill' : 'subscription');
       out.push(stream(g, cl, dated, kind, cad, now, dated.length >= needed ? 'mature' : 'early'));
     }
   }

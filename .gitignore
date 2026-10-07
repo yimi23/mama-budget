@@ -25,3 +25,5 @@ data/mama-memory.json
 data/photon-spaces.json
 data/notify-state.json
 data/photon-gate.json
+data/budget-cache.json
+data/budget-state.json
