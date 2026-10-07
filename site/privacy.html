@@ -4,6 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Mama Budget privacy</title>
+<meta name="description" content="Exactly what Mama Budget reads, where it goes, who else sees it, and how to delete it." />
+<link rel="icon" href="/favicon.png" />
 <style>
   body { margin: 0; background: #FBF8F3; color: #22172A; font: 17px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
   main { max-width: 680px; margin: 0 auto; padding: 48px 20px 80px; }
@@ -12,52 +14,89 @@
   p, li { margin: 0 0 12px; }
   .muted { color: #5E566B; }
   code { background: #EADFCB; padding: 1px 5px; border-radius: 5px; font-size: 15px; }
+  a { color: #0F7B5A; }
 </style>
 </head>
 <body>
 <main>
   <h1>Mama Budget privacy</h1>
-  <p class="muted">Last updated October 4, 2026. Built at MHacks 2026 by Praise Oyimi and Ugonna Emeka-Inegbu.</p>
+  <p class="muted">Last updated October 7, 2026. Made and run by Praise Oyimi. Started at MHacks 2026 with Ugonna Emeka-Inegbu.</p>
 
-  <p>Mama Budget is a Chrome extension. A grandmother character sits in the corner of your shopping cart and holds you to the fun money you set for the week. This page says exactly what the extension reads, where it goes, and what it never touches.</p>
+  <p>Mama Budget is a browser extension for Chrome and Safari, an API it talks to, and a ChatGPT app. A grandmother character sits in the corner of your shopping cart and holds you to the fun money you set for the week. This page says exactly what is read, where it goes, who else sees it, and how to delete it.</p>
 
   <h2>What the extension reads</h2>
   <ul>
     <li><strong>The page you are on, only when it is a cart, checkout or product page.</strong> On every other page a small check runs locally and nothing is read, stored or sent. The check looks for the structure of a cart (a subtotal, a pay button, a cart address) and loads the rest of the extension only when it finds one.</li>
     <li><strong>Cart contents.</strong> Item names, quantities and prices, read from the store's own cart data or from the visible text of the cart area. Nothing else on the page: no account details, no addresses, no card numbers, no cookies.</li>
-    <li><strong>What you tell her.</strong> Your answers on her cards ("it is for something", "I just want it") and the one line reason you may type.</li>
-    <li><strong>Settings you choose.</strong> Which grandma, how loud, the weekly amount, the currency from home, sounds on or off, and the address of the API if you changed it.</li>
+    <li><strong>What you tell her.</strong> Your answers on her cards ("it is for something", "I just want it", "put it back"), the one line reason you may type, and your yes or no when she asks whether something is a bill.</li>
+    <li><strong>Settings you choose.</strong> Which grandma, how loud, the weekly amount, the currency from home, sounds on or off, your phone number if you want texts, and the address of the API if you changed it.</li>
   </ul>
 
-  <h2>Where it goes</h2>
+  <h2>Where it goes: the API</h2>
+  <p>The extension talks to the Mama Budget API at <code>api.mamabudget.com</code>, run by Praise Oyimi on a server in the United States (Amazon Web Services, Ohio). You can instead run the API yourself on your own computer; the code is open source and the popup lets you point the extension at it. Then nothing leaves your machine except the calls below to the services the API uses.</p>
+  <p>The API has no accounts, passwords, names or email addresses. Each install of the extension makes a random device token and that token is your identity. Against it the API keeps:</p>
   <ul>
-    <li><strong>Your own API.</strong> The extension talks to an API you run (by default on your own computer at <code>localhost:8787</code>). Cart items and your answers are sent there so she can judge them against your week. The API's code is open source in the same repository.</li>
-    <li><strong>From the API, three services, each for one job.</strong> Capital One's Nessie sandbox holds the simulated ledger (a demo bank, never your real account). ElevenLabs turns her lines into speech when a voice key is set. Anthropic's Claude reads cart text she could not parse otherwise, says whether an item is an obvious necessity, reads the meaning of a typed reason, and words her lines; it receives item names, prices, the store's name and the week's numbers, never page HTML. If you use the texting feature, Photon delivers her messages to the phone number you enrolled.</li>
-    <li><strong>Nothing to us.</strong> The developers run no server that receives your data. There is no analytics, no advertising, no tracking pixel, no sale or sharing of data.</li>
+    <li>Your settings and the weekly amount.</li>
+    <li>This week's state: what she has judged, what you answered, what you put back (the shelf), the kept jar and the streak, and past weeks' totals for the Sunday report card.</li>
+    <li>Her memory of your answers, so she stops asking about things you have already settled.</li>
+    <li>Your bank link, if you connect one: a SimpleFIN access token, encrypted at rest (AES-256-GCM) with a key that lives only on the server. Your bank username and password are never seen or stored by Mama Budget; you make the token at SimpleFIN and they hold the login.</li>
+    <li>The last 90 days of transactions from the linked accounts (date, amount, merchant, account name), pulled at most four times a day, so the week and the bills can be computed. Older rows roll off with each pull.</li>
+    <li>If you join a house: which house, when you joined and left. Other members see each of your purchases as an amount, an item and a day. Your name and token never leave the server.</li>
+    <li>If billing is on and you subscribe: your Stripe customer id, plan and trial or renewal dates. Your card number goes to Stripe and is never seen by Mama Budget.</li>
+    <li>If you enrol a phone number: the number, and a short log of what she texted you, so she does not repeat herself. Reply STOP to any text and nothing more is sent to that number until you reply START.</li>
+    <li>Her voice clips, cached by the words spoken, not by who heard them.</li>
   </ul>
+
+  <h2>Who else sees what</h2>
+  <ul>
+    <li><strong>SimpleFIN</strong> gives the API read-only access to the accounts you chose. Mama Budget cannot move money.</li>
+    <li><strong>Capital One Nessie</strong> is a demo bank with made-up transactions for people who have not linked a bank. It never holds real account data.</li>
+    <li><strong>Anthropic (Claude)</strong> reads cart text she could not parse otherwise, says whether an item is an obvious necessity, reads the meaning of a typed reason, and words her lines. It receives item names, prices, the store's name and the week's numbers. It never receives page HTML, your bank login, your transactions list or your phone number.</li>
+    <li><strong>ElevenLabs</strong> turns her lines into speech when a voice key is set. It receives the words of the line only.</li>
+    <li><strong>Photon</strong> delivers her texts to the number you enrolled. It receives the number and the text.</li>
+    <li><strong>Stripe</strong> handles payment. It receives what any card payment needs; Mama Budget receives back a customer id and the state of the plan.</li>
+    <li><strong>OpenAI</strong>, only if you use the ChatGPT app: ChatGPT sends the API an anonymous subject id for your ChatGPT account, which becomes its own device token with its own week. What you type in ChatGPT is handled by OpenAI under OpenAI's terms. The ChatGPT app reads your week; it does not change it and it never mentions prices.</li>
+    <li><strong>Nobody else.</strong> There is no analytics, no advertising, no tracking pixel, and no sale, rental or sharing of data. Data is disclosed only if the law demands it.</li>
+  </ul>
+  <p>The extension's use of information from Google APIs and the browser follows the Chrome Web Store User Data Policy, including its Limited Use requirements: data is used only to provide the feature you see, never for advertising, and never read by a human except with your permission or for security.</p>
 
   <h2>What stays in the browser</h2>
-  <p>Her memory of your answers, your settings and this week's state live in Chrome's extension storage on your computer. "Start over" in the popup clears all of it and resets the demo ledger.</p>
+  <p>Your settings, this week's state and her memory of your answers are also kept in the browser's extension storage on your computer so she can speak before the API answers. "Start over" in the popup clears all of it and tells the API to forget this device.</p>
+
+  <h2>How long, and how to delete</h2>
+  <ul>
+    <li>Everything is kept while the device token exists. Removing the bank link in the popup deletes the stored token and the cached transactions at once.</li>
+    <li>Leaving a house removes you from it; your past purchases stay in the house's closed weeks as amounts with no name.</li>
+    <li>"Delete my data" in the popup deletes everything the API holds for this device at once, then clears the browser's copy. There are no separate backups; the data lives in one place and that place is emptied. If the extension is already gone, email praiseoyimi526@gmail.com and the deletion is done by hand within 7 days.</li>
+    <li>Cancelling a subscription keeps the Stripe record for as long as tax law requires; nothing else survives deletion.</li>
+  </ul>
 
   <h2>What she never does</h2>
   <ul>
     <li>She never blocks a purchase and never clicks a store's buttons.</li>
     <li>She never reads a page that is not a cart, checkout or product page.</li>
-    <li>She never touches needs or money sent to family: those are protected before anything else runs.</li>
-    <li>She never moves real money. The bank is a sandbox.</li>
+    <li>She never touches needs, bills or money sent to family: those are protected before anything else runs.</li>
+    <li>She never moves money. The bank link is read only.</li>
+    <li>She never tells the other people in your house who bought what.</li>
   </ul>
 
   <h2>Permissions, in plain words</h2>
   <ul>
     <li><code>&lt;all_urls&gt;</code> content script: carts live on every store, so she has to be able to look. The local check above is the whole cost on a page that is not a cart.</li>
     <li><code>storage</code>: her memory and your settings.</li>
-    <li><code>offscreen</code>: playing her voice.</li>
-    <li><code>tts</code>: the browser's own voice as a fallback when there is no ElevenLabs voice.</li>
-    <li><code>http://localhost:8787/*</code>: the API on your computer.</li>
+    <li><code>offscreen</code> (Chrome): playing her voice.</li>
+    <li><code>tts</code> (Chrome): the browser's own voice as a fallback when there is no ElevenLabs voice. Safari asks for neither of these; her voice plays from the page.</li>
+    <li><code>https://api.mamabudget.com/*</code> and <code>http://localhost:8787/*</code>: the API, hosted or on your own computer.</li>
   </ul>
 
+  <h2>Children</h2>
+  <p>Mama Budget is not for children under 13 and does not knowingly keep anything about them. If you believe a child has used it, email and it is deleted.</p>
+
+  <h2>Changes</h2>
+  <p>When this page changes in a way that matters, the date at the top changes. Big changes are also announced in the extension's release notes.</p>
+
   <h2>Contact</h2>
-  <p>Questions and deletion requests: praiseoyimi526@gmail.com. Source: <a href="https://github.com/yimi23/mama-budget">github.com/yimi23/mama-budget</a>.</p>
+  <p>Questions and deletion requests: praiseoyimi526@gmail.com. Source: <a href="https://github.com/yimi23/mama-budget">github.com/yimi23/mama-budget</a>. Terms: <a href="/terms.html">mamabudget.com/terms</a>.</p>
 </main>
 </body>
 </html>

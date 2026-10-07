@@ -61,7 +61,9 @@ const q = {
   delLink: db.prepare('DELETE FROM bank_links WHERE user_id = ?'),
   getCache: db.prepare('SELECT json, at FROM bank_cache WHERE user_id = ?'),
   putCache: db.prepare('INSERT INTO bank_cache (user_id, json, at) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET json = excluded.json, at = excluded.at'),
-  deleteUser: db.transaction((id) => { for (const t of ['settings', 'bank_links', 'bank_cache', 'budget_state', 'memory']) db.prepare(`DELETE FROM ${t} WHERE user_id = ?`).run(id); db.prepare('DELETE FROM users WHERE id = ?').run(id); }),
+  delCache: db.prepare('DELETE FROM bank_cache WHERE user_id = ?'),
+  // Every table keyed by user_id, including the ones other modules create (billing, house_members) when they exist.
+  deleteUser: db.transaction((id) => { const have = new Set(db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all().map((r) => r.name)); for (const t of ['settings', 'bank_links', 'bank_cache', 'budget_state', 'memory', 'billing', 'house_members']) if (have.has(t)) db.prepare(`DELETE FROM ${t} WHERE user_id = ?`).run(id); db.prepare('DELETE FROM users WHERE id = ?').run(id); }),
   count: db.prepare('SELECT COUNT(*) AS n FROM users'),
 };
 const jsonTables = { settings: { get: q.getJson('settings'), put: q.putJson('settings') }, budget_state: { get: q.getJson('budget_state'), put: q.putJson('budget_state') }, memory: { get: q.getJson('memory'), put: q.putJson('memory') } };
@@ -86,7 +88,7 @@ module.exports = {
   budgetState: { get: (u, f) => getJson('budget_state', u, f), put: (u, v) => putJson('budget_state', u, v) },
   memory: { get: (u, f) => getJson('memory', u, f), put: (u, v) => putJson('memory', u, v) },
   bankLink: { get: (u) => { const r = q.getLink.get(u); return r ? decrypt(r.access_enc) : null; }, put: (u, access) => q.putLink.run(u, encrypt(access), now()), remove: (u) => q.delLink.run(u) },
-  bankCache: { get: (u) => { const r = q.getCache.get(u); return r ? { ...JSON.parse(r.json), at: r.at } : null; }, put: (u, v) => q.putCache.run(u, JSON.stringify({ accounts: v.accounts, rows: v.rows }), v.at || now()) },
+  bankCache: { get: (u) => { const r = q.getCache.get(u); return r ? { ...JSON.parse(r.json), at: r.at } : null; }, put: (u, v) => q.putCache.run(u, JSON.stringify({ accounts: v.accounts, rows: v.rows }), v.at || now()), remove: (u) => q.delCache.run(u) },
   deleteUser: (u) => q.deleteUser(u),
   userCount: () => q.count.get().n,
   encrypt, decrypt,

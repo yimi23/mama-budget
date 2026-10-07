@@ -1,5 +1,14 @@
 [build]
   publish = "."
+# The store listing and the ChatGPT app point at /privacy and /terms without the extension.
+[[redirects]]
+  from = "/privacy"
+  to = "/privacy.html"
+  status = 200
+[[redirects]]
+  from = "/terms"
+  to = "/terms.html"
+  status = 200
 [[headers]]
   for = "/assets/*"
   [headers.values]

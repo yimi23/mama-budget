@@ -579,6 +579,23 @@ $('#home-over').addEventListener('click', async () => {
   flow = { step: 'welcome', bank: false, texted: false };
   await show('welcome');
 });
+$('#home-bank-remove').addEventListener('click', async () => {
+  // The bank goes, the week stays. The row hides and the demo ledger carries the week until a new link.
+  const r = await send({ type: 'UNLINK_BANK' });
+  if (!r || !r.ok) { homeNote.textContent = 'She could not reach the API to remove it. Try again.'; return; }
+  flow.bank = false;
+  homeNote.textContent = 'The bank is gone. Your week, jar and shelf stayed.';
+  await paintHome();
+});
+$('#home-delete').addEventListener('click', async () => {
+  // Two taps: the first asks, the second deletes. Everything the API holds for this device and the browser's copy.
+  const b = $<HTMLButtonElement>('#home-delete');
+  if (b.dataset.armed !== '1') { b.dataset.armed = '1'; b.textContent = 'Tap again to delete everything'; setTimeout(() => { b.dataset.armed = ''; b.textContent = 'Delete my data'; }, 6000); return; }
+  await send({ type: 'DELETE_ME' });
+  settings = {};
+  flow = { step: 'welcome', bank: false, texted: false };
+  await show('welcome');
+});
 $('#home-tour').addEventListener('click', async () => {
   await saveSettings({ onboarded: false });
   flow = { step: 'welcome', bank: false, texted: false };

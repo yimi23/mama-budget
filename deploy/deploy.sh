@@ -11,7 +11,9 @@ fi
 [ -f deploy/.env ] || { echo "deploy/.env is missing: cp deploy/.env.example deploy/.env and fill it"; exit 1; }
 grep -q '^MAMA_DOMAIN=' deploy/.env || { echo "MAMA_DOMAIN is missing from deploy/.env"; exit 1; }
 grep -q '^MAMA_CHATGPT_DOMAIN=' deploy/.env || { echo "MAMA_CHATGPT_DOMAIN is missing from deploy/.env"; exit 1; }
-docker compose -f deploy/docker-compose.yml up -d --build
+# Right after Docker is installed the login shell is not in the docker group yet; sudo covers the first run.
+DC="docker compose"; docker info >/dev/null 2>&1 || DC="sudo docker compose"
+$DC -f deploy/docker-compose.yml up -d --build
 sleep 5
 domain=$(grep '^MAMA_DOMAIN=' deploy/.env | cut -d= -f2)
 echo "health: $(curl -s --max-time 10 "https://$domain/health" || echo 'not yet (certificate may still be issuing; try again in a minute)')"

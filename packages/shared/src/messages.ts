@@ -41,6 +41,9 @@ export type Message =
   /** Onboarding 06: a bill she was not sure of. "confirmed" makes the early stream a bill; "not-recurring" drops it. */
   | { type: 'CORRECT'; merchantKey: string; kind: 'confirmed' | 'not-recurring' }
   | { type: 'START_OVER' }
+  /** Home: remove the bank link (the week stays), or delete everything the API holds for this device and clear the browser. */
+  | { type: 'UNLINK_BANK' }
+  | { type: 'DELETE_ME' }
   /** Her voice for one line. Fire and forget: the card never waits on audio. */
   | { type: 'SPEAK'; text: string; grandma: Grandma; mood?: 'calm' | 'shocked' | 'down' }
   /** Onboarding 05: the 30 day read, in her words. */
@@ -78,6 +81,8 @@ export type Reply<M extends Message> =
   M extends { type: 'SHELVE' } ? { ok: true; shelf: ShelfItem[] } | { ok: false } :
   M extends { type: 'CORRECT' } ? { ok: true; saw: Saw | null; week: Week | null } | { ok: false } :
   M extends { type: 'START_OVER' } ? { ok: true } :
+  M extends { type: 'UNLINK_BANK' } ? { ok: true; week: Week | null } | { ok: false } :
+  M extends { type: 'DELETE_ME' } ? { ok: true } :
   M extends { type: 'SPEAK' } ? { ok: boolean; duration: number | null; dataUrl?: string; speakText?: string } :
   M extends { type: 'MONTH' } ? { ok: true; month: Month } | { ok: false } :
   M extends { type: 'LINK_BANK' } ? { ok: true; month: Month } | { ok: false; reason: string } :

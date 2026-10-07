@@ -31,3 +31,4 @@ deploy/.env
 data/owner.json
 data/mama.sqlite*
 data/server.key
+data/photon-stopped.json

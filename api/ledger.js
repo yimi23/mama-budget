@@ -70,5 +70,7 @@ module.exports = {
   correct: (k, kind, userId) => (live(userId) ? budget.correct(k, kind, userId) : null),
   linkAccess: (access, userId) => budget.linkAccess(access, userId),
   isOwner: (userId) => budget.isOwner(userId),
+  unlink: (userId) => budget.unlink(userId),
+  forget: (userId) => budget.forget(userId),
   claimOwner: (userId) => budget.claimOwner(userId),
 };

@@ -17,6 +17,17 @@ const photon = require('../photon/spectrum');
 const kit = require('../photon/kit');
 const gate = require('../photon/gate');
 const spaces = require('./spaces');
+const fs = require('node:fs');
+const path = require('node:path');
+
+// Numbers that replied STOP. Persisted beside the database; nothing is sent to them until they reply START.
+const STOPPED = path.join(__dirname, '..', '..', 'data', 'photon-stopped.json');
+const digits = (n) => String(n || '').replace(/\D/g, '');
+function stoppedSet() { try { return new Set(JSON.parse(fs.readFileSync(STOPPED, 'utf8'))); } catch { return new Set(); } }
+function saveStopped(set) { fs.mkdirSync(path.dirname(STOPPED), { recursive: true }); fs.writeFileSync(STOPPED, JSON.stringify([...set])); }
+function stopped(to) { const d = digits(to); return !!d && stoppedSet().has(d); }
+function stopTexts(from) { const d = digits(from); if (!d) return false; const s = stoppedSet(); s.add(d); saveStopped(s); return true; }
+function startTexts(from) { const d = digits(from); const s = stoppedSet(); const had = s.delete(d); if (had) saveStopped(s); return had; }
 
 function senderName() {
   return photon.live() ? 'photon' : kit.available() ? 'imessage' : 'log';
@@ -35,7 +46,8 @@ async function notify(to, text, mood, opts = {}) {
   if (!text) return null;
   const dest = resolveDest(to);
   const sender = senderName();
-  const held = gate.gate({ to: dest, prompted: !!opts.prompted, important: !!opts.important });
+  // STOP wins over everything, including prompted and important, except the one confirmation that STOP itself earns.
+  const held = stopped(dest) && !opts.stopConfirm ? 'stopped' : gate.gate({ to: dest, prompted: !!opts.prompted, important: !!opts.important });
   if (held) {
     log.push({ to: dest, text, mood: mood || null, sender, sent: false, held, direction: 'out', at: Date.now() });
     return { sender, sent: false, held };
@@ -60,4 +72,4 @@ function logIncoming(from, text) {
   log.push({ to: from || 'mama', text, mood: null, sender: 'log', sent: true, direction: 'in', at: Date.now() });
 }
 
-module.exports = { notify, logIncoming, senderName, getMessages: log.list, clearMessages: log.clear };
+module.exports = { notify, logIncoming, senderName, getMessages: log.list, clearMessages: log.clear, stopped, stopTexts, startTexts };

@@ -425,6 +425,19 @@ async function startOver() {
   if (await apiUp()) void call('/reset', { method: 'POST' }, true);
 }
 
+/** Home: the bank goes, the week stays. */
+async function unlinkBank(): Promise<{ ok: true; week: Week | null } | { ok: false }> {
+  const r = await call<{ ok: boolean; week?: Week }>('/bank/unlink', { method: 'POST' });
+  if (!r || !r.ok) return { ok: false };
+  return { ok: true, week: r.week ?? null };
+}
+
+/** Home: delete everything the API holds for this device, then the browser's copy. Onboarding starts at Welcome. */
+async function deleteMe() {
+  if (await apiUp()) await call('/me/delete', { method: 'POST' }, true).catch(() => null);
+  await Promise.all([browser.storage.local.clear(), browser.storage.session.clear()]);
+}
+
 /** Her memory of your answers. Durable, keyed by the rules' own item key, shared across every store. */
 async function remember(key: string, answer: Answer | 'planned', reason?: string) {
   const { memory = {}, reasons = {} } = await browser.storage.local.get(['memory', 'reasons']);
@@ -552,6 +565,12 @@ export default defineBackground(() => {
         return true;
       case 'START_OVER':
         startOver().then(() => sendResponse({ ok: true }), () => sendResponse({ ok: true }));
+        return true;
+      case 'UNLINK_BANK':
+        unlinkBank().then(sendResponse, () => sendResponse({ ok: false }));
+        return true;
+      case 'DELETE_ME':
+        deleteMe().then(() => sendResponse({ ok: true }), () => sendResponse({ ok: true }));
         return true;
       case 'ANSWER':
         remember(msg.key, msg.answer, msg.reason).then(() => sendResponse({ ok: true }), () => sendResponse({ ok: true }));

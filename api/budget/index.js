@@ -44,6 +44,23 @@ function readCache(userId) { return isOwner(userId) ? readJson(CACHE, null) : db
 function writeCache(c, userId) { if (isOwner(userId)) writeJson(CACHE, c); else db.bankCache.put(userId, c); }
 /** A claimed Access URL for a user: the owner's goes to api/.env (the server does that), everyone else's into the database, encrypted. */
 function linkAccess(access, userId) { if (!isAccess(access)) throw new Error('not an access url'); if (isOwner(userId)) { process.env.SIMPLEFIN_ACCESS_URL = access; return 'env'; } db.bankLink.put(userId, access); return 'db'; }
+/** Remove the bank: the access URL and the cached pull go at once; the week's state (jar, streak, shelf) stays. */
+function unlink(userId) {
+  if (isOwner(userId)) {
+    delete process.env.SIMPLEFIN_ACCESS_URL;
+    const envPath = path.join(__dirname, '..', '.env');
+    if (fs.existsSync(envPath)) fs.writeFileSync(envPath, fs.readFileSync(envPath, 'utf8').replace(/^SIMPLEFIN_ACCESS_URL=.*\n?/m, ''));
+    try { fs.unlinkSync(CACHE); } catch { /* no cache */ }
+  } else { db.bankLink.remove(userId); db.bankCache.remove(userId); }
+  return true;
+}
+/** Forget a person entirely: bank, cache, week, memory, settings, billing row, house membership. The device token mints a fresh user next time. */
+function forget(userId) {
+  unlink(userId);
+  if (isOwner(userId)) { writeJson(STATE, FRESH_STATE()); return true; }
+  db.deleteUser(userId);
+  return true;
+}
 
 /** Pull from the bank when the cache is older than six hours (or `force`). Keeps the last good pull on failure. */
 async function refresh(force = false, userId) {
@@ -217,4 +234,4 @@ function reportInputs(at, userId) {
 
 function ready(userId) { return live(userId) && !!readCache(userId); }
 
-module.exports = { live, ready, refresh, snapshot, ownerId, claimOwner, isOwner, linkAccess, week: weekView, month: monthView, saw, setEnvelope, correct, postOrder, putBack, shelf, shelfRows, shelve, closeWeek, reportInputs, state, compute };
+module.exports = { live, ready, refresh, snapshot, ownerId, claimOwner, isOwner, linkAccess, unlink, forget, week: weekView, month: monthView, saw, setEnvelope, correct, postOrder, putBack, shelf, shelfRows, shelve, closeWeek, reportInputs, state, compute };

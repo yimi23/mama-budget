@@ -42,7 +42,7 @@ const reasons = require('./judge/reasons');
 const model = require('./lines/model');
 const extractCache = new Map();
 const { speak } = require('./voice/elevenlabs');
-const { notify, getMessages, clearMessages } = require('./notify');
+const { notify, getMessages, clearMessages, stopTexts, startTexts } = require('./notify');
 const chat = require('./notify/chat');
 const watch = require('./notify/watch');
 const photon = require('./photon/spectrum');
@@ -340,7 +340,11 @@ const routes = {
     return { month: await month(), mood: 'proud', line: lineFor({ label: 'need', mood: 'proud', tags: ['saved'] }, { item: 'savings' }, await month()) };
   },
 
-  'POST /reset': async () => {
+  'POST /reset': async (body, query, ctx) => {
+    // Another device's Start over touches only that device: its bank, week, memory and house seat. The owner's reset
+    // below is the box-wide one (the demo seed, the watcher, the transcript).
+    const u = ctx && ctx.userId;
+    if (u && !nessie.isOwner(u)) { house.leave(u); nessie.forget(u); return { ok: true, week: null }; }
     require('./lines/pick').reset();
     if (!nessie.live()) { const seed = require('./nessie/seed'); await seed.main(); }
     watch.resetState();
@@ -355,6 +359,10 @@ const routes = {
   'GET /messages': async () => getMessages(),
 
   'POST /messages/incoming': async (body) => {
+    // STOP and START are carrier words and they win over everything else in the text.
+    const word = String(body.text || '').trim().toLowerCase();
+    if (/^(stop|unsubscribe|quit|end|cancel)$/.test(word)) { stopTexts(body.from); await notify(body.from, 'No more texts from her. Reply START if you want her back.', 'calm', { prompted: true, stopConfirm: true }); return { ok: true, reply: null, stopped: true }; }
+    if (/^(start|unstop)$/.test(word)) { startTexts(body.from); const out = await notify(body.from, 'She is back. A short statement on Sundays, one text when something big happens.', 'proud', { prompted: true }); return { ok: true, reply: null, stopped: false, texted: !!(out && out.sent) }; }
     const images = Array.isArray(body.images) ? body.images.filter((i) => i && i.data && /^image\//.test(i.mediaType || '')).slice(0, 3) : [];
     const { reply, mood, intent, react, verdicts, followUp } = await chat.handleIncoming(String(body.text || ''), 'mama', body.from, body.id, { images });
     const out = reply ? await notify(body.from, reply, mood, { prompted: true }) : null;
@@ -384,6 +392,9 @@ const routes = {
   },
   'GET /bank/saw': async (body, query, ctx) => { const u = ctx && ctx.userId; return { ok: true, live: nessie.live(u), saw: nessie.saw(u), week: nessie.live(u) ? nessie.week(undefined, u) : null }; },
   'POST /bank/refresh': async (body, query, ctx) => { const u = ctx && ctx.userId; await nessie.refresh(true, u); return { ok: true, live: nessie.live(u), week: nessie.week(undefined, u) }; },
+  // Remove the bank: link and cached pull gone, the week stays. Delete everything: the person's rows go and the house seat is given up.
+  'POST /bank/unlink': async (body, query, ctx) => { const u = ctx && ctx.userId; nessie.unlink(u); return { ok: true, live: false, week: weekFor(u) }; },
+  'POST /me/delete': async (body, query, ctx) => { const u = ctx && ctx.userId; house.leave(u); nessie.forget(u); return { ok: true }; },
   'POST /bank/correct': async (body, query, ctx) => { const u = ctx && ctx.userId; const corrections = nessie.correct(String(body.merchantKey || ''), String(body.kind || ''), u); return { ok: true, corrections, week: nessie.week(undefined, u), saw: nessie.saw(u) }; },
   // The shelf: what was put back and not let go. "still" marks it wanted (the extension remembers it as planned); "let-go" clears the row, the kept credit stays.
   'GET /shelf': (body, query, ctx) => ({ ok: true, shelf: nessie.shelf(ctx && ctx.userId) }),
