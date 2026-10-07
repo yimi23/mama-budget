@@ -1,4 +1,5 @@
-# The Mama Budget API on one box. Node 22, the API only (the extension is built and shipped separately).
+# The Mama Budget API and the ChatGPT app on one box. Node 22. One image, two containers: the API (default command)
+# and the ChatGPT MCP server (docker-compose overrides the command). The extension is built and shipped separately.
 # better-sqlite3 needs a build toolchain for its native binding, so the build stage has it and the runtime does not.
 FROM node:22-bookworm-slim AS build
 WORKDIR /app
@@ -6,6 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3 make g+
 COPY package.json package-lock.json ./
 COPY packages ./packages
 COPY apps/extension/package.json ./apps/extension/package.json
+COPY apps/chatgpt/package.json ./apps/chatgpt/package.json
 RUN npm ci --omit=dev --ignore-scripts && npm rebuild better-sqlite3
 
 FROM node:22-bookworm-slim
@@ -17,6 +19,7 @@ COPY --from=build /app/node_modules ./node_modules
 COPY package.json ./
 COPY packages ./packages
 COPY api ./api
+COPY apps/chatgpt ./apps/chatgpt
 COPY docs/privacy.html ./docs/privacy.html
 # data/ holds the SQLite file, the bank cache, the voice cache: a volume, never baked in.
 RUN mkdir -p data api/.cache/tts && chown -R node:node /app

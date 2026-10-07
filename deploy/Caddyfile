@@ -1,7 +1,24 @@
-# api.mamabudget.com -> the API container. Caddy fetches the certificate from Let's Encrypt and renews it.
+# api.mamabudget.com -> the API container; chatgpt.mamabudget.com -> the ChatGPT MCP server.
+# Caddy fetches both certificates from Let's Encrypt and renews them.
 {$MAMA_DOMAIN} {
 	encode zstd gzip
 	reverse_proxy api:8787
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+	}
+	log {
+		output stdout
+		format console
+	}
+}
+
+{$MAMA_CHATGPT_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy chatgpt:8790 {
+		flush_interval -1
+	}
 	header {
 		Strict-Transport-Security "max-age=31536000"
 		X-Content-Type-Options "nosniff"
