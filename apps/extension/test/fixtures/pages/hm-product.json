@@ -1,0 +1,14 @@
+{
+  "url": "https://www2.hm.com/en_us/productpage.1351218002.html",
+  "title": "Men’s Black Relaxed-Fit Interlock T-Shirt | H&M US",
+  "capturedAt": "2026-10-07T15:43:19.989Z",
+  "bytes": 167468,
+  "expect": {
+    "via": "product",
+    "name": "Relaxed-Fit Interlock T-Shirt",
+    "unitPrice": 19.99,
+    "currency": "USD"
+  },
+  "kind": "product",
+  "store": "hm"
+}

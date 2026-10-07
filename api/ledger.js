@@ -9,34 +9,38 @@ const nessie = require('./nessie/client');
 const budget = require('./budget');
 
 // MAMA_LEDGER=demo pins the sandbox (tests, demos on a machine with a link).
-const live = () => process.env.MAMA_LEDGER !== 'demo' && budget.ready();
+const live = (userId) => process.env.MAMA_LEDGER !== 'demo' && budget.ready(userId);
 
 module.exports = {
   live,
-  week: (...a) => (live() ? budget.week(...a) : nessie.week(...a)),
-  month: (...a) => (live() ? budget.month(...a) : nessie.month(...a)),
-  saw: () => (live() ? budget.saw() : null),
-  setEnvelope: (amount) => (live() ? budget.setEnvelope(amount) : nessie.setEnvelope(amount)),
-  proposeEnvelope: (m) => (live() ? (budget.snapshot()?.plan.envelope ?? 75) : nessie.proposeEnvelope(m)),
+  // Every reader takes the user last; no user means the owner (the watcher, the schedule and chat run as the owner).
+  week: (at, userId) => (live(userId) ? budget.week(at, userId) : nessie.week(at)),
+  month: (at, userId) => (live(userId) ? budget.month(at, userId) : nessie.month(at)),
+  saw: (userId) => (live(userId) ? budget.saw(undefined, userId) : null),
+  setEnvelope: (amount, userId) => (live(userId) ? budget.setEnvelope(amount, userId) : nessie.setEnvelope(amount)),
+  proposeEnvelope: (m, userId) => (live(userId) ? (budget.snapshot(undefined, userId)?.plan.envelope ?? 75) : nessie.proposeEnvelope(m)),
   trueLine: (m) => nessie.trueLine(m),
   watches: (m) => nessie.watches(m),
   weekStart: nessie.weekStart,
   daysLeftInWeek: nessie.daysLeftInWeek,
-  savingsBalance: () => (live() ? (budget.state().jar || 0) : nessie.savingsBalance()),
-  customerName: () => (live() ? Promise.resolve(null) : nessie.customerName()),
+  savingsBalance: (userId) => (live(userId) ? (budget.state(userId).jar || 0) : nessie.savingsBalance()),
+  customerName: (userId) => (live(userId) ? Promise.resolve(null) : nessie.customerName()),
   // Money paths. Live: recorded, never moved.
-  purchase: async (o) => (live() ? budget.postOrder({ requestId: String(o.requestId || `${o.item}:${Date.now()}`), item: o.item, price: o.price, store: o.merchant, tag: o.tag }) : nessie.purchase(o)),
-  transferHome: async (amount, requestId) => (live() ? { narrated: true, amount } : nessie.transferHome(amount, requestId)),
-  moveToSavings: async (amount, requestId) => (live() ? { narrated: true, amount } : nessie.moveToSavings(amount, requestId)),
-  fundFromSavings: async (amount, item, requestId) => (live() ? { narrated: true, amount } : nessie.fundFromSavings(amount, item, requestId)),
+  purchase: async (o, userId) => (live(userId) ? budget.postOrder({ requestId: String(o.requestId || `${o.item}:${Date.now()}`), item: o.item, price: o.price, store: o.merchant, tag: o.tag }, userId) : nessie.purchase(o)),
+  transferHome: async (amount, requestId, userId) => (live(userId) ? { narrated: true, amount } : nessie.transferHome(amount, requestId)),
+  moveToSavings: async (amount, requestId, userId) => (live(userId) ? { narrated: true, amount } : nessie.moveToSavings(amount, requestId)),
+  fundFromSavings: async (amount, item, requestId, userId) => (live(userId) ? { narrated: true, amount } : nessie.fundFromSavings(amount, item, requestId)),
   deposit: async (...a) => (live() ? { narrated: true } : nessie.deposit(...a)),
-  putBack: (o) => (live() ? budget.putBack(o) : null),
+  putBack: (o, userId) => (live(userId) ? budget.putBack(o, userId) : null),
   // Raw access some callers still use (the watcher, the schedule). Live mode has no Nessie cache to read.
   readCache: () => (live() ? { purchases: [], transfers: [], putBack: budget.state().putBacks || [], envelope: budget.state().envelope, live: true } : nessie.readCache()),
   writeCache: (c) => (live() ? undefined : nessie.writeCache(c)),
   call: (...a) => nessie.call(...a),
   spentThisWeek: async () => module.exports.week().spent,
-  refresh: (force) => budget.refresh(force),
-  closeWeek: (o) => (live() ? budget.closeWeek(o) : null),
-  correct: (k, kind) => (live() ? budget.correct(k, kind) : null),
+  refresh: (force, userId) => budget.refresh(force, userId),
+  closeWeek: (o, userId) => (live(userId) ? budget.closeWeek(o, undefined, userId) : null),
+  correct: (k, kind, userId) => (live(userId) ? budget.correct(k, kind, userId) : null),
+  linkAccess: (access, userId) => budget.linkAccess(access, userId),
+  isOwner: (userId) => budget.isOwner(userId),
+  claimOwner: (userId) => budget.claimOwner(userId),
 };

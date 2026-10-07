@@ -1,0 +1,14 @@
+{
+  "url": "https://www.gymshark.com/products/gymshark-push-up-t-shirt-ss-tops-blue-aw26",
+  "title": "Gymshark Shape Push Up T-Shirt - Tranquil Blue | Gymshark",
+  "capturedAt": "2026-10-07T15:41:48.602Z",
+  "bytes": 773892,
+  "expect": {
+    "via": "product",
+    "name": "Shape Push Up T-Shirt",
+    "unitPrice": 52,
+    "currency": "USD"
+  },
+  "kind": "product",
+  "store": "gymshark"
+}

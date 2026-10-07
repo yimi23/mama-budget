@@ -27,3 +27,7 @@ data/notify-state.json
 data/photon-gate.json
 data/budget-cache.json
 data/budget-state.json
+deploy/.env
+data/owner.json
+data/mama.sqlite*
+data/server.key

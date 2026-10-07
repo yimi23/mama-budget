@@ -1,0 +1,33 @@
+# Weekly live check: the built extension in Chrome for Testing against a real store, with the API running in demo
+# mode. Catches a store changing under us; the saved corpus (npm test) catches a reader changing under the stores.
+name: live
+on:
+  schedule:
+    - cron: '17 9 * * 1' # Mondays 09:17 UTC
+  workflow_dispatch:
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build:ext
+      - name: Chrome for Testing
+        run: npx --yes @puppeteer/browsers install chrome@stable --path "$HOME/.cache/mb-chrome" | tail -1 | awk '{print $2}' > chrome-path.txt
+      - name: API in demo mode
+        run: |
+          MAMA_LEDGER=demo nohup npm run api > api.log 2>&1 &
+          for i in $(seq 1 40); do curl -sf localhost:8787/health && break; sleep 0.5; done
+      - name: Allbirds, click to card
+        run: |
+          CLICK="(() => { const b=[...document.querySelectorAll('button,[role=button],input[type=submit],a')].find(b=>/add to (cart|bag)/i.test((b.innerText||b.value||b.getAttribute('aria-label')||'').trim())); if(!b) return 'no add button'; b.scrollIntoView(); b.click(); return 'clicked: '+(b.innerText||b.value||b.getAttribute('aria-label')).trim().slice(0,30); })()"
+          CHROME="$(cat chrome-path.txt)" node tools/live.mjs 'https://www.allbirds.com/products/womens-tree-runners' 0 "$CLICK" poll | tee live.log
+          grep -q "her words on screen" live.log
+      - name: API log on failure
+        if: failure()
+        run: tail -50 api.log

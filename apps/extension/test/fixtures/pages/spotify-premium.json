@@ -1,0 +1,13 @@
+{
+  "url": "https://www.spotify.com/us/premium/",
+  "title": "Spotify Premium - Spotify (USA)",
+  "capturedAt": "2026-10-07T15:44:11.026Z",
+  "bytes": 85534,
+  "expect": {
+    "gate": "closed",
+    "signals": 1,
+    "silenced": false
+  },
+  "kind": "pricing",
+  "store": "spotify-premium"
+}

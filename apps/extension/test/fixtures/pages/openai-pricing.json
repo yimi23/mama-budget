@@ -1,0 +1,13 @@
+{
+  "url": "https://chatgpt.com/pricing/",
+  "title": "Pricing | ChatGPT",
+  "capturedAt": "2026-10-07T15:43:52.659Z",
+  "bytes": 294840,
+  "expect": {
+    "gate": "open",
+    "signals": 2,
+    "silenced": true
+  },
+  "kind": "pricing",
+  "store": "openai-pricing"
+}

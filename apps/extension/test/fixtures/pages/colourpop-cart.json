@@ -1,0 +1,13 @@
+{
+  "url": "https://colourpop.com/?modals=cart-drawer-dialog",
+  "title": "ColourPop® Cosmetics",
+  "capturedAt": "2026-10-07T15:40:41.926Z",
+  "bytes": 1241849,
+  "expect": {
+    "regionChars": 935,
+    "subtotal": "$49.00",
+    "sample": "You qualify for FREE shipping! Free U.S. shipping over $35 thank you, This item has been added to your product Spooky Mystery Box Spooky Mystery Box Regular pri"
+  },
+  "kind": "cart",
+  "store": "colourpop"
+}

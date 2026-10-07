@@ -1,0 +1,14 @@
+{
+  "url": "https://colourpop.com/products/halloween-mystery-box",
+  "title": "Colourpop - Spooky Mystery Box",
+  "capturedAt": "2026-10-07T15:40:35.690Z",
+  "bytes": 796283,
+  "expect": {
+    "via": "product",
+    "name": "Spooky Mystery Box",
+    "unitPrice": 49,
+    "currency": "USD"
+  },
+  "kind": "product",
+  "store": "colourpop"
+}

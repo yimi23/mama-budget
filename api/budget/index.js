@@ -22,27 +22,40 @@ const STATE = path.join(DATA, 'budget-state.json');
 const DAY = 86400;
 const FRESH_MS = 6 * 3600 * 1000; // the Bridge refreshes about daily; we pull at most four times a day
 
+const db = require('../db.js');
+const OWNER_FILE = path.join(DATA, 'owner.json');
+/** The owner is the first device ever seen; the owner's ledger lives in files and api/.env as before. Everyone else is a database row. */
+function ownerId() { try { return JSON.parse(fs.readFileSync(OWNER_FILE, 'utf8')).id; } catch { return null; } }
+function claimOwner(userId) { if (userId && !ownerId()) fs.writeFileSync(OWNER_FILE, JSON.stringify({ id: userId, at: Date.now() })); }
+const isOwner = (userId) => !userId || userId === ownerId();
 const readJson = (p, fallback) => { try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return fallback; } };
 const writeJson = (p, v) => { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, JSON.stringify(v, null, 2)); };
 const nowSec = () => Math.floor(Date.now() / 1000);
 /** Callers pass a Date (schedule.js), milliseconds, or seconds. */
 const toSec = (t) => (t == null ? nowSec() : t instanceof Date ? Math.floor(t.getTime() / 1000) : Number(t) > 1e11 ? Math.floor(Number(t) / 1000) : Number(t));
 
-function live() { return /^https:\/\/[^@\s]+:[^@\s]+@/.test(process.env.SIMPLEFIN_ACCESS_URL || ''); }
-function state() { return readJson(STATE, { envelope: null, closes: [], graces: { used: [], banked: 0 }, jar: 0, corrections: { kinds: {}, notRecurring: [] }, posted: [], putBacks: [] }); }
-function saveState(s) { writeJson(STATE, s); return s; }
+const FRESH_STATE = () => ({ envelope: null, closes: [], graces: { used: [], banked: 0 }, jar: 0, corrections: { kinds: {}, notRecurring: [] }, posted: [], putBacks: [] });
+const isAccess = (u) => /^https:\/\/[^@\s]+:[^@\s]+@/.test(u || '');
+function accessFor(userId) { return isOwner(userId) ? process.env.SIMPLEFIN_ACCESS_URL : db.bankLink.get(userId); }
+function live(userId) { return isAccess(accessFor(userId)); }
+function state(userId) { return isOwner(userId) ? readJson(STATE, FRESH_STATE()) : db.budgetState.get(userId, FRESH_STATE()); }
+function saveState(s, userId) { if (isOwner(userId)) writeJson(STATE, s); else db.budgetState.put(userId, s); return s; }
+function readCache(userId) { return isOwner(userId) ? readJson(CACHE, null) : db.bankCache.get(userId); }
+function writeCache(c, userId) { if (isOwner(userId)) writeJson(CACHE, c); else db.bankCache.put(userId, c); }
+/** A claimed Access URL for a user: the owner's goes to api/.env (the server does that), everyone else's into the database, encrypted. */
+function linkAccess(access, userId) { if (!isAccess(access)) throw new Error('not an access url'); if (isOwner(userId)) { process.env.SIMPLEFIN_ACCESS_URL = access; return 'env'; } db.bankLink.put(userId, access); return 'db'; }
 
 /** Pull from the bank when the cache is older than six hours (or `force`). Keeps the last good pull on failure. */
-async function refresh(force = false) {
-  const cache = readJson(CACHE, null);
+async function refresh(force = false, userId) {
+  const cache = readCache(userId);
   if (!force && cache && Date.now() - (cache.at || 0) < FRESH_MS) return cache;
-  if (!live()) return cache;
+  if (!live(userId)) return cache;
   try {
     const now = nowSec();
     const windows = sync.windows(90, now);
     let accounts = [], rows = [];
     for (const w of windows) {
-      const body = await sync.pull(process.env.SIMPLEFIN_ACCESS_URL, { start: w.start, end: w.end, pending: true });
+      const body = await sync.pull(accessFor(userId), { start: w.start, end: w.end, pending: true });
       accounts = sync.accounts(body);
       rows = rows.concat(sync.rows(body));
       if (body.errlist.length) console.log('[budget] bank says:', body.errlist.map((e) => e.msg || e).join('; '));
@@ -50,7 +63,7 @@ async function refresh(force = false) {
     const seen = new Set();
     rows = rows.filter((r) => (seen.has(r.id + r.accountId) ? false : seen.add(r.id + r.accountId)));
     const fresh = { at: Date.now(), accounts, rows };
-    writeJson(CACHE, fresh);
+    writeCache(fresh, userId);
     console.log(`[budget] pulled ${rows.length} rows across ${accounts.length} accounts`);
     return fresh;
   } catch (e) {
@@ -80,17 +93,17 @@ function compute(cache, st, now = nowSec()) {
 }
 
 /** The last pull through the pipeline, synchronously: callers read the week in the middle of a request. */
-function snapshot(now = nowSec()) {
-  const cache = readJson(CACHE, null);
-  const st = state();
+function snapshot(now = nowSec(), userId) {
+  const cache = readCache(userId);
+  const st = state(userId);
   const c = compute(cache, st, now);
   return c ? { ...c, state: st } : null;
 }
 
 /** nessie.week() shape, from the bank. */
-function weekView(at) {
+function weekView(at, userId) {
   const now = toSec(at);
-  const s = snapshot(now);
+  const s = snapshot(now, userId);
   if (!s) return null;
   const st = s.state;
   const envelope = st.envelope || s.plan.envelope;
@@ -108,9 +121,9 @@ function weekView(at) {
 }
 
 /** nessie.month() shape, from the bank: the last 30 days. */
-function monthView(at) {
+function monthView(at, userId) {
   const now = toSec(at);
-  const s = snapshot(now);
+  const s = snapshot(now, userId);
   if (!s) return null;
   const since = now - 30 * DAY;
   const rows = s.rows.filter((r) => (r.posted || r.transactedAt) >= since);
@@ -133,9 +146,9 @@ function monthView(at) {
 }
 
 /** "Here is what I saw": detected paychecks, bills (early ones marked confirm), transfers and cards, top unsure merchants. */
-function saw(at) {
+function saw(at, userId) {
   const now = toSec(at);
-  const s = snapshot(now);
+  const s = snapshot(now, userId);
   if (!s) return null;
   const unsure = {};
   for (const r of s.rows) if (r.unsure && r.amount < 0) unsure[r.merchantName] = (unsure[r.merchantName] || 0) + -r.amount;
@@ -149,21 +162,21 @@ function saw(at) {
   };
 }
 
-function setEnvelope(amount) { const st = state(); st.envelope = Math.max(25, Math.min(500, Math.round(Number(amount) || 0))); saveState(st); return st.envelope; }
-function correct(merchantKey, kind) { const st = state(); if (kind === 'not-recurring') st.corrections.notRecurring = [...new Set([...st.corrections.notRecurring, merchantKey])]; else st.corrections.kinds[merchantKey] = kind; saveState(st); return st.corrections; }
+function setEnvelope(amount, userId) { const st = state(userId); st.envelope = Math.max(25, Math.min(500, Math.round(Number(amount) || 0))); saveState(st, userId); return st.envelope; }
+function correct(merchantKey, kind, userId) { const st = state(userId); if (kind === 'not-recurring') st.corrections.notRecurring = [...new Set([...st.corrections.notRecurring, merchantKey])]; else st.corrections.kinds[merchantKey] = kind; saveState(st, userId); return st.corrections; }
 /** An order the extension saw land: kept until the bank shows it. */
-function postOrder({ requestId, item, price, store, tag }) { const st = state(); if (!(st.posted || []).some((o) => o.requestId === requestId)) { st.posted = [...(st.posted || []), { requestId, item, price: Number(price), store, tag, at: nowSec() }].slice(-200); saveState(st); } return st.posted.length; }
-function putBack({ requestId, item, amount }) { const st = state(); if (!(st.putBacks || []).some((k) => k.requestId === requestId)) { st.putBacks = [...(st.putBacks || []), { requestId, item, amount: Number(amount), date: week.key(nowSec()) }].slice(-500); saveState(st); } return st.putBacks.length; }
-function closeWeek({ useGrace = false } = {}, at) {
+function postOrder({ requestId, item, price, store, tag }, userId) { const st = state(userId); if (!(st.posted || []).some((o) => o.requestId === requestId)) { st.posted = [...(st.posted || []), { requestId, item, price: Number(price), store, tag, at: nowSec() }].slice(-200); saveState(st, userId); } return st.posted.length; }
+function putBack({ requestId, item, amount }, userId) { const st = state(userId); if (!(st.putBacks || []).some((k) => k.requestId === requestId)) { st.putBacks = [...(st.putBacks || []), { requestId, item, amount: Number(amount), date: week.key(nowSec()) }].slice(-500); saveState(st, userId); } return st.putBacks.length; }
+function closeWeek({ useGrace = false } = {}, at, userId) {
   const now = toSec(at);
-  const s = snapshot(now);
+  const s = snapshot(now, userId);
   if (!s) return null;
   const st = s.state;
   const r = week.close(s.rows, { ...st, envelope: st.envelope || s.plan.envelope }, now, { useGrace, putBacks: st.putBacks || [] });
-  saveState({ ...st, closes: r.state.closes, graces: r.state.graces, jar: r.state.jar });
+  saveState({ ...st, closes: r.state.closes, graces: r.state.graces, jar: r.state.jar }, userId);
   return r;
 }
 
-function ready() { return live() && !!readJson(CACHE, null); }
+function ready(userId) { return live(userId) && !!readCache(userId); }
 
-module.exports = { live, ready, refresh, snapshot, week: weekView, month: monthView, saw, setEnvelope, correct, postOrder, putBack, closeWeek, state, compute };
+module.exports = { live, ready, refresh, snapshot, ownerId, claimOwner, isOwner, linkAccess, week: weekView, month: monthView, saw, setEnvelope, correct, postOrder, putBack, closeWeek, state, compute };

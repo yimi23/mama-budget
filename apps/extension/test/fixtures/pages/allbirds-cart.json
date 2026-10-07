@@ -1,0 +1,13 @@
+{
+  "url": "https://www.allbirds.com/?openCartDrawer=true",
+  "title": "Allbirds: Comfortable, Sustainable Shoes & Apparel",
+  "capturedAt": "2026-10-07T15:40:16.185Z",
+  "bytes": 504999,
+  "expect": {
+    "regionChars": 477,
+    "subtotal": "$25",
+    "sample": "Women's Allbirds Flip Flop - Dusty Pink Size: 10 Remove $25 1 + Recommended for you Anytime No Show Sock $14 Select size Size: S (W5-7) Size: M (W8-10 / M8) Siz"
+  },
+  "kind": "cart",
+  "store": "allbirds"
+}

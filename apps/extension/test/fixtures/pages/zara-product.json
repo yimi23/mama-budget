@@ -1,0 +1,14 @@
+{
+  "url": "https://www.zara.com/us/en/basic-slim-fit-t-shirt--01-p05584401.html",
+  "title": "SLIM-FIT T-SHIRT /01 - White | ZARA United States",
+  "capturedAt": "2026-10-07T15:43:33.144Z",
+  "bytes": 333635,
+  "expect": {
+    "via": "product",
+    "name": "SLIM-FIT T-SHIRT /01",
+    "unitPrice": 19.9,
+    "currency": "USD"
+  },
+  "kind": "product",
+  "store": "zara"
+}

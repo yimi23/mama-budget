@@ -1,0 +1,14 @@
+{
+  "url": "https://www.uniqlo.com/us/en/products/E455365-000/00?colorDisplayCode=07&sizeDisplayCode=003",
+  "title": "Unisex SUPIMA® Cotton T-Shirt | UNIQLO US",
+  "capturedAt": "2026-10-07T15:42:01.835Z",
+  "bytes": 1112082,
+  "expect": {
+    "via": "product",
+    "name": "SUPIMA® Cotton T-Shirt",
+    "unitPrice": 24.9,
+    "currency": "USD"
+  },
+  "kind": "product",
+  "store": "uniqlo"
+}

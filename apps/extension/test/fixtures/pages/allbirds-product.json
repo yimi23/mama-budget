@@ -1,0 +1,14 @@
+{
+  "url": "https://www.allbirds.com/products/womens-allbirds-flip-flop-dusty-pink",
+  "title": "Women's Allbirds Flip Flop - Comfortable & Eco-Friendly Summer Sandals | Allbirds",
+  "capturedAt": "2026-10-07T15:40:10.076Z",
+  "bytes": 434726,
+  "expect": {
+    "via": "product",
+    "name": "Women's Allbirds Flip Flop",
+    "unitPrice": 25,
+    "currency": "USD"
+  },
+  "kind": "product",
+  "store": "allbirds"
+}

@@ -16,8 +16,32 @@ export async function apiBase(): Promise<string> {
   }
 }
 
+/**
+ * This install's device token: how the API knows which person's ledger, envelope and bank link to read. Made once,
+ * kept in storage.local, never shown. The API's first device becomes the owner; every other device is its own user.
+ */
+export async function deviceToken(): Promise<string> {
+  try {
+    const { device } = await browser.storage.local.get('device');
+    const d = device as { token?: string } | undefined;
+    if (d?.token) return d.token;
+    const token = `${crypto.randomUUID()}${crypto.randomUUID()}`.replace(/-/g, '');
+    await browser.storage.local.set({ device: { token, madeAt: Date.now() } });
+    return token;
+  } catch {
+    return '';
+  }
+}
+
+/** Headers every call to our API carries. */
+export async function authHeaders(): Promise<Record<string, string>> {
+  const token = await deviceToken();
+  return token ? { authorization: `Bearer ${token}` } : {};
+}
+
 async function once(path: string, init?: RequestInit, timeoutMs = TIMEOUT_MS): Promise<unknown> {
-  const res = await fetch((await apiBase()) + path, { ...init, signal: AbortSignal.timeout(timeoutMs) });
+  const headers = { ...(await authHeaders()), ...((init?.headers as Record<string, string>) || {}) };
+  const res = await fetch((await apiBase()) + path, { ...init, headers, signal: AbortSignal.timeout(timeoutMs) });
   if (!res.ok) throw new Error(`${path} ${res.status}`);
   return res.json();
 }

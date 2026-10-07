@@ -1,0 +1,13 @@
+{
+  "url": "https://elevenlabs.io/pricing",
+  "title": "ElevenLabs Pricing for Creators & Businesses of All Sizes",
+  "capturedAt": "2026-10-07T15:43:58.758Z",
+  "bytes": 218244,
+  "expect": {
+    "gate": "open",
+    "signals": 2,
+    "silenced": true
+  },
+  "kind": "pricing",
+  "store": "elevenlabs-pricing"
+}

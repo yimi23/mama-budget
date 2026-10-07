@@ -62,19 +62,19 @@ function html(body) {
 
 const PORT = process.env.PORT || 8787;
 // The envelope is weekly. Every number comes from the ledger sums in nessie/client.js, never from a balance field.
-async function month() { return nessie.week(); }
+async function month(userId) { return nessie.week(undefined, userId); }
 // The 30 day read for onboarding. ?grandma=nana changes the wording of her lines, nothing else. firstName is the one
 // time her name is used (screen 06); null when Nessie is unreachable, and the screen simply leaves it out.
-async function reading(query = {}) {
+async function reading(query = {}, userId) {
   const who = whoOf(query.grandma);
-  const m = nessie.month();
+  const m = nessie.month(undefined, userId);
   const tl = nessie.trueLine(m);
   const watches = nessie.watches(m);
   const firstName = await nessie.customerName().catch(() => null);
   const watchTexts = watchLines(watches, who).map((w) => ({ ...w, spoken: onboarding.spokenNumbers(w.line) }));
-  const liveBank = nessie.live();
-  const saw = liveBank ? nessie.saw() : null;
-  return { ...m, firstName, trueLine: tl, watches, proposedEnvelope: nessie.proposeEnvelope(m), live: liveBank, reason: saw ? saw.plan.reason : undefined, saw, lines: { trueLine: onboarding.trueLineText(tl, who), watches: watchTexts } };
+  const liveBank = nessie.live(userId);
+  const saw = liveBank ? nessie.saw(userId) : null;
+  return { ...m, firstName, trueLine: tl, watches, proposedEnvelope: nessie.proposeEnvelope(m, userId), live: liveBank, reason: saw ? saw.plan.reason : undefined, saw, lines: { trueLine: onboarding.trueLineText(tl, who), watches: watchTexts } };
 }
 
 // GET /schedule?now=1&grandma=nana or POST /schedule { now, kind?, to?, grandma? }: a query string and
@@ -88,10 +88,10 @@ async function scheduleRoute(body, query) {
 
 const routes = {
   'GET /health': async () => ({ ok: true, model: model.ready() ? model.MODEL : null }),
-  'GET /week': month,
-  'GET /month': (body, query) => reading(query),
+  'GET /week': (body, query, ctx) => month(ctx && ctx.userId),
+  'GET /month': (body, query, ctx) => reading(query, ctx && ctx.userId),
   // Onboarding screen 06: the weekly envelope she proposed, adjusted. Whole dollars, 25 to 500. The badge reads it next tick.
-  'POST /envelope': async (body) => { const envelope = nessie.setEnvelope(body.amount); return { ok: true, envelope, week: nessie.week() }; },
+  'POST /envelope': async (body, query, ctx) => { const u = ctx && ctx.userId; const envelope = nessie.setEnvelope(body.amount, u); return { ok: true, envelope, week: nessie.week(undefined, u) }; },
 
   'POST /judge': async (body) => {
     const m = await month();
@@ -187,7 +187,8 @@ const routes = {
   // A charge lands: "Buy anyway" on the card, or a real order confirmation page. Idempotent by requestId, so a
   // reload of a confirmation page or a double tap never posts twice. The tag comes from the caller (an admitted
   // want from the card) or from the rules over the caller's memory (a confirmation page lists needs too).
-  'POST /v2/buy': async (body) => {
+  'POST /v2/buy': async (body, query, ctx) => {
+    const u = ctx && ctx.userId;
     const who = whoOf(body.grandma);
     const name = String(body.name || '');
     const short = body.short || shortName(name);
@@ -196,10 +197,10 @@ const routes = {
     let tag = body.tag;
     if (tag !== 'need' && tag !== 'want') {
       const memory = body.memory && typeof body.memory === 'object' ? body.memory : {};
-      tag = v2.judge({ item: name, price, merchant: body.store || '' }, nessie.week(), memory).label === 'need' ? 'need' : 'want';
+      tag = v2.judge({ item: name, price, merchant: body.store || '' }, nessie.week(undefined, u), memory).label === 'need' ? 'need' : 'want';
     }
-    await nessie.purchase({ item: short, price, merchant: body.store || 'Store', tag, requestId: String(body.requestId) });
-    if (nessie.live()) watch.announce({ id: String(body.requestId), item: short, amount: price, merchant: body.store || '', tag }).catch((e) => console.log('[buy] announce failed:', e.message));
+    await nessie.purchase({ item: short, price, merchant: body.store || 'Store', tag, requestId: String(body.requestId) }, u);
+    if (nessie.live(u) && nessie.isOwner(u)) watch.announce({ id: String(body.requestId), item: short, amount: price, merchant: body.store || '', tag }).catch((e) => console.log('[buy] announce failed:', e.message));
     const w = nessie.week();
     setHome(body.home);
     const it = { item: short, price, storePrice: body.storePrice != null ? Number(body.storePrice) : null, merchant: body.store || '', currency: body.currency || 'USD', home: body.home || null };
@@ -241,11 +242,12 @@ const routes = {
 
   // "You're right, Mama" and the item leaves the cart: the money stays in the week and Kept goes up. Idempotent by
   // requestId. The record lives in the local ledger (Nessie has no notion of a purchase that did not happen).
-  'POST /v2/putback': async (body) => {
+  'POST /v2/putback': async (body, query, ctx) => {
+    const u = ctx && ctx.userId;
     const name = String(body.name || '');
     const amount = Math.round(Number(body.price || 0));
     if (!name || !(amount > 0) || !body.requestId) throw new Error('name, price and requestId are required');
-    if (nessie.live()) { nessie.putBack({ requestId: String(body.requestId), item: name, amount }); return { ok: true, week: nessie.week() }; }
+    if (nessie.live(u)) { nessie.putBack({ requestId: String(body.requestId), item: name, amount }, u); return { ok: true, week: nessie.week(undefined, u) }; }
     const c = nessie.readCache();
     c.putBack = c.putBack || [];
     if (!c.putBack.some((p) => p.requestId === body.requestId)) {
@@ -352,22 +354,25 @@ const routes = {
 
   // The real bank. Link once with a SimpleFIN Setup Token (pasted on onboarding screen 04); the Access URL it becomes
   // lives only in api/.env. Then: what she saw, a pull on demand, a correction, the Sunday close.
-  'POST /bank/link': async (body) => {
+  'POST /bank/link': async (body, query, ctx) => {
+    const u = ctx && ctx.userId;
     const sync = require('./budget/sync');
     const access = await sync.claim(String(body.token || ''));
-    const envPath = require('node:path').join(__dirname, '.env');
-    const fs = require('node:fs');
-    const cur = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf8') : '';
-    const line = `SIMPLEFIN_ACCESS_URL=${access}`;
-    fs.writeFileSync(envPath, /^SIMPLEFIN_ACCESS_URL=.*$/m.test(cur) ? cur.replace(/^SIMPLEFIN_ACCESS_URL=.*$/m, line) : `${cur.replace(/\n?$/, '\n')}${line}\n`);
-    process.env.SIMPLEFIN_ACCESS_URL = access;
-    await nessie.refresh(true);
-    return { ok: true, live: nessie.live(), saw: nessie.saw() };
+    if (nessie.isOwner(u)) {
+      const envPath = require('node:path').join(__dirname, '.env');
+      const fs = require('node:fs');
+      const cur = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf8') : '';
+      const line = `SIMPLEFIN_ACCESS_URL=${access}`;
+      fs.writeFileSync(envPath, /^SIMPLEFIN_ACCESS_URL=.*$/m.test(cur) ? cur.replace(/^SIMPLEFIN_ACCESS_URL=.*$/m, line) : `${cur.replace(/\n?$/, '\n')}${line}\n`);
+    }
+    nessie.linkAccess(access, u);
+    await nessie.refresh(true, u);
+    return { ok: true, live: nessie.live(u), saw: nessie.saw(u) };
   },
-  'GET /bank/saw': async () => ({ ok: true, live: nessie.live(), saw: nessie.saw(), week: nessie.live() ? nessie.week() : null }),
-  'POST /bank/refresh': async () => { await nessie.refresh(true); return { ok: true, live: nessie.live(), week: nessie.week() }; },
-  'POST /bank/correct': async (body) => ({ ok: true, corrections: nessie.correct(String(body.merchantKey || ''), String(body.kind || '')), week: nessie.week() }),
-  'POST /bank/close': async (body) => ({ ok: true, close: nessie.closeWeek({ useGrace: !!body.useGrace }), week: nessie.week() }),
+  'GET /bank/saw': async (body, query, ctx) => { const u = ctx && ctx.userId; return { ok: true, live: nessie.live(u), saw: nessie.saw(u), week: nessie.live(u) ? nessie.week(undefined, u) : null }; },
+  'POST /bank/refresh': async (body, query, ctx) => { const u = ctx && ctx.userId; await nessie.refresh(true, u); return { ok: true, live: nessie.live(u), week: nessie.week(undefined, u) }; },
+  'POST /bank/correct': async (body, query, ctx) => { const u = ctx && ctx.userId; return { ok: true, corrections: nessie.correct(String(body.merchantKey || ''), String(body.kind || ''), u), week: nessie.week(undefined, u) }; },
+  'POST /bank/close': async (body, query, ctx) => { const u = ctx && ctx.userId; return { ok: true, close: nessie.closeWeek({ useGrace: !!body.useGrace }, u), week: nessie.week(undefined, u) }; },
 
   'GET /bank': async () => {
     const cache = nessie.readCache();
@@ -426,7 +431,7 @@ http.createServer(async (req, res) => {
   // so nothing on the web can post to /buy or /transfer through a visitor's browser.
   const origin = req.headers.origin || '';
   const trusted = /^chrome-extension:\/\/[a-z]{32}$/.test(origin) || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
-  const cors = { 'Access-Control-Allow-Origin': trusted ? origin : 'null', 'Vary': 'Origin', 'Access-Control-Allow-Headers': 'content-type', 'Access-Control-Allow-Methods': 'GET,POST,OPTIONS' };
+  const cors = { 'Access-Control-Allow-Origin': trusted ? origin : 'null', 'Vary': 'Origin', 'Access-Control-Allow-Headers': 'content-type, authorization', 'Access-Control-Allow-Methods': 'GET,POST,OPTIONS' };
   if (req.method === 'OPTIONS') { res.writeHead(204, cors); return res.end(); }
   const [pathname, search] = req.url.split('?');
   const key = `${req.method} ${pathname}`;
@@ -437,7 +442,12 @@ http.createServer(async (req, res) => {
   req.on('data', (c) => (raw += c));
   req.on('end', async () => {
     try {
-      const out = await handler(raw ? JSON.parse(raw) : {}, query);
+      // Who is asking: the extension's device token. The first device ever seen is the owner (files and api/.env);
+      // every other device is a row in the database with its own ledger, bank link and envelope.
+      const token = /^Bearer\s+(\S+)/i.exec(req.headers.authorization || '')?.[1];
+      const user = token ? require('./db').userForToken(token) : null;
+      if (user) nessie.claimOwner(user.id);
+      const out = await handler(raw ? JSON.parse(raw) : {}, query, { user, userId: user ? user.id : undefined });
       if (out && out.__raw) {
         res.writeHead(out.status || 200, { 'content-type': out.contentType, ...cors });
         return res.end(out.body);

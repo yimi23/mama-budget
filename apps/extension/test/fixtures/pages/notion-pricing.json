@@ -1,0 +1,13 @@
+{
+  "url": "https://www.notion.com/pricing",
+  "title": "Notion Pricing Plans: Free, Plus, Business, & Enterprise.",
+  "capturedAt": "2026-10-07T15:44:04.917Z",
+  "bytes": 236474,
+  "expect": {
+    "gate": "open",
+    "signals": 2,
+    "silenced": true
+  },
+  "kind": "pricing",
+  "store": "notion-pricing"
+}

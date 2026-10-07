@@ -1,0 +1,14 @@
+{
+  "url": "https://www.adidas.com/us/handball-spezial-shoes/KK1153.html",
+  "title": "adidas Handball Spezial Sneakers - Brown | Free Shipping with adiClub",
+  "capturedAt": "2026-10-07T15:43:46.485Z",
+  "bytes": 413267,
+  "expect": {
+    "via": "product",
+    "name": "Handball Spezial Shoes",
+    "unitPrice": 110,
+    "currency": "USD"
+  },
+  "kind": "product",
+  "store": "adidas"
+}
