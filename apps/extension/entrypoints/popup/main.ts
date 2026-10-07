@@ -473,7 +473,81 @@ function shelfDay(date: string): string {
   const d = new Date(`${date}T12:00:00`); const days = Math.round((Date.now() - d.getTime()) / 86400000);
   return days <= 0 ? 'today' : days === 1 ? 'yesterday' : days < 7 ? `${days} days ago` : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
-SHOW.home = () => { homeNote.textContent = ''; paintHome(); void paintWeek(); void paintShelf(); };
+// The report card: five fields from GET /report, the six lines under it. Closed on Sunday 7pm, "so far" before.
+async function paintReport() {
+  const r = await send({ type: 'REPORT', grandma: grandma() }).catch(() => null);
+  $('#home-report-wrap').hidden = !(r && r.ok);
+  if (!r || !r.ok) return;
+  const f = r.fields;
+  $('#report-title').textContent = f.result.closed ? 'Sunday report card' : 'This week so far';
+  const row = (title: string, value: string, arrow?: 'better' | 'worse' | 'same' | null) => {
+    const d = document.createElement('div'); d.className = 'row';
+    const t = document.createElement('span'); t.className = 'row-title'; t.textContent = title;
+    const v = document.createElement('span'); v.className = 'val'; v.textContent = value;
+    if (arrow) { const a = document.createElement('span'); a.className = `arrow ${arrow}`; a.textContent = arrow === 'better' ? 'better than last week' : arrow === 'worse' ? 'more than last week' : 'same as last week'; v.append(a); }
+    d.append(t, v); return d;
+  };
+  $('#home-report').replaceChildren(
+    row('Week', f.result.over ? `$${f.result.over} over` : `$${f.result.stayed} stayed`, f.result.arrow),
+    row('Biggest thing', f.biggest ? `${f.biggest.item}, $${f.biggest.amount}${f.biggest.day ? `, ${f.biggest.day}` : ''}` : 'Nothing big'),
+    row('Streak', `${f.streak.weeks} week${f.streak.weeks === 1 ? '' : 's'}${f.streak.graced ? ', grace used' : ''}`),
+    row('Kept jar', `$${f.jar}`),
+    row('Monday', `$${f.monday.envelope} goes in${f.monday.carry ? `, $${f.monday.carry} carried` : ''}`),
+  );
+  $('#report-lines').textContent = r.lines.join('\n');
+}
+// The plan: open (no billing on the API) hides the block; a trial or a paid plan shows the days or the renewal; locked
+// or free shows the two prices, yearly first. Checkout and the portal open in a new tab through the worker.
+const planNote = $('#plan-note');
+async function paintPlan() {
+  const r = await send({ type: 'ME' }).catch(() => null);
+  const wrap = $('#home-plan-wrap');
+  wrap.hidden = !(r && r.ok) || r.plan === 'open';
+  if (!r || !r.ok || r.plan === 'open') return;
+  const actions = $('#plan-actions'), manage = $('#plan-manage');
+  const full = r.plan === 'full';
+  $('#plan-title').textContent = full ? (r.status === 'trialing' ? 'Trial' : 'Full') : r.plan === 'free' ? 'Free, text only' : 'Her week is paused';
+  $('#plan-sub').textContent = full
+    ? (r.status === 'trialing' && r.trialDaysLeft != null ? `${r.trialDaysLeft} day${r.trialDaysLeft === 1 ? '' : 's'} left, then ${r.prices.year.label}` : r.periodEnd ? `Renews ${new Date(r.periodEnd).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}` : '')
+    : r.plan === 'free' ? 'Voice and texts are off.' : 'Seven days free with a card, cancel in one tap.';
+  actions.hidden = full;
+  manage.hidden = !full && r.status === 'none';
+  $('#plan-year').textContent = `${r.prices.year.label}`;
+  $('#plan-month').textContent = `${r.prices.month.label}`;
+}
+for (const [id, plan] of [['#plan-year', 'year'], ['#plan-month', 'month']] as const) $(id).addEventListener('click', async () => { planNote.textContent = 'Opening checkout.'; const x = await send({ type: 'BILLING', action: 'checkout', plan }); planNote.textContent = x?.ok ? 'Checkout opened in a new tab.' : (x && !x.ok ? x.reason : 'Could not open checkout.'); });
+$('#plan-manage').addEventListener('click', async () => { const x = await send({ type: 'BILLING', action: 'portal' }); planNote.textContent = x?.ok ? 'Opened in a new tab.' : (x && !x.ok ? x.reason : 'Could not open billing.'); });
+
+// The house: one pot. Not in one: open or join. In one: the code, the people, the envelope (Monday's number for the
+// opener), the house week and what the others see (amount, item, day).
+const houseNote = $('#house-note');
+async function paintHouse(r?: Reply<{ type: 'HOUSE'; action: 'get' }> | null) {
+  const x = r ?? (await send({ type: 'HOUSE', action: 'get' }).catch(() => null));
+  const inHouse = !!(x && x.ok && x.house);
+  $('#house-list').hidden = !inHouse; $('#house-items').hidden = true;
+  $('#house-actions').hidden = inHouse; $('#house-member-actions').hidden = !inHouse;
+  $('#home-house-wrap').hidden = !x || !x.ok;
+  if (!x || !x.ok || !x.house) { $('#house-sub').textContent = 'One envelope for two to four people. Others see the amount, the item and the day, never who.'; return; }
+  const h = x.house, w = x.week;
+  $('#house-sub').textContent = h.opener ? 'You opened it. Share the code; you set Monday\u2019s number.' : 'Share the code to bring someone in.';
+  $('#house-code').textContent = h.code;
+  $('#house-members').textContent = `${h.members} of 4`;
+  $('#house-envelope').textContent = `$${h.envelope} a week${h.nextEnvelope != null ? `, $${h.nextEnvelope} from Monday` : ''}`;
+  $('#house-week').textContent = w ? `$${Math.round(w.spent)} of $${Math.round(w.budget)} gone, $${Math.round(w.left)} left${w.mine ? `, $${w.mine.spent} of it yours` : ''}` : '';
+  const setRow = $('#house-set-row'); setRow.hidden = !h.opener;
+  if (h.opener) ($('#house-amount') as HTMLInputElement).value = String(h.nextEnvelope ?? h.envelope);
+  const items = $('#house-items');
+  const list = (w && w.items) || [];
+  items.hidden = list.length === 0;
+  items.replaceChildren(...list.slice(0, 6).map((i) => { const li = document.createElement('li'); li.className = 'row'; const what = document.createElement('div'); what.className = 'what'; const a = document.createElement('span'); a.textContent = i.kept ? `${i.item}, kept` : i.item; const b = document.createElement('span'); b.textContent = `$${i.amount}`; what.append(a, b); li.append(what); if (i.day) { const d = document.createElement('span'); d.className = 'row-sub'; d.textContent = shelfDay(i.day); li.append(d); } return li; }));
+}
+$('#house-open').addEventListener('click', async () => { houseNote.textContent = ''; const x = await send({ type: 'HOUSE', action: 'open', amount: settings.envelope || 75 }); if (x && !x.ok) houseNote.textContent = x.reason; else { void paintHouse(x); void paintWeek(); } });
+$('#house-join-show').addEventListener('click', () => { $('#house-join-row').hidden = false; ($('#house-code-field') as HTMLInputElement).focus(); });
+$('#house-join').addEventListener('click', async () => { houseNote.textContent = ''; const code = ($('#house-code-field') as HTMLInputElement).value.replace(/\D/g, ''); if (code.length !== 6) { houseNote.textContent = 'Six digits.'; return; } const x = await send({ type: 'HOUSE', action: 'join', code }); if (x && !x.ok) houseNote.textContent = x.reason; else { void paintHouse(x); void paintWeek(); } });
+$('#house-set').addEventListener('click', async () => { houseNote.textContent = ''; const amount = Number(($('#house-amount') as HTMLInputElement).value); const x = await send({ type: 'HOUSE', action: 'envelope', amount }); if (x && !x.ok) houseNote.textContent = x.reason; else { houseNote.textContent = 'Set. It starts Monday.'; void paintHouse(x); } });
+$('#house-leave').addEventListener('click', async () => { houseNote.textContent = ''; const x = await send({ type: 'HOUSE', action: 'leave' }); if (x && !x.ok) houseNote.textContent = x.reason; else { void paintHouse(x); void paintWeek(); } });
+
+SHOW.home = () => { homeNote.textContent = ''; paintHome(); void paintWeek(); void paintPlan(); void paintHouse(); void paintReport(); void paintShelf(); };
 for (const b of document.querySelectorAll<HTMLButtonElement>('#home-grandma button')) b.addEventListener('click', async () => { await saveSettings({ grandma: b.dataset.v as Grandma }); paintHome(); });
 // The API address: saved on change, checked at once, so a wrong address shows before a judge does.
 {

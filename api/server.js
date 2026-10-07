@@ -33,9 +33,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { judge } = require('./judge/rules');
+const house = require('./house');
+const billing = require('./billing');
 const v2 = require('./judge/rules_v2');
 const nessie = require('./ledger'); // live bank when linked, the Nessie sandbox otherwise
-const { lineFor, ackLine, buyLine, smallLines, subLine, setHome, contextLine, backHome, planLine, fundedLine } = require('./lines/writer');
+const { weeklyReport, lineFor, ackLine, buyLine, smallLines, subLine, setHome, contextLine, backHome, planLine, fundedLine } = require('./lines/writer');
 const reasons = require('./judge/reasons');
 const model = require('./lines/model');
 const extractCache = new Map();
@@ -62,7 +64,14 @@ function html(body) {
 
 const PORT = process.env.PORT || 8787;
 // The envelope is weekly. Every number comes from the ledger sums in nessie/client.js, never from a balance field.
-async function month(userId) { return nessie.week(undefined, userId); }
+/** The week a user lives in: the house week when they are in a house (one pot), else their own ledger's. */
+function weekFor(userId, at) {
+  const own = nessie.week(at, userId);
+  const h = userId ? house.week(userId, { weekFor: (id) => nessie.week(at, id), shelfFor: (id) => nessie.shelf(id) }) : null;
+  const w = h ? { ...own, ...h, source: own.source, payday: own.payday, pulledAt: own.pulledAt, streak: own.streak, jar: own.jar, grace: own.grace } : own;
+  return { ...w, plan: billing.planFor(userId).plan };
+}
+async function month(userId) { return weekFor(userId); }
 // The 30 day read for onboarding. ?grandma=nana changes the wording of her lines, nothing else. firstName is the one
 // time her name is used (screen 06); null when Nessie is unreachable, and the screen simply leaves it out.
 async function reading(query = {}, userId) {
@@ -89,9 +98,11 @@ async function scheduleRoute(body, query) {
 const routes = {
   'GET /health': async () => ({ ok: true, model: model.ready() ? model.MODEL : null }),
   'GET /week': (body, query, ctx) => month(ctx && ctx.userId),
+  // The report card: six lines and five fields for this week (closed on Sunday, so far before).
+  'GET /report': (body, query, ctx) => { const u = ctx && ctx.userId; const inputs = nessie.reportInputs(undefined, u); return inputs ? { ok: true, ...weeklyReport(inputs, whoOf(query.grandma)) } : { ok: false }; },
   'GET /month': (body, query, ctx) => reading(query, ctx && ctx.userId),
   // Onboarding screen 06: the weekly envelope she proposed, adjusted. Whole dollars, 25 to 500. The badge reads it next tick.
-  'POST /envelope': async (body, query, ctx) => { const u = ctx && ctx.userId; const envelope = nessie.setEnvelope(body.amount, u); return { ok: true, envelope, week: nessie.week(undefined, u) }; },
+  'POST /envelope': async (body, query, ctx) => { const u = ctx && ctx.userId; const envelope = nessie.setEnvelope(body.amount, u); return { ok: true, envelope, week: weekFor(u) }; },
 
   'POST /judge': async (body) => {
     const m = await month();
@@ -106,9 +117,10 @@ const routes = {
 
   // v2 for the extension: protect the obvious, ask once, remember. Memory lives in the extension and comes with each call;
   // verdict.key is what the extension stores the answer under, so the key logic stays in rules_v2 only.
-  'POST /v2/judge': async (body) => {
+  'POST /v2/judge': async (body, query, ctx) => {
+    const u = ctx && ctx.userId;
     if (body.grandma) require('./notify/memory').setDefaultGrandma(whoOf(body.grandma));
-    const w = nessie.week();
+    const w = weekFor(u);
     const who = whoOf(body.grandma);
     const memory = body.memory && typeof body.memory === 'object' ? body.memory : {};
     const saidReasons = body.reasons && typeof body.reasons === 'object' ? body.reasons : null;
@@ -201,7 +213,7 @@ const routes = {
     }
     await nessie.purchase({ item: short, price, merchant: body.store || 'Store', tag, requestId: String(body.requestId) }, u);
     if (nessie.live(u) && nessie.isOwner(u)) watch.announce({ id: String(body.requestId), item: short, amount: price, merchant: body.store || '', tag }).catch((e) => console.log('[buy] announce failed:', e.message));
-    const w = nessie.week();
+    const w = weekFor(ctx && ctx.userId);
     setHome(body.home);
     const it = { item: short, price, storePrice: body.storePrice != null ? Number(body.storePrice) : null, merchant: body.store || '', currency: body.currency || 'USD', home: body.home || null };
     let line = tag === 'need' ? smallLines(who).agreed : buyLine(w, it, who);
@@ -270,14 +282,14 @@ const routes = {
 
   // The reason behind an answer, on any store. An occasion makes the item a plan (rules v2: planned, never scolded);
   // if it beats what is left and savings can cover it, she offers to fund the week from savings. Nothing moves here.
-  'POST /v2/plan': async (body) => {
+  'POST /v2/plan': async (body, query, ctx) => {
     const who = whoOf(body.grandma);
     const name = String(body.name || '');
     const price = Number(body.price || 0);
     const reason = String(body.reason || '').trim();
     if (!name || !(price > 0) || !reason) throw new Error('name, price and reason are required');
     setHome(body.home);
-    const w = nessie.week();
+    const w = weekFor(ctx && ctx.userId);
     const left = Math.max(0, w.budget - w.spent);
     const savings = nessie.savingsBalance();
     const short = body.short || shortName(name);
@@ -299,12 +311,12 @@ const routes = {
   },
 
   // "From savings": the money moves in Nessie and this week's envelope grows by that much. Idempotent by requestId.
-  'POST /v2/fund': async (body) => {
+  'POST /v2/fund': async (body, query, ctx) => {
     const who = whoOf(body.grandma);
     const amount = Math.round(Number(body.amount || 0));
     if (!(amount > 0) || !body.requestId) throw new Error('amount and requestId are required');
     await nessie.fundFromSavings(amount, String(body.name || 'this week'), String(body.requestId));
-    const w = nessie.week();
+    const w = weekFor(ctx && ctx.userId);
     let line = fundedLine(who, amount, w);
     const written = await contextLine({ kind: 'funded', who, verdict: { label: 'need', react: false, mood: w.mood, tags: ['funded'] }, it: { item: String(body.short || body.name || 'this'), price: amount }, week: w, month: nessie.month(), memory: body.memory, store: body.store }).catch(() => null);
     if (written) line = written;
@@ -375,6 +387,21 @@ const routes = {
   'POST /bank/correct': async (body, query, ctx) => { const u = ctx && ctx.userId; const corrections = nessie.correct(String(body.merchantKey || ''), String(body.kind || ''), u); return { ok: true, corrections, week: nessie.week(undefined, u), saw: nessie.saw(u) }; },
   // The shelf: what was put back and not let go. "still" marks it wanted (the extension remembers it as planned); "let-go" clears the row, the kept credit stays.
   'GET /shelf': (body, query, ctx) => ({ ok: true, shelf: nessie.shelf(ctx && ctx.userId) }),
+
+  // The house: one envelope shared by two to four people (api/house.js). Code to join, opener sets Monday's number.
+  'GET /house': (body, query, ctx) => { const u = ctx && ctx.userId; const h = house.houseOf(u); return { ok: true, house: h ? house.view(h.id, u) : null, week: h ? weekFor(u) : null }; },
+  'POST /house': (body, query, ctx) => { const u = ctx && ctx.userId; const v = house.open(u, body.envelope || weekFor(u).budget); return { ok: true, house: v, week: weekFor(u) }; },
+  'POST /house/join': (body, query, ctx) => { const u = ctx && ctx.userId; const v = house.join(u, body.code); return { ok: true, house: v, week: weekFor(u) }; },
+  'POST /house/leave': (body, query, ctx) => { const u = ctx && ctx.userId; house.leave(u); return { ok: true, house: null, week: weekFor(u) }; },
+  'POST /house/envelope': (body, query, ctx) => { const u = ctx && ctx.userId; const v = house.setEnvelope(u, body.amount); return { ok: true, house: v, week: weekFor(u) }; },
+
+  // Billing (api/billing.js): the plan, a checkout, the portal, Stripe's webhook on the raw body.
+  'GET /me': (body, query, ctx) => { const u = ctx && ctx.userId; return { ok: true, userId: u || null, ...billing.planFor(u), house: !!house.houseOf(u) }; },
+  'POST /billing/checkout': async (body, query, ctx) => { const u = ctx && ctx.userId; return { ok: true, ...(await billing.checkout(u, body.plan === 'month' ? 'month' : 'year', { email: body.email })) }; },
+  'POST /billing/portal': async (body, query, ctx) => { const u = ctx && ctx.userId; return { ok: true, ...(await billing.portal(u)) }; },
+  'POST /stripe/webhook': async (body, query, ctx) => { try { return billing.webhook(ctx.raw, ctx.headers['stripe-signature']); } catch (e) { return { __raw: true, status: 400, contentType: 'application/json', body: JSON.stringify({ error: e.message }) }; } },
+  'GET /billing/done': async () => ({ __raw: true, contentType: 'text/html; charset=utf-8', body: '<!doctype html><meta charset="utf-8"><title>Mama Budget</title><body style="font:16px/1.5 system-ui;background:#FBF7EF;color:#141016;display:grid;place-items:center;height:100vh;margin:0"><div style="max-width:420px;padding:24px"><h1 style="font-size:24px;margin:0 0 8px">She is in your cart.</h1><p>Your trial has started. Close this tab and open a store; her badge will show the plan on the popup.</p></div>' }),
+  'GET /billing/cancelled': async () => ({ __raw: true, contentType: 'text/html; charset=utf-8', body: '<!doctype html><meta charset="utf-8"><title>Mama Budget</title><body style="font:16px/1.5 system-ui;background:#FBF7EF;color:#141016;display:grid;place-items:center;height:100vh;margin:0"><div style="max-width:420px;padding:24px"><h1 style="font-size:24px;margin:0 0 8px">Nothing changed.</h1><p>No charge was made. You can start the trial from her popup any time.</p></div>' }),
   'POST /shelf': (body, query, ctx) => { if (!body.requestId || !['still', 'let-go'].includes(body.action)) throw new Error('requestId and action (still | let-go) are required'); return { ok: true, shelf: nessie.shelve({ requestId: String(body.requestId), action: body.action }, ctx && ctx.userId) }; },
   'POST /bank/close': async (body, query, ctx) => { const u = ctx && ctx.userId; return { ok: true, close: nessie.closeWeek({ useGrace: !!body.useGrace }, u), week: nessie.week(undefined, u) }; },
 
@@ -451,7 +478,7 @@ http.createServer(async (req, res) => {
       const token = /^Bearer\s+(\S+)/i.exec(req.headers.authorization || '')?.[1];
       const user = token ? require('./db').userForToken(token) : null;
       if (user) nessie.claimOwner(user.id);
-      const out = await handler(raw ? JSON.parse(raw) : {}, query, { user, userId: user ? user.id : undefined });
+      const out = await handler(raw ? JSON.parse(raw) : {}, query, { user, userId: user ? user.id : undefined, raw, headers: req.headers });
       if (out && out.__raw) {
         res.writeHead(out.status || 200, { 'content-type': out.contentType, ...cors });
         return res.end(out.body);

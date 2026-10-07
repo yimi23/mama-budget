@@ -187,8 +187,11 @@ number for a fixed "today".
 ## 6b. Built, Oct 7 2026
 Sections 2 to 5 are code in `api/budget/` with tests on the fixture (`api/test/budget_*.test.js`), the live ledger is
 wired through `api/ledger.js`, and onboarding screens 04 to 06 run on a real link. Verified against the SimpleFIN demo
-link end to end (360 rows, three accounts). Not yet: the corpus of 30 pages and the speed harness in CI (section 4.3,
-4.4), the extension's kept moments and shelf surfaces, and a run on Praise's own bank (needs her token).
+link end to end (360 rows, three accounts). Later on Oct 7: the corpus (19 real pages from 17 stores, `apps/extension/test/corpus.test.ts`) and a weekly live
+run in CI (`.github/workflows/live.yml`); the confirm tap on bills (corrections.confirmed); kept moments on the card
+and the shelf (`GET /shelf`); the Sunday report (`api/budget/report.js`, six lines, five fields); the house
+(`api/house.js`); billing (`api/billing.js`); the Safari build; the ChatGPT app (`apps/chatgpt`). Research for each
+is in docs/research/. Still not done: a run on Praise's own bank (needs her token), and the corpus to 30 pages.
 
 ## 7. Definition of done
 The core is done when, on the fixture and on Praise's real SimpleFIN link:

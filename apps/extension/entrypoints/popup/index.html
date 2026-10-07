@@ -196,6 +196,43 @@
           <div class="row between" id="home-jar-row" hidden><span class="row-title">Kept jar</span><span class="row-sub" id="home-jar"></span></div>
           <div class="row between" id="home-bank-row" hidden><span class="row-title">Bank</span><span class="row-sub" id="home-bank"></span></div>
         </div>
+        <div id="home-plan-wrap" hidden>
+          <p class="shelf-title">Plan</p>
+          <div class="list">
+            <div class="row between"><span class="row-title" id="plan-title"></span><span class="row-sub" id="plan-sub"></span></div>
+          </div>
+          <div class="decide plan-actions" id="plan-actions" hidden>
+            <button type="button" class="yes" id="plan-year"></button>
+            <button type="button" id="plan-month"></button>
+          </div>
+          <button type="button" class="plain" id="plan-manage" hidden>Manage or cancel</button>
+          <p class="status" id="plan-note" role="status" aria-live="polite"></p>
+        </div>
+        <div id="home-house-wrap">
+          <p class="shelf-title">House</p>
+          <p class="row-sub shelf-sub" id="house-sub">One envelope for two to four people. Others see the amount, the item and the day, never who.</p>
+          <div class="list" id="house-list" hidden>
+            <div class="row between"><span class="row-title">Code</span><span class="val" id="house-code"></span></div>
+            <div class="row between"><span class="row-title">People</span><span class="row-sub" id="house-members"></span></div>
+            <div class="row between"><span class="row-title">Envelope</span><span class="row-sub" id="house-envelope"></span></div>
+            <div class="row between" id="house-week-row"><span class="row-title">This week</span><span class="row-sub" id="house-week"></span></div>
+          </div>
+          <ul class="list shelf" id="house-items" hidden></ul>
+          <div class="house-actions" id="house-actions">
+            <div class="decide"><button type="button" class="yes" id="house-open">Open a house</button><button type="button" id="house-join-show">Join with a code</button></div>
+            <div class="join-row" id="house-join-row" hidden><input type="text" inputmode="numeric" id="house-code-field" class="field" placeholder="Six digits" maxlength="7" aria-label="House code" /><button type="button" class="yes" id="house-join">Join</button></div>
+          </div>
+          <div class="house-actions" id="house-member-actions" hidden>
+            <div class="join-row" id="house-set-row" hidden><input type="number" id="house-amount" class="field" min="25" max="2000" step="5" aria-label="Monday's envelope" /><button type="button" class="yes" id="house-set">Set for Monday</button></div>
+            <button type="button" class="plain" id="house-leave">Leave the house</button>
+          </div>
+          <p class="status" id="house-note" role="status" aria-live="polite"></p>
+        </div>
+        <div id="home-report-wrap" hidden>
+          <p class="shelf-title" id="report-title">This week so far</p>
+          <div class="list report" id="home-report"></div>
+          <p class="row-sub report-lines" id="report-lines"></p>
+        </div>
         <div id="home-shelf-wrap" hidden>
           <p class="shelf-title">The shelf</p>
           <p class="row-sub shelf-sub">What you put back after she spoke. The money stayed in the week.</p>

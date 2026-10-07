@@ -1,7 +1,7 @@
 {
-  "accountId": "31bad4b3-77c5-49a9-ac6d-60d7a4706b09",
-  "familyAccountId": "41ed5161-4201-4a48-a6b4-1bbe1fa7cf9b",
-  "savingsId": "c3c6a26a-78ca-4bda-a999-29cf26f4e80d",
+  "accountId": "57f8c440-8e09-45ef-a642-bea558289306",
+  "familyAccountId": "49da5f35-e571-4d79-8f20-3903fc6eaadb",
+  "savingsId": "e537f2aa-57e7-409b-a5e9-6773709a23aa",
   "purchases": [
     {
       "item": "Electric bill",
@@ -151,6 +151,34 @@
       "item": "Moved to savings",
       "tag": "saved",
       "date": "2026-10-01"
+    },
+    {
+      "amount": 150,
+      "to": "savings",
+      "item": "Moved to savings",
+      "tag": "saved",
+      "date": "2026-08-20"
+    },
+    {
+      "amount": 150,
+      "to": "savings",
+      "item": "Moved to savings",
+      "tag": "saved",
+      "date": "2026-07-21"
+    },
+    {
+      "amount": 150,
+      "to": "savings",
+      "item": "Moved to savings",
+      "tag": "saved",
+      "date": "2026-06-21"
+    },
+    {
+      "amount": 150,
+      "to": "savings",
+      "item": "Moved to savings",
+      "tag": "saved",
+      "date": "2026-05-22"
     }
   ],
   "deposits": [
@@ -212,19 +240,19 @@
     }
   ],
   "merchantIds": {
-    "Kroger": "eb1ae6e6-94d1-4fc4-84dd-46237423094d",
-    "Target": "f88af5dc-c00e-4ab6-9c93-dbf025dfe3cf",
-    "Consumers Energy": "2ba96875-700c-405b-9edf-d764dbf5d47b",
-    "T-Mobile": "5c59a724-26e0-4f58-90a4-f55653efc4de",
-    "CMU Bookstore": "7b1b573b-0939-4d83-9c8b-18112d864fd3",
-    "Ann Arbor Transit": "343b3ccd-7077-4310-bd82-5535f89b5652",
-    "DoorDash": "2ac56126-1965-453a-8ddb-9e8fba1cc05e",
-    "Starbucks": "c5daa484-7782-4aaf-9a10-5d0095376a73",
-    "Boba shop": "de818694-a8db-4b4a-938a-cd7f8587d171",
-    "Online store": "62e6cfe9-3e87-4a81-8c59-dec6e1c5e52d",
-    "Bar": "9fbd0ed2-610e-4039-8171-e1c6b2e1da3d"
+    "Kroger": "3ae48f8a-30ee-4f90-b29d-2b4786faff25",
+    "Consumers Energy": "d3d10024-c6fa-45fa-b49c-71178e285f17",
+    "Target": "78bbbbfa-42d5-4b0b-aff9-bbfa81fe3ba2",
+    "DoorDash": "98e3657a-9d64-406e-a29a-5384970f53ab",
+    "CMU Bookstore": "ecfe2352-dac2-4ffd-8300-5e50e79bd8f4",
+    "Ann Arbor Transit": "a2a02003-2a2e-4269-ab51-1c65304384ed",
+    "T-Mobile": "9e0d2116-7bbc-4af8-91da-59ecbf089d16",
+    "Online store": "d8ebe0a9-50ca-4e3a-8e4c-ba34af317b71",
+    "Boba shop": "38ef02e8-664c-4c09-8da3-946f29c11dda",
+    "Starbucks": "4581d433-bb2a-483f-93cf-d6df8104da82",
+    "Bar": "8a7e2525-545d-4854-a24e-6beb131e6f1b"
   },
-  "envelope": 75,
+  "envelope": 120,
   "bills": [
     {
       "payee": "Landlord",
@@ -234,5 +262,8 @@
       "recurringDay": 1
     }
   ],
-  "customerId": "ac20a3b3-012c-4fa6-a7ee-d449a6c8c65e"
+  "customerId": "aa884ec8-90ec-4060-9975-5e8fd99a285e",
+  "firstName": "Demo",
+  "putBack": [],
+  "funding": []
 }

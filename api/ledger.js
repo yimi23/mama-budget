@@ -54,6 +54,19 @@ module.exports = {
   spentThisWeek: async () => module.exports.week().spent,
   refresh: (force, userId) => budget.refresh(force, userId),
   closeWeek: (o, userId) => (live(userId) ? budget.closeWeek(o, undefined, userId) : null),
+  // Inputs for the Sunday report. Demo mode: this week and last week from the cache, the biggest want from purchases,
+  // the savings balance as the jar; no streak on the sandbox.
+  reportInputs: (at, userId) => {
+    if (live(userId)) return budget.reportInputs(at, userId);
+    const now = at ? new Date(at) : new Date();
+    const wk = module.exports.week(now, userId);
+    const start = nessie.weekStart(now);
+    const last = nessie.week(new Date(start.getTime() - DAY));
+    const c = nessie.readCache();
+    const big = (c.purchases || []).filter((p) => p.tag === 'want' && new Date(`${p.date}T12:00:00`) >= start).sort((a, b) => b.amount - a.amount)[0];
+    const sunday = now.getDay() === 0 && now.getHours() >= 19;
+    return { week: { envelope: wk.budget, spent: wk.spent, kept: wk.kept }, lastWeek: { spent: last.spent }, biggest: big ? { item: big.item, amount: big.amount, day: require('./budget/report').dayName(big.date) } : null, streak: 0, graced: false, jar: nessie.savingsBalance(), closed: sunday, carry: 0, nextEnvelope: wk.budget };
+  },
   correct: (k, kind, userId) => (live(userId) ? budget.correct(k, kind, userId) : null),
   linkAccess: (access, userId) => budget.linkAccess(access, userId),
   isOwner: (userId) => budget.isOwner(userId),

@@ -113,11 +113,14 @@ test('next statement times roll forward correctly', () => {
   assert.equal(nextMonthEnd7(at('2026-10-31T19:01:00')).toISOString(), at('2026-11-30T19:00:00').toISOString());
 });
 
-test('the weekly text is four lines: numbers, kept, bill or biggest, one line of her', () => {
+test('the weekly text is six lines: what stayed or went over, last week, the biggest thing, the streak, the jar, Monday with her line', () => {
   const lines = weeklyText(new Date(), 'mama').split('\n');
-  assert.equal(lines.length, 4);
-  assert.match(lines[0], /^This week: \$\d+ of \$\d+ fun money gone, \$\d+ left/);
-  assert.match(lines[1], /kept|Nothing kept/);
+  assert.equal(lines.length, 6);
+  assert.match(lines[0], /^\$\d+ (?:stayed in the envelope|over this week)/);
+  assert.match(lines[0], /\$\d+ of \$\d+ gone/);
+  assert.match(lines[1], /Last week \$\d+ went|Same as last week/);
+  assert.match(lines[4], /The jar is \$\d+\./);
+  assert.match(lines[5], /^Monday: \$\d+ goes in\./);
 });
 
 test('statement and text helpers in the writer still name every amount', () => {

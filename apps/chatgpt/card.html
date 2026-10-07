@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mama Budget</title>
+<style>
+  :root { --cream: #FBF7EF; --ink: #141016; --muted: #5E566B; --line: #EADFCB; --green: #0F7B5A; --coral: #FFE2D6; --mint: #DDF1E8; }
+  html, body { margin: 0; background: transparent; color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .card { display: flex; gap: 14px; padding: 16px; border-radius: 20px; background: var(--cream); max-width: 420px; box-sizing: border-box; }
+  .tile { width: 84px; height: 96px; flex-shrink: 0; border-radius: 14px; background: var(--mint); display: flex; align-items: flex-end; justify-content: center; overflow: hidden; }
+  .card[data-tone="alarm"] .tile { background: var(--coral); }
+  .face { width: 56px; height: 56px; border-radius: 50%; background: var(--ink); margin-bottom: 14px; position: relative; }
+  .face::before, .face::after { content: ''; position: absolute; top: 22px; width: 8px; height: 8px; border-radius: 50%; background: var(--cream); }
+  .face::before { left: 14px; } .face::after { right: 14px; }
+  .gele { position: absolute; top: -10px; left: 6px; right: 6px; height: 22px; border-radius: 12px 12px 4px 4px; background: #C9A227; }
+  .body { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .line { margin: 0; font-size: 17px; font-weight: 700; line-height: 1.25; }
+  .sub { margin: 0; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .meter { height: 8px; border-radius: 999px; background: var(--line); overflow: hidden; margin-top: 4px; }
+  .meter i { display: block; height: 100%; background: var(--green); width: 0; transition: width 300ms cubic-bezier(0, 0, 0.2, 1); }
+  .meter.hot i { background: #D9534F; }
+  ul { margin: 4px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+  li { display: flex; justify-content: space-between; gap: 8px; }
+  li span:last-child { font-variant-numeric: tabular-nums; color: var(--muted); }
+  @media (prefers-color-scheme: dark) { :root { --cream: #221A2A; --ink: #FBF7EF; --muted: #B8AEC4; --line: #3A3044; --mint: #1F4A3C; --coral: #5A2E27; } }
+</style>
+</head>
+<body>
+<section class="card" id="card" data-tone="ask" role="status" aria-live="polite">
+  <div class="tile"><div class="face"><div class="gele"></div></div></div>
+  <div class="body">
+    <p class="line" id="line">One number for the week.</p>
+    <p class="sub" id="sub"></p>
+    <div class="meter" id="meter" hidden><i id="fill"></i></div>
+    <ul id="list" hidden></ul>
+  </div>
+</section>
+<script>
+  // Text only through textContent. The host hands the tool's structuredContent to window.openai.toolOutput.
+  const $ = (id) => document.getElementById(id);
+  const money = (n) => '$' + Math.round(n || 0);
+  function render(d) {
+    if (!d) return;
+    const card = $('card'), list = $('list'), meter = $('meter');
+    list.hidden = true; meter.hidden = true;
+    if (d.kind === 'week') {
+      $('line').textContent = d.line;
+      $('sub').textContent = money(d.spent) + ' of ' + money(d.envelope) + ' gone.' + (d.jar ? ' Jar ' + money(d.jar) + '.' : '') + (d.streak >= 2 ? ' ' + d.streak + ' weeks in a row.' : '');
+      const ratio = d.envelope ? Math.min(1, d.spent / d.envelope) : 0;
+      meter.hidden = false; meter.classList.toggle('hot', ratio >= 0.75); $('fill').style.width = Math.round(ratio * 100) + '%';
+      card.dataset.tone = ratio >= 1 ? 'alarm' : 'ask';
+    } else if (d.kind === 'verdict') {
+      $('line').textContent = d.line;
+      $('sub').textContent = d.sub || (money(d.price) + ' against ' + money(d.left) + ' left this week.');
+      card.dataset.tone = d.label === 'want' && d.price > d.left ? 'alarm' : 'ask';
+    } else if (d.kind === 'shelf') {
+      $('line').textContent = d.line;
+      $('sub').textContent = d.items.length ? 'What you put back after she spoke.' : '';
+      list.hidden = !d.items.length;
+      list.replaceChildren(...d.items.map((i) => { const li = document.createElement('li'); const a = document.createElement('span'); a.textContent = i.item + (i.store ? ', ' + i.store : ''); const b = document.createElement('span'); b.textContent = money(i.amount); li.append(a, b); return li; }));
+      card.dataset.tone = 'ask';
+    }
+  }
+  render(window.openai && window.openai.toolOutput);
+  window.addEventListener('openai:set_globals', () => render(window.openai && window.openai.toolOutput));
+</script>
+</body>
+</html>

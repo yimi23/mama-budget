@@ -1,7 +1,7 @@
 // Service worker. Stateless: everything lives in chrome.storage. Every listener is top level and synchronous.
 
 import type { HandledLists, Message } from '@mama/shared/messages';
-import type { Answer, BuyReply, CartItem, CartRead, CurrencyCode, JudgeReply, Month, PlanReply, Saw, ShelfItem, Week } from '@mama/shared/types';
+import type { Answer, BuyReply, CartItem, CartRead, CurrencyCode, JudgeReply, Month, House, Me, PlanReply, Report, Saw, ShelfItem, Week } from '@mama/shared/types';
 import { apiBase, apiUp, authHeaders, call } from '../lib/api';
 import { weekKey } from '@mama/shared/week';
 import { regionHome } from '../lib/onboarding';
@@ -69,7 +69,14 @@ async function judgeCart(store: string, currency: CurrencyCode, items: CartItem[
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ items: items.map((i) => ({ ...i, store })), memory, reasons, currency, confidence, grandma: (settings as { grandma?: string }).grandma ?? 'mama', home: await homeSetting(), loudness: (settings as { loudness?: string }).loudness }),
   });
+  if (reply) await rememberPlan(reply.week);
+  if (reply && reply.week && reply.week.plan === 'locked') return { ok: false as const }; // the page behaves as if she was never installed
   return reply ? { ok: true as const, ...reply, handled: await handledLists() } : { ok: false as const };
+}
+
+/** The plan rides on every week reply; kept in storage so the voice path can read it without a call. */
+async function rememberPlan(week: Week | undefined) {
+  if (week && week.plan) await browser.storage.local.set({ plan: week.plan });
 }
 
 // Asks: no repeats and at most three per browser session (storage.session).
@@ -186,6 +193,7 @@ export function gainFor(grandma: unknown): number {
 const OFFSCREEN_URL = 'offscreen.html';
 
 async function offscreenReady(): Promise<boolean> {
+  if (!('offscreen' in browser) || !browser.offscreen) return false; // Safari: the content script plays instead
   try {
     const contexts = await browser.runtime.getContexts({ contextTypes: [browser.runtime.ContextType.OFFSCREEN_DOCUMENT] });
     if (contexts.length) return true;
@@ -210,10 +218,12 @@ function toDataUrl(buf: ArrayBuffer): string {
 const silent = { ok: false, duration: null };
 
 /** Fetches her line as mp3 from /tts and plays it in the offscreen document. Silent on any failure, and in quiet hours. */
-async function speak(msg: Extract<Message, { type: 'SPEAK' }>): Promise<{ ok: boolean; duration: number | null }> {
+async function speak(msg: Extract<Message, { type: 'SPEAK' }>): Promise<{ ok: boolean; duration: number | null; dataUrl?: string; speakText?: string }> {
   const { settings = {} } = await browser.storage.local.get('settings');
   const st = settings as { sounds?: boolean; loudness?: string; quietHours?: boolean }; // quiet hours are opt in for the hackathon (Praise, Oct 4): she speaks at any hour unless settings.quietHours is true
   if (st.sounds === false || (st.quietHours === true && quietHours())) return silent;
+  const { plan } = await browser.storage.local.get('plan');
+  if (plan === 'free') return silent; // the degraded tier: she is in the cart in text only
   if (!(await apiUp())) return silent;
   try {
     const res = await fetch(`${await apiBase()}/tts`, {
@@ -222,10 +232,11 @@ async function speak(msg: Extract<Message, { type: 'SPEAK' }>): Promise<{ ok: bo
     });
     if (!res.ok || !(res.headers.get('content-type') ?? '').startsWith('audio/')) {
       // No ElevenLabs: the browser's own voice, so a line is never only text when sound is on.
+      if (!('tts' in browser) || !browser.tts) return { ...silent, speakText: msg.text }; // Safari: the page's own speechSynthesis
       try { browser.tts.speak(msg.text, { rate: 0.95, volume: volumeFor(st.loudness) }); return { ok: true, duration: null }; } catch { return silent; }
     }
     const dataUrl = toDataUrl(await res.arrayBuffer());
-    if (!(await offscreenReady())) return silent;
+    if (!(await offscreenReady())) return { ...silent, dataUrl }; // no offscreen document (Safari): the content script plays it
     const reply = (await browser.runtime.sendMessage({ type: 'PLAY', dataUrl, volume: volumeFor(st.loudness), gain: gainFor(msg.grandma) })) as { ok?: boolean; duration?: number | null } | undefined;
     return { ok: !!reply?.ok, duration: reply?.duration ?? null };
   } catch {
@@ -301,6 +312,45 @@ async function putBack(msg: Extract<Message, { type: 'PUT_BACK' }>) {
     body: JSON.stringify({ name: msg.name, price: msg.price, store: msg.store, requestId: `putback:${weekKey()}:${postedKey(msg.name)}` }),
   });
   return reply ? { ok: true as const, week: reply.week } : { ok: false as const };
+}
+
+const TIMEOUT_MS = 4000;
+
+async function houseAction(msg: Extract<Message, { type: 'HOUSE' }>) {
+  if (!(await apiUp())) return { ok: false as const, reason: 'The API is not answering' };
+  const path = msg.action === 'get' ? '/house' : msg.action === 'open' ? '/house' : msg.action === 'join' ? '/house/join' : msg.action === 'leave' ? '/house/leave' : '/house/envelope';
+  const init = msg.action === 'get' ? undefined : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(msg.action === 'join' ? { code: msg.code } : msg.action === 'envelope' ? { amount: msg.amount } : msg.action === 'open' ? { envelope: msg.amount } : {}) };
+  try {
+    const res = await fetch((await apiBase()) + path, { ...init, headers: { ...(await authHeaders()), ...(init?.headers || {}) }, signal: AbortSignal.timeout(TIMEOUT_MS) });
+    const r = (await res.json()) as { ok?: boolean; house?: House | null; week?: Week | null; error?: string };
+    if (!res.ok || r.error) return { ok: false as const, reason: r.error || 'Something went wrong' };
+    return { ok: true as const, house: r.house ?? null, week: r.week ?? null };
+  } catch { return { ok: false as const, reason: 'The API is not answering' }; }
+}
+
+async function me() {
+  if (!(await apiUp())) return { ok: false as const };
+  const r = await call<{ ok: true } & Me>('/me');
+  if (r) await browser.storage.local.set({ plan: r.plan });
+  return r ? { ...r, ok: true as const } : { ok: false as const };
+}
+
+// Checkout and the portal open in a new tab; the API talks to Stripe, the extension never holds a key.
+async function billingAction(msg: Extract<Message, { type: 'BILLING' }>) {
+  if (!(await apiUp())) return { ok: false as const, reason: 'The API is not answering' };
+  try {
+    const res = await fetch((await apiBase()) + (msg.action === 'portal' ? '/billing/portal' : '/billing/checkout'), { method: 'POST', headers: { 'content-type': 'application/json', ...(await authHeaders()) }, body: JSON.stringify({ plan: msg.plan ?? 'year' }), signal: AbortSignal.timeout(TIMEOUT_MS) });
+    const r = (await res.json()) as { ok?: boolean; url?: string; error?: string };
+    if (!res.ok || !r.url) return { ok: false as const, reason: r.error || 'Billing is not set up yet' };
+    await browser.tabs.create({ url: r.url });
+    return { ok: true as const, url: r.url };
+  } catch { return { ok: false as const, reason: 'The API is not answering' }; }
+}
+
+async function reportCard(msg: Extract<Message, { type: 'REPORT' }>) {
+  if (!(await apiUp())) return { ok: false as const };
+  const r = await call<{ ok: true } & Report>(`/report?grandma=${encodeURIComponent(msg.grandma)}`);
+  return r ? { ...r, ok: true as const } : { ok: false as const };
 }
 
 async function shelf() {
@@ -469,6 +519,18 @@ export default defineBackground(() => {
         return true;
       case 'SHELF':
         shelf().then(sendResponse, () => sendResponse({ ok: false }));
+        return true;
+      case 'REPORT':
+        reportCard(msg).then(sendResponse, () => sendResponse({ ok: false }));
+        return true;
+      case 'HOUSE':
+        houseAction(msg).then(sendResponse, () => sendResponse({ ok: false, reason: 'The API is not answering' }));
+        return true;
+      case 'ME':
+        me().then(sendResponse, () => sendResponse({ ok: false }));
+        return true;
+      case 'BILLING':
+        billingAction(msg).then(sendResponse, () => sendResponse({ ok: false, reason: 'The API is not answering' }));
         return true;
       case 'SHELVE':
         shelve(msg).then(sendResponse, () => sendResponse({ ok: false }));

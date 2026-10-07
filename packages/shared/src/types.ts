@@ -51,6 +51,37 @@ export interface Week {
   payday?: { at: string; amount: number; daysUntil: number } | null;
   reason?: string;
   pulledAt?: number;
+  /** Billing (GET /me): open when the API has no Stripe keys, full on a trial or a paid plan, locked after, free on the degraded tier. */
+  plan?: Plan;
+  /** Set when this person is in a house: the week above is the house's (one pot), these are the house's own facts. */
+  house?: House;
+  /** House only: what the others see of each purchase, amount and item and day, never who. */
+  items?: { amount: number; item: string; kept?: boolean; day?: string }[];
+  /** House only: this person's own part of the week. */
+  mine?: { spent: number; kept: number } | null;
+}
+
+export type Plan = 'open' | 'full' | 'locked' | 'free';
+
+/** The house (GET /house): one envelope shared by two to four people. */
+export interface House {
+  code: string;
+  members: number;
+  /** This person opened the house, so they set the number. */
+  opener: boolean;
+  envelope: number;
+  /** A number set this week, applied next Monday. */
+  nextEnvelope: number | null;
+}
+
+/** GET /me: the plan and the prices, for the popup. */
+export interface Me {
+  plan: Plan;
+  status: string;
+  periodEnd: number | null;
+  trialDaysLeft: number | null;
+  prices: { month: { amount: number; label: string }; year: { amount: number; label: string } };
+  house: boolean;
 }
 
 /** GET /month: the 30 day read for onboarding. Everything she knows before you have typed anything. */
@@ -87,6 +118,20 @@ export interface Month extends Week {
 
 /** The six cue sounds (docs/research_clicky_onboarding.md section 4.7). Synthesised in the offscreen document. */
 export type Cue = 'arrive' | 'ask' | 'surprised' | 'proud' | 'text' | 'tick';
+
+/** The Sunday report card (GET /report): six lines and five fields. Closed on Sunday 7pm, "so far" before. */
+export interface Report {
+  lines: string[];
+  text: string;
+  fields: {
+    result: { stayed: number; over: number; spent: number; envelope: number; arrow: 'better' | 'worse' | 'same' | null; lastWeekSpent: number | null; closed: boolean };
+    biggest: { item: string; amount: number; day: string | null } | null;
+    streak: { weeks: number; graced: boolean };
+    jar: number;
+    kept: number;
+    monday: { envelope: number; carry: number };
+  };
+}
 
 /** One thing put back after she spoke (GET /shelf): the kept moment, newest first. */
 export interface ShelfItem {

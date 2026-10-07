@@ -1,6 +1,6 @@
 // Every message between content script, popup and worker. Add the case here before writing the handler.
 
-import type { Answer, BuyReply, CartItem, CartRead, Cue, CurrencyCode, Grandma, JudgeReply, Month, PlanReply, Saw, ShelfItem, Week } from './types.ts';
+import type { Answer, BuyReply, CartItem, CartRead, Cue, CurrencyCode, Grandma, JudgeReply, House, Me, Month, PlanReply, Report, Saw, ShelfItem, Week } from './types.ts';
 
 /** What she already asked about or reacted to this browser session, across every tab and reload. */
 export interface HandledLists {
@@ -28,6 +28,14 @@ export type Message =
   | { type: 'PUT_BACK'; name: string; price: number; store?: string }
   /** The shelf: what was put back and not let go. */
   | { type: 'SHELF' }
+  /** The Sunday report card for this week. */
+  | { type: 'REPORT'; grandma: Grandma }
+  /** The house: read it, open one, join by code, leave, or set Monday's number (opener only). */
+  | { type: 'HOUSE'; action: 'get' | 'open' | 'join' | 'leave' | 'envelope'; code?: string; amount?: number }
+  /** The plan (GET /me). */
+  | { type: 'ME' }
+  /** Start the trial checkout or open the billing portal, in a new tab. */
+  | { type: 'BILLING'; action: 'checkout' | 'portal'; plan?: 'month' | 'year' }
   /** A shelf row answered: still wanted (remembered as planned) or let go (the row leaves the shelf, the kept credit stays). */
   | { type: 'SHELVE'; requestId: string; action: 'still' | 'let-go' }
   /** Onboarding 06: a bill she was not sure of. "confirmed" makes the early stream a bill; "not-recurring" drops it. */
@@ -63,10 +71,14 @@ export type Reply<M extends Message> =
   M extends { type: 'CONFIRM' } ? { ok: true; posted: number } :
   M extends { type: 'PUT_BACK' } ? { ok: true; week: Week } | { ok: false } :
   M extends { type: 'SHELF' } ? { ok: true; shelf: ShelfItem[] } | { ok: false } :
+  M extends { type: 'REPORT' } ? ({ ok: true } & Report) | { ok: false } :
+  M extends { type: 'HOUSE' } ? { ok: true; house: House | null; week: Week | null } | { ok: false; reason: string } :
+  M extends { type: 'ME' } ? ({ ok: true } & Me) | { ok: false } :
+  M extends { type: 'BILLING' } ? { ok: true; url: string } | { ok: false; reason: string } :
   M extends { type: 'SHELVE' } ? { ok: true; shelf: ShelfItem[] } | { ok: false } :
   M extends { type: 'CORRECT' } ? { ok: true; saw: Saw | null; week: Week | null } | { ok: false } :
   M extends { type: 'START_OVER' } ? { ok: true } :
-  M extends { type: 'SPEAK' } ? { ok: boolean; duration: number | null } :
+  M extends { type: 'SPEAK' } ? { ok: boolean; duration: number | null; dataUrl?: string; speakText?: string } :
   M extends { type: 'MONTH' } ? { ok: true; month: Month } | { ok: false } :
   M extends { type: 'LINK_BANK' } ? { ok: true; month: Month } | { ok: false; reason: string } :
   M extends { type: 'WARM' } ? { ok: true } :

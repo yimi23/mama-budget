@@ -63,7 +63,13 @@ Mama Budget watches the shopping cart on the page the user is on and, when a pur
 
 ## Distribution tab
 
-Visibility: Unlisted. Regions: all. Pricing: free.
+Visibility: Unlisted. Regions: all. Pricing: the Web Store has no price field; the price is in the description (below) as the
+"Accepting Payment From Users" policy asks: the price, the trial, who sells it, and a link to terms with the refund policy.
+
+## Price paragraph (goes at the end of the description once billing is on)
+Mama Budget is free for seven days with a card, then $4.99 a month or $39 a year. Cancel in one tap from her popup.
+Sold by Praise Oyimi, not Google. Terms and refunds: https://mamabudget.com/terms. Until billing is switched on the
+API runs open and this paragraph stays out of the listing.
 
 ## After submitting
 

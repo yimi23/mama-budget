@@ -195,6 +195,26 @@ function closeWeek({ useGrace = false } = {}, at, userId) {
   return r;
 }
 
+/** Inputs for the Sunday report (api/budget/report.js), from the bank: this week, last week, the biggest want with its day. */
+function reportInputs(at, userId) {
+  const now = toSec(at);
+  const s = snapshot(now, userId);
+  if (!s) return null;
+  const st = s.state;
+  const envelope = st.envelope || s.plan.envelope;
+  const wk = week.current(s.rows, { ...st, envelope }, now, st.putBacks || []);
+  const lastWeek = week.current(s.rows, { ...st, envelope }, now - 7 * DAY, st.putBacks || []);
+  const start = week.weekStart(now), end = start + 7 * DAY;
+  const big = s.rows.filter((r) => { const t = r.posted || r.transactedAt; return t >= start && t < end && r.kind === 'want' && r.amount < 0; }).sort((a, b) => a.amount - b.amount)[0];
+  const thisClose = (st.closes || []).find((c) => c.weekStart === wk.weekStart);
+  const over = Math.max(0, wk.spent - wk.envelope);
+  return {
+    week: wk, lastWeek: { spent: lastWeek.spent }, biggest: big ? { item: big.item || big.merchantName || big.merchantKey, amount: -big.amount, day: require('./report').dayName(big.posted || big.transactedAt) } : null,
+    streak: wk.streak, graced: !!(thisClose && thisClose.graced), jar: st.jar || 0, closed: !!thisClose,
+    carry: thisClose && !thisClose.graced ? Math.min(over, envelope / 2) : 0, nextEnvelope: Math.max(0, envelope - (thisClose && !thisClose.graced ? Math.min(over, envelope / 2) : 0)),
+  };
+}
+
 function ready(userId) { return live(userId) && !!readCache(userId); }
 
-module.exports = { live, ready, refresh, snapshot, ownerId, claimOwner, isOwner, linkAccess, week: weekView, month: monthView, saw, setEnvelope, correct, postOrder, putBack, shelf, shelfRows, shelve, closeWeek, state, compute };
+module.exports = { live, ready, refresh, snapshot, ownerId, claimOwner, isOwner, linkAccess, week: weekView, month: monthView, saw, setEnvelope, correct, postOrder, putBack, shelf, shelfRows, shelve, closeWeek, reportInputs, state, compute };

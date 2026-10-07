@@ -1,0 +1,17 @@
+{
+  "name": "@mama/chatgpt",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Mama Budget as a ChatGPT app: an MCP server over Streamable HTTP that calls the Mama API.",
+  "type": "module",
+  "main": "server.mjs",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/ext-apps": "^2.0.3",
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "zod": "^4.6.5"
+  }
+}

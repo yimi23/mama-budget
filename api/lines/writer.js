@@ -410,19 +410,23 @@ function subLine(month) {
   return `${Math.round((month.ratio || 0) * 100)}% of this week gone. $${left} left. ${days} day${days === 1 ? '' : 's'}.`;
 }
 
-// Weekly statement. Four lines. Numbers first, one line of her at the end.
-function weeklyStatement({ week, biggest, who = 'mama', trend = 0 }) {
+// The Sunday statement: six lines, numbers in her order (api/budget/report.js), her one line folded into the last.
+// `inputs` is the report's inputs when the caller has them; the old shape (week, biggest, trend) still works.
+function weeklyStatement({ week, biggest, who = 'mama', trend = 0, inputs = null }) {
   const bank = bankOf(who);
-  const left = Math.max(0, week.budget - week.spent);
-  const close = trend < 0 ? bank.statementClose[1] : trend > 0 ? bank.statementClose[2] : bank.statementClose[0];
-  const days = week.daysLeft != null ? week.daysLeft : daysLeftInWeek();
-  const bill = (week.bills || [])[0];
-  return [
-    `This week: $${week.spent} of $${week.budget} fun money gone, $${left} left${days ? `, ${days} day${days === 1 ? '' : 's'} to go` : ''}.`,
-    week.kept ? `You kept $${week.kept}.` : 'Nothing kept yet this week.',
-    bill ? `${bill.nickname} is due in ${bill.daysUntil} day${bill.daysUntil === 1 ? '' : 's'}.` : (biggest ? `Biggest one: ${biggest.item}, $${biggest.amount}.` : 'Nothing big. Good.'),
-    close,
-  ].join('\n');
+  const { report } = require('../budget/report');
+  const r = inputs || { week: { envelope: week.budget, spent: week.spent, kept: week.kept || 0 }, lastWeek: trend ? { spent: week.spent + (trend < 0 ? 1 : -1) } : null, biggest: biggest || null, streak: 0, graced: false, jar: week.jar || week.kept || 0, closed: true, carry: 0, nextEnvelope: week.budget };
+  const last = r.lastWeek ? r.lastWeek.spent : null;
+  const close = last == null ? bank.statementClose[0] : r.week.spent < last ? bank.statementClose[1] : r.week.spent > last ? bank.statementClose[2] : bank.statementClose[0];
+  return report({ ...r, close }).text;
+}
+/** The report card: the six lines and the five fields, for GET /report and the popup. */
+function weeklyReport(inputs, who = 'mama') {
+  const bank = bankOf(who);
+  const { report } = require('../budget/report');
+  const last = inputs.lastWeek ? inputs.lastWeek.spent : null;
+  const close = last == null ? bank.statementClose[0] : inputs.week.spent < last ? bank.statementClose[1] : inputs.week.spent > last ? bank.statementClose[2] : bank.statementClose[0];
+  return report({ ...inputs, close });
 }
 
 // Three watches for onboarding, from the top want merchants of the last 30 days. Facts first, one clause of her.
@@ -616,6 +620,6 @@ function modelReply({ who = 'mama', userText, week, ledger = '', history, promis
 module.exports = {
   fresh, bankOf, BANK, phrase, PHRASES,
   shopName, backHome, setHome,
-  lineFor, ackLine, buyLine, buyText, smallLines, subLine, weeklyStatement, monthlyStatement, watchLines, whatsLeft,
+  lineFor, ackLine, buyLine, buyText, smallLines, subLine, weeklyStatement, weeklyReport, monthlyStatement, watchLines, whatsLeft,
   modelLine, modelReply, contextLine, planLine, fundedLine, toNaira, notifyLine, notifyText, MAMA, NANA, ABUELA, WONG,
 };

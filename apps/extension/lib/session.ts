@@ -212,6 +212,21 @@ async function talk() {
   }
 }
 
+/**
+ * Her voice. The worker plays it in the offscreen document; where that does not exist (Safari) it hands back the
+ * audio for the page to play, or the text for the page's own speech, inside the click that opened the card.
+ * The flagged fallback CLAUDE.md allows: content script Audio only when the worker cannot play.
+ */
+function voice(text: string, g: Grandma, mood: 'calm' | 'shocked' | 'down') {
+  void send<{ ok: boolean; duration: number | null; dataUrl?: string; speakText?: string }>({ type: 'SPEAK', text, grandma: g, mood }).then((r) => {
+    if (!r || r.ok) return;
+    try {
+      if (r.dataUrl) { const a = new Audio(r.dataUrl); a.volume = 0.9; void a.play().catch(() => {}); return; }
+      if (r.speakText && 'speechSynthesis' in window) { const u = new SpeechSynthesisUtterance(r.speakText); u.rate = 0.95; window.speechSynthesis.speak(u); }
+    } catch { /* silent by design */ }
+  });
+}
+
 /** A new read landed. Close a card about an item that left the cart; the running conversation picks up the rest. */
 function onRead(read: CartRead | null) {
   lastRead = read;
@@ -323,7 +338,7 @@ async function react(g: Grandma, week: Week, v: Verdict, also: Verdict[] = []) {
   panel?.close();
   remember(v.line);
   void send({ type: 'CUE', cue: 'surprised' }); // the intake of breath before she speaks
-  void send({ type: 'SPEAK', text: spoken(v.line), grandma: g, mood: v.mood === 'down' ? 'down' : 'shocked' }); // her voice: here and on Gele down only; the card never waits
+  voice(spoken(v.line), g, v.mood === 'down' ? 'down' : 'shocked'); // her voice: here and on Gele down only; the card never waits
   badge!.shake();
   mark?.show(() => locateRow(document, location.href, v.name), 'alarm');
   const choice = await card!.ask({
@@ -348,7 +363,7 @@ async function react(g: Grandma, week: Week, v: Verdict, also: Verdict[] = []) {
   if (!reply?.ok) return hideAll();
   showWeek(g, reply.week);
   remember(reply.line);
-  if (reply.week.ratio >= 1) void send({ type: 'SPEAK', text: spoken(reply.line), grandma: g, mood: 'down' }); // Gele down
+  if (reply.week.ratio >= 1) voice(spoken(reply.line), g, 'down'); // Gele down
   bubble!.say(reply.line, reply.texted ? `${reply.sub} Texted.` : reply.sub);
   if (reply.texted) void send({ type: 'CUE', cue: 'text' });
 }

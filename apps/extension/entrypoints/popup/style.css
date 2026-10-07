@@ -179,6 +179,24 @@ input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--ink); ma
 .saw-bills .decide button.yes, .shelf .decide button.yes { border-color: var(--ink); background: var(--ink); color: var(--cream); }
 .saw-bills .decide button:focus-visible, .shelf .decide button:focus-visible { outline: 3px solid var(--green); outline-offset: 2px; }
 .saw-bills .decided { font-size: 13px; color: var(--muted); }
+/* Plan and house (home). */
+.plan-actions, .house-actions .decide { margin-top: 10px; }
+.plan-actions.decide, .house-actions .decide { display: flex; gap: 8px; }
+.plan-actions button, .house-actions .decide button, .join-row button { all: unset; box-sizing: border-box; flex: 1; min-height: 40px; padding: 0 12px; border-radius: 8px; border: 1.5px solid var(--line); text-align: center; font-size: 13px; font-weight: 600; cursor: pointer; }
+.plan-actions button.yes, .house-actions button.yes, .join-row button.yes { border-color: var(--ink); background: var(--ink); color: var(--cream); }
+.plan-actions button:focus-visible, .house-actions button:focus-visible, .join-row button:focus-visible { outline: 3px solid var(--green); outline-offset: 2px; }
+.join-row { display: flex; gap: 8px; margin-top: 10px; }
+.join-row .field { flex: 1; min-width: 0; }
+.join-row button { flex: 0 0 auto; padding: 0 16px; }
+#house-code.val { font-size: 20px; font-weight: 700; letter-spacing: 0.08em; font-variant-numeric: tabular-nums; }
+/* The report card (home): five fields, numbers right, the arrow against last week. */
+.report { margin-top: 10px; }
+.report .row { justify-content: space-between; min-height: 44px; padding: 10px 16px; }
+.report .row-title { font-size: 14px; font-weight: 500; }
+.report .val { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+.report .val .arrow { margin-left: 6px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.report .val .arrow.better { color: var(--green); }
+.report-lines { margin: 8px 2px 0; white-space: pre-line; }
 /* The shelf (home): one row per kept moment, the item and its amount, two answers. */
 .shelf-title { margin: 22px 0 0; font-size: 16px; font-weight: 600; }
 .shelf-sub { margin: 2px 0 0; }

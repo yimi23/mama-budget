@@ -57,10 +57,12 @@ function biggestWant(filter) {
 
 // The weekly text, built from the same week() the badge and the card read.
 function weeklyText(now = new Date(), who = grandma()) {
+  const inputs = nessie.reportInputs(now);
+  if (inputs) return weeklyStatement({ week: nessie.week(now), who, inputs: { ...inputs, closed: true } });
   const week = nessie.week(now);
   const start = nessie.weekStart(now);
   const lastWeek = nessie.week(new Date(start.getTime() - 86400000));
-  const trend = Math.sign(week.spent - lastWeek.spent); // more than last week is bad
+  const trend = Math.sign(week.spent - lastWeek.spent);
   const biggest = biggestWant((d) => new Date(`${d}T12:00:00`) >= start);
   return weeklyStatement({ week, biggest, who, trend });
 }
@@ -86,8 +88,8 @@ async function send(kind, { now = new Date(), to, grandma: g } = {}) {
   // Live bank: Sunday close first (sweep, carry, streak), so the statement reads the closed week.
   let closed = null;
   if (kind === 'weekly' && nessie.live && nessie.live()) { try { closed = nessie.closeWeek({}); } catch (e) { console.log('[schedule] close failed:', e.message); } }
-  let body = kind === 'monthly' ? monthlyText(now, who) : weeklyText(now, who);
-  if (closed && closed.text) body += `\n${closed.text}`;
+  const body = kind === 'monthly' ? monthlyText(now, who) : weeklyText(now, who); // the week was closed above, so the report reads the closed week
+  void closed;
   const result = await notify(to, body, 'calm', { prompted: true }); // statements skip the gate: PLAN allows them on top of the daily text
   const sent = !!(result && result.sent);
   if (sent) writeState({ ...(kind === 'monthly' ? { monthlySentFor: monthKey(now), lastMonthlyAt: now.toISOString() } : { weeklySentFor: weekKey(now), lastWeeklyAt: now.toISOString() }), ...(readState().firstStatementAt ? {} : { firstStatementAt: now.toISOString() }) });
