@@ -4,17 +4,17 @@
 
 import type { CartRead } from '@mama/shared/types';
 import { storeKey } from '@mama/shared/store-key';
-import { readPlatform } from './platform';
-import { readJsonLd } from './jsonld';
-import { locateRow as locateIn, runAdapter, type AdapterSpec } from './adapter';
-import { amazon } from './sites/amazon';
-import { target } from './sites/target';
-import { walmart } from './sites/walmart';
-import { practice } from './sites/practice';
+import { readPlatform } from './platform.ts';
+import { readJsonLd } from './jsonld.ts';
+import { locateRow as locateIn, runAdapter, type AdapterSpec } from './adapter.ts';
+import { amazon } from './sites/amazon.ts';
+import { target } from './sites/target.ts';
+import { walmart } from './sites/walmart.ts';
+import { practice } from './sites/practice.ts';
 
 const HAND_WRITTEN: AdapterSpec[] = [amazon, target, walmart];
 
-import { cartRegionText } from './text';
+import { cartRegionText } from './text.ts';
 
 /** Reader 4 is asynchronous and lives behind the worker, so the session hands it in. */
 export type Extractor = (text: string) => Promise<CartRead | null>;

@@ -2,7 +2,7 @@
 // Content scripts cannot see window.Shopify (isolated world), so the platform is read from markup.
 
 import type { CartRead } from '@mama/shared/types';
-import { parseBigCommerce, parseShopify, parseWoo } from './platform-parse';
+import { parseBigCommerce, parseShopify, parseWoo } from './platform-parse.ts';
 
 type Platform = 'shopify' | 'woocommerce' | 'bigcommerce';
 

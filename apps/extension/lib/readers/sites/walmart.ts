@@ -2,7 +2,7 @@
 // so each row is the list item holding a productName, and the price is the first currency amount in it
 // ("Current price $2.50, Was $2.96" reads $2.50). Recommendation tiles live outside full-page-cart.
 
-import type { AdapterSpec } from '../adapter';
+import type { AdapterSpec } from '../adapter.ts';
 
 export const walmart: AdapterSpec = {
   host: 'walmart.com',

@@ -11,22 +11,24 @@ Visibility: **Unlisted** (anyone with the link installs, not searchable, still a
 **Summary** (132 characters max):
 You set the fun money for the week. She holds you to it, in your cart, before you pay. What you need, she never touches.
 
-**Description**:
+**Rejection log**: Oct 6 2026, "Spam and Placement in the Store: excessive keywords in the description" (the sentence listing Amazon, Target, Walmart, Shopify, WooCommerce and BigCommerce). Fixed by removing every store and platform name; resubmit with the text below.
+
+**Description** (rewritten Oct 7 after the "excessive keywords" rejection; no store or platform lists, no third-party names beyond the people who built it):
 Every money app tells you after the money is gone. Mama Budget puts someone in your cart.
 
-Pick your grandma: Mama (Nigerian), Nana (US Midwest), Abuela (Mexican American) or Grandma Wong (Cantonese). Set the fun money for the week. From then on she sits in the corner of your cart on any store.
+Pick your grandma: Mama (Nigerian), Nana (US Midwest), Abuela (Mexican American) or Grandma Wong (Cantonese). Set the fun money for the week. From then on she sits in the corner of your cart on the stores you already shop at and speaks before you pay, not after.
 
-Groceries, rent, medicine, money sent home: she says nothing. A new want above a few dollars: she asks what it is for, once, and remembers your answer on every store. A want that blows the week: she names the price, the item and what is left, out loud and in text, while the Buy button is still in front of you. Nothing is blocked. You can always buy anyway. Put it back and her number, Kept, goes up.
+Groceries, rent, medicine, money sent home: she says nothing. A new want above a few dollars: she asks what it is for, once, and remembers your answer on every store. A want that blows the week: she tells you what it costs you, in plain words, with the exact amount and what is left. Buy anyway always works. Nothing is ever blocked and no button on the store is ever pressed for you.
 
-She reads Amazon, Target, Walmart, every Shopify, WooCommerce and BigCommerce store, product pages (she answers the Add to cart click itself) and, with a model key, any cart at all. Her lines are written from the documented speech of real grandmothers, never improvised, and the lines that shame were left out on purpose. One cultural marker per line at most, nothing about you, every scolding ends with love.
+She reads the cart on the page you are on, including product pages, where she answers the Add to cart click itself. Her lines are written from your week, your item and your store, so she never says the same thing twice.
 
-Text her too. Send "should I buy the Sony XM5 for $348" or a screenshot of a product page and she weighs it with the same judge and the same memory as the cart; if the same product is cheaper somewhere she actually fetched, she sends the listing as cash back in the week.
+Text her too. Send her a question like "should I buy these headphones for $348", or a screenshot of a product page, and she weighs it with the same judge and the same memory as the cart. If the same product is cheaper somewhere else, she sends the link.
 
-How it works under the hood: a tiny local check decides whether a page is a cart before anything loads; rules keep every promise (needs and family money are protected before any model runs, a first sighting is only ever a question, a planned purchase is never scolded); the model only reads and words things. Checked against 50 purchases labelled by our own mothers: where they agreed, she agreed 81% of the time; your bank's categories manage 69%.
+How it works under the hood: a tiny local check decides whether a page is a cart before anything loads; rules keep every promise (needs and family money are protected before any model runs, a first sighting is only ever a question, she reacts only to wants you admitted, the week's numbers decide how loud she is); a model only chooses her words.
 
 Needs the companion API running (open source, in the same repository). By default it runs on your own computer; the address can be changed in the popup.
 
-Built at MHacks 2026 by Praise Oyimi and Ugonna Emeka-Inegbu. Bank: Capital One Nessie (a sandbox, never your real account). Voice: ElevenLabs. Texts: Photon. Reading and words: Claude.
+Built at MHacks 2026 by Praise Oyimi and Ugonna Emeka-Inegbu.
 
 **Category**: Shopping (alternative: Productivity)
 **Language**: English (United States)

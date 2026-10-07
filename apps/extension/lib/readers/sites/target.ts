@@ -2,7 +2,7 @@
 // list (sfl-cart-item-list) outside it. Quantity is a select whose aria-label carries the current value,
 // which survives rerenders and saved pages where the selected option does not.
 
-import type { AdapterSpec } from '../adapter';
+import type { AdapterSpec } from '../adapter.ts';
 
 export const target: AdapterSpec = {
   host: 'target.com',

@@ -2,7 +2,7 @@
 // (and subtotals) only the ticked items. Saved for later rows are data-itemtype="saved" in #sc-saved-cart and
 // Buy it again sits outside #sc-active-cart, so neither can match.
 
-import type { AdapterSpec } from '../adapter';
+import type { AdapterSpec } from '../adapter.ts';
 
 export const amazon: AdapterSpec = {
   host: 'amazon.com',
