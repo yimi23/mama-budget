@@ -42,6 +42,15 @@ export interface Week {
   mood: Mood;
   daysLeft: number;
   bills: { payee: string; nickname?: string; amount: number; due: string; daysUntil: number }[];
+  /** Live bank only. */
+  source?: 'bank';
+  jar?: number;
+  streak?: number;
+  grace?: number;
+  carry?: number;
+  payday?: { at: string; amount: number; daysUntil: number } | null;
+  reason?: string;
+  pulledAt?: number;
 }
 
 /** GET /month: the 30 day read for onboarding. Everything she knows before you have typed anything. */

@@ -184,6 +184,12 @@ pre-auth that posts $43; a pending row that vanishes; an Amazon refund; a duplic
 Expected outputs are fixed: streams with cadence, next date and confidence; transfer pairs; kinds; and one safe-to-spend
 number for a fixed "today".
 
+## 6b. Built, Oct 7 2026
+Sections 2 to 5 are code in `api/budget/` with tests on the fixture (`api/test/budget_*.test.js`), the live ledger is
+wired through `api/ledger.js`, and onboarding screens 04 to 06 run on a real link. Verified against the SimpleFIN demo
+link end to end (360 rows, three accounts). Not yet: the corpus of 30 pages and the speed harness in CI (section 4.3,
+4.4), the extension's kept moments and shelf surfaces, and a run on Praise's own bank (needs her token).
+
 ## 7. Definition of done
 The core is done when, on the fixture and on Praise's real SimpleFIN link:
 1. Every bill and paycheck in the fixture is detected with the right cadence, and the two-hit monthly bill shows as "confirm?".

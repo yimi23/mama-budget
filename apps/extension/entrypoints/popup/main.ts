@@ -408,7 +408,21 @@ function paintHome() {
   $('#home-phone').textContent = settings.phone ? formatPhone(settings.phone) : 'Not set';
   $('#home-envelope').textContent = settings.envelope ? `$${settings.envelope}` : '$75';
 }
-SHOW.home = () => { homeNote.textContent = ''; paintHome(); };
+// The live week on the home screen: what is left, the jar and the streak, when the bank was last read.
+async function paintWeek() {
+  const r = await send({ type: 'GET_WEEK' }).catch(() => null);
+  const w = r && r.ok ? r.week : null;
+  const live = !!(w && w.source === 'bank');
+  $('#home-week-row').hidden = !w; $('#home-jar-row').hidden = !live; $('#home-bank-row').hidden = !live;
+  if (!w) return;
+  $('#home-week').textContent = `$${Math.round(w.spent)} of $${Math.round(w.budget)} gone, $${Math.round(w.left)} left, ${w.daysLeft} day${w.daysLeft === 1 ? '' : 's'} to go${w.carry ? `, $${Math.round(w.carry)} short from last week` : ''}`;
+  if (live) {
+    $('#home-jar').textContent = `$${Math.round(w.jar ?? 0)}${w.streak ? `, ${w.streak} week${w.streak === 1 ? '' : 's'} kept in a row` : ''}${w.grace ? `, ${w.grace} grace left` : ''}`;
+    const ago = w.pulledAt ? Math.round((Date.now() - w.pulledAt) / 3600000) : null;
+    $('#home-bank').textContent = `Read ${ago == null ? 'recently' : ago < 1 ? 'this hour' : `${ago} hour${ago === 1 ? '' : 's'} ago`}${w.payday ? `. Payday in ${w.payday.daysUntil} day${w.payday.daysUntil === 1 ? '' : 's'}` : ''}.`;
+  }
+}
+SHOW.home = () => { homeNote.textContent = ''; paintHome(); void paintWeek(); };
 for (const b of document.querySelectorAll<HTMLButtonElement>('#home-grandma button')) b.addEventListener('click', async () => { await saveSettings({ grandma: b.dataset.v as Grandma }); paintHome(); });
 // The API address: saved on change, checked at once, so a wrong address shows before a judge does.
 {
