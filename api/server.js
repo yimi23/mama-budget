@@ -72,7 +72,9 @@ async function reading(query = {}) {
   const watches = nessie.watches(m);
   const firstName = await nessie.customerName().catch(() => null);
   const watchTexts = watchLines(watches, who).map((w) => ({ ...w, spoken: onboarding.spokenNumbers(w.line) }));
-  return { ...m, firstName, trueLine: tl, watches, proposedEnvelope: nessie.proposeEnvelope(m), lines: { trueLine: onboarding.trueLineText(tl, who), watches: watchTexts } };
+  const liveBank = nessie.live();
+  const saw = liveBank ? nessie.saw() : null;
+  return { ...m, firstName, trueLine: tl, watches, proposedEnvelope: nessie.proposeEnvelope(m), live: liveBank, reason: saw ? saw.plan.reason : undefined, saw, lines: { trueLine: onboarding.trueLineText(tl, who), watches: watchTexts } };
 }
 
 // GET /schedule?now=1&grandma=nana or POST /schedule { now, kind?, to?, grandma? }: a query string and

@@ -45,7 +45,23 @@ export interface Week {
 }
 
 /** GET /month: the 30 day read for onboarding. Everything she knows before you have typed anything. */
+/** What she saw in a real bank (GET /bank/saw): paychecks, bills with confirm flags, cards, unsure merchants, the plan. */
+export interface Saw {
+  paychecks: { from: string; amount: number; cadence: string; next: string | null; variable: boolean }[];
+  bills: { merchant: string; amount: number; cadence: string; next: string | null; confirm: boolean; kind: string; variable: boolean; changed: { from: number; to: number } | null }[];
+  cards: { name: string; owed: number }[];
+  transfers: number;
+  unsure: { merchant: string; amount: number }[];
+  plan: { balance: number; payday: { at: number; amount: number; cadence: string; variable: boolean } | null; daysUntil: number; billsTotal: number; cardOwed: number; savings: number; safe: number; needsWeekly: number; envelope: number; reason: string };
+  pulledAt: number;
+}
+
 export interface Month extends Week {
+  /** True when the numbers come from a real bank through SimpleFIN. */
+  live?: boolean;
+  /** Why the proposed envelope is what it is, in one sentence (live only). */
+  reason?: string;
+  saw?: Saw | null;
   firstName: string | null;
   proposedEnvelope: number;
   sentHome: number;

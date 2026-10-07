@@ -313,6 +313,16 @@ async function monthCached(grandma: string): Promise<Month | null> {
   return month;
 }
 
+/** Screen 04 with a real bank: claim the token on the API, then read the month fresh. */
+async function linkBank(msg: Extract<Message, { type: 'LINK_BANK' }>) {
+  if (!(await apiUp())) return { ok: false as const, reason: 'The API is not answering.' };
+  const r = await call<{ ok: boolean; live: boolean }>('/bank/link', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token: msg.token }) }, true);
+  if (!r?.ok || !r.live) return { ok: false as const, reason: 'The bank did not accept that token. A token works once; make a new one on the Bridge.' };
+  await browser.storage.session.remove('monthCache');
+  const m = await monthCached(msg.grandma);
+  return m ? { ok: true as const, month: m } : { ok: false as const, reason: 'Linked, but the month did not load.' };
+}
+
 async function watchHere(msg: Extract<Message, { type: 'WATCH_HERE' }>): Promise<{ line: string | null }> {
   const { settings = {} } = await browser.storage.local.get('settings');
   const st = settings as { grandma?: string; ignoredWatches?: string[] };
@@ -418,6 +428,9 @@ export default defineBackground(() => {
         return true;
       case 'MONTH':
         month(msg).then(sendResponse, () => sendResponse({ ok: false }));
+        return true;
+      case 'LINK_BANK':
+        linkBank(msg).then(sendResponse, () => sendResponse({ ok: false, reason: 'The API is not answering.' }));
         return true;
       case 'TEXT_NOW':
         textNow(msg).then(sendResponse, () => sendResponse({ ok: false, texted: false, text: null, reason: 'The API is not answering' }));

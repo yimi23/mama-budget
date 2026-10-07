@@ -99,7 +99,7 @@ function weekView(at) {
   const spentIncludesPending = s.rows.some((r) => r.fromExtension);
   return {
     envelope, budget: envelope, spent: w.spent, left: w.left, kept: w.kept, ratio: w.ratio, mood: w.mood, bills,
-    topWants: w.topWants.map((t) => ({ merchant: t.merchant, amount: t.amount, category: 'Want' })), cheapestFood: null,
+    topWants: w.topWants.map((t) => ({ merchant: t.merchant, amount: t.amount, category: t.merchant })), cheapestFood: null,
     sentHome: 0, toSavings: s.plan.savings, counts: { purchases: s.rows.filter((r) => r.amount < 0 && !['transfer', 'refund'].includes(r.kind)).length, wants: w.counts.wants, needs: s.rows.filter((r) => r.kind === 'need').length, paychecks: s.streams.filter((x) => x.kind === 'income').length, transfers: s.rows.filter((r) => r.kind === 'transfer').length, bills: bills.length },
     funded: 0, daysLeft: w.daysLeft, period: 'week', carry: w.carry, streak: w.streak, jar: w.jar, grace: w.grace,
     payday: s.plan.payday && { at: week.key(s.plan.payday.at), amount: s.plan.payday.amount, daysUntil: s.plan.daysUntil },
@@ -117,7 +117,8 @@ function monthView(at) {
   const wants = rows.filter((r) => r.kind === 'want' && r.amount < 0);
   const byMerchant = {};
   for (const r of wants) { const k = r.merchantName || r.merchantKey; byMerchant[k] = (byMerchant[k] || 0) + -r.amount; }
-  const topWants = Object.entries(byMerchant).map(([m, a]) => ({ merchant: m, amount: Math.round(a * 100) / 100, category: 'Want' })).sort((a, b) => b.amount - a.amount).slice(0, 5);
+  // The category is the merchant: her true line says "$312 on DoorDash", not "on want".
+  const topWants = Object.entries(byMerchant).map(([m, a]) => ({ merchant: m, amount: Math.round(a * 100) / 100, category: m })).sort((a, b) => b.amount - a.amount).slice(0, 5);
   const needs = rows.filter((r) => r.kind === 'need' && r.amount < 0);
   const cheapestFood = needs.filter((r) => /\b(?:grocer|market|kroger|meijer|walmart|aldi|shoprite|spar|costco)\b/i.test(r.merchantName || '')).sort((a, b) => -a.amount - -b.amount)[0];
   const envelope = (s.state.envelope || s.plan.envelope) * 4.3;

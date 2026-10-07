@@ -73,12 +73,18 @@
       <section data-step="bank" hidden>
         <header><h1>Where the money lives.</h1><p class="lead">She reads your last 30 days so she knows you before you shop. You don’t need to tell her anything. Nothing is moved without you.</p></header>
         <div class="list">
-          <div class="row stack"><span class="row-title">Demo student</span><span class="row-sub">Capital One Nessie. A simulated bank for this hackathon, not your real account. Checking and savings.</span></div>
+          <div class="row stack" id="bank-live-row" hidden><span class="row-title">Your bank. Linked.</span><span class="row-sub" id="bank-live-sub">Read only, refreshed about once a day.</span></div>
+          <div class="row stack" id="bank-token-row">
+            <span class="row-title">Your bank, through SimpleFIN</span>
+            <span class="row-sub">She only reads. SimpleFIN gives her a read-only key to your transactions, refreshed about once a day. It costs $1.50 a month, paid to them, not to us. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Make a setup token</a>, then paste it here.</span>
+            <input type="text" id="bank-token" class="field" placeholder="Paste your setup token" autocomplete="off" spellcheck="false" aria-label="SimpleFIN setup token" />
+          </div>
         </div>
         <p class="status" id="bank-status" role="status" aria-live="polite"></p>
         <div class="spacer"></div>
         <div class="actions">
           <button type="button" class="pill" id="bank-connect">Let her read it</button>
+          <button type="button" class="plain" id="bank-demo">Use the demo bank</button>
           <button type="button" class="plain" data-go="skip">Not now</button>
         </div>
       </section>
@@ -111,9 +117,10 @@
         </div>
         <div class="envelope">
           <label for="envelope-range" class="envelope-label"><span id="envelope-prefix">Fun money this week:</span> <output id="envelope-value" for="envelope-range">$75</output></label>
-          <input type="range" id="envelope-range" min="25" max="300" step="5" value="75" aria-label="Weekly fun money" />
+          <input type="range" id="envelope-range" min="25" max="500" step="5" value="75" aria-label="Weekly fun money" />
           <p class="row-sub" id="envelope-sub">A week of what you spend, plus room to breathe. Slide it if she is wrong.</p>
         </div>
+        <ul class="list saw-bills" id="saw-bills" hidden></ul>
         <div class="spacer"></div>
         <button type="button" class="pill" id="saw-fair">That’s fair</button>
       </section>

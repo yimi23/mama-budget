@@ -31,6 +31,8 @@ export type Message =
   | { type: 'SPEAK'; text: string; grandma: Grandma; mood?: 'calm' | 'shocked' | 'down' }
   /** Onboarding 05: the 30 day read, in her words. */
   | { type: 'MONTH'; grandma: Grandma }
+  /** A SimpleFIN Setup Token from onboarding screen 04: the API claims it and pulls the bank. */
+  | { type: 'LINK_BANK'; token: string; grandma: Grandma }
   /** Onboarding 05: fetch these lines into the API's voice cache so screen 06 speaks at once. Nothing plays. */
   | { type: 'WARM'; texts: string[]; grandma: Grandma }
   /** Onboarding 07: send the first statement now. ok only when a text actually went. */
@@ -57,6 +59,7 @@ export type Reply<M extends Message> =
   M extends { type: 'START_OVER' } ? { ok: true } :
   M extends { type: 'SPEAK' } ? { ok: boolean; duration: number | null } :
   M extends { type: 'MONTH' } ? { ok: true; month: Month } | { ok: false } :
+  M extends { type: 'LINK_BANK' } ? { ok: true; month: Month } | { ok: false; reason: string } :
   M extends { type: 'WARM' } ? { ok: true } :
   M extends { type: 'TEXT_NOW' } ? { ok: boolean; texted: boolean; text: string | null; reason: string | null } :
   M extends { type: 'HEALTH' } ? { api: boolean; texts: boolean; voice: boolean } :

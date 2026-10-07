@@ -152,22 +152,45 @@ const bankConnect = $<HTMLButtonElement>('#bank-connect');
 SHOW.bank = () => {
   bankStatus.textContent = ''; bankStatus.className = 'status';
   bankConnect.disabled = false; bankConnect.textContent = 'Let her read it';
+  bankDemo.disabled = false;
+  // A link that already exists on the API shows as linked; the token field is for a first link.
+  void send({ type: 'MONTH', grandma: grandma() }).then((r) => {
+    const live = !!(r && r.ok && r.month.live);
+    $('#bank-live-row').hidden = !live; $('#bank-token-row').hidden = live;
+    if (live && r.ok) $('#bank-live-sub').textContent = `Read only, refreshed about once a day. ${r.month.saw?.paychecks.length ? `${r.month.saw.paychecks.length} paycheck${r.month.saw.paychecks.length === 1 ? '' : 's'} seen.` : ''}`;
+  }).catch(() => {});
   void speak(COPY[grandma()].bank);
 };
+const bankToken = $<HTMLInputElement>('#bank-token');
+const bankDemo = $<HTMLButtonElement>('#bank-demo');
+async function bankConnected(month: Month, label: string, sub: string) {
+  flow.month = month; flow.bank = true; flow.hasMonth = !!month.lines.trueLine;
+  bankConnect.textContent = label;
+  bankStatus.textContent = sub; bankStatus.className = 'status good';
+  await sleep(500);
+  await advance();
+}
+// The real bank: a pasted token, or a link that already exists on the API.
 bankConnect.addEventListener('click', async () => {
   bankConnect.disabled = true;
-  bankStatus.textContent = 'Asking the bank…'; bankStatus.className = 'status';
-  const r = await send({ type: 'MONTH', grandma: grandma() });
+  const token = bankToken.value.trim();
+  bankStatus.textContent = token ? 'Linking your bank…' : 'Asking the bank…'; bankStatus.className = 'status';
+  const r = token ? await send({ type: 'LINK_BANK', token, grandma: grandma() }) : await send({ type: 'MONTH', grandma: grandma() });
   if (!r?.ok) {
-    bankStatus.textContent = 'The bank is not answering. Not now still works.'; bankStatus.className = 'status bad';
+    const reason = (r as { reason?: string } | null | undefined)?.reason;
+    bankStatus.textContent = reason || 'The bank is not answering. Not now still works.'; bankStatus.className = 'status bad';
     bankConnect.disabled = false;
     return;
   }
-  flow.month = r.month; flow.bank = true; flow.hasMonth = !!r.month.lines.trueLine;
-  bankConnect.textContent = `Connected. ${r.month.firstName ? `${r.month.firstName}’s account.` : 'Demo student.'}`;
-  bankStatus.textContent = 'Capital One Nessie. Simulated.'; bankStatus.className = 'status good';
-  await sleep(500);
-  await advance();
+  const live = !!r.month.live;
+  await bankConnected(r.month, live ? 'Linked. She is reading.' : `Connected. ${r.month.firstName ? `${r.month.firstName}’s account.` : 'Demo student.'}`, live ? 'Read only. Refreshed about once a day.' : 'Capital One Nessie. Simulated.');
+});
+bankDemo.addEventListener('click', async () => {
+  bankDemo.disabled = true; bankConnect.disabled = true;
+  bankStatus.textContent = 'Asking the demo bank…'; bankStatus.className = 'status';
+  const r = await send({ type: 'MONTH', grandma: grandma() });
+  if (!r?.ok) { bankStatus.textContent = 'The bank is not answering. Not now still works.'; bankStatus.className = 'status bad'; bankDemo.disabled = false; bankConnect.disabled = false; return; }
+  await bankConnected(r.month, 'Connected. Demo student.', 'Capital One Nessie. Simulated.');
 });
 
 // ---------- 05 reading ----------
@@ -178,11 +201,12 @@ SHOW.reading = async () => {
   const rows = [...document.querySelectorAll<HTMLElement>('#ticks .row')];
   for (const r of rows) r.classList.remove('done');
   const bill = m.bills[0];
+  const saw = m.saw;
   const labels: Record<string, string | null> = {
     purchases: `${m.counts.purchases} purchase${m.counts.purchases === 1 ? '' : 's'}`,
-    paychecks: `${m.counts.paychecks} paycheck${m.counts.paychecks === 1 ? '' : 's'}`,
-    transfers: m.sentHome || m.toSavings ? [m.sentHome ? `$${m.sentHome} sent home` : '', m.toSavings ? `$${m.toSavings} to savings` : ''].filter(Boolean).join(', ') : null,
-    bills: bill ? `${bill.nickname || bill.payee} due in ${bill.daysUntil} day${bill.daysUntil === 1 ? '' : 's'}` : null,
+    paychecks: saw ? (saw.paychecks.length ? `${saw.paychecks.length} paycheck stream${saw.paychecks.length === 1 ? '' : 's'}: ${saw.paychecks[0]!.from}, ${saw.paychecks[0]!.cadence}` : 'No regular pay found yet') : `${m.counts.paychecks} paycheck${m.counts.paychecks === 1 ? '' : 's'}`,
+    transfers: saw ? (saw.transfers ? `${saw.transfers} transfer${saw.transfers === 1 ? '' : 's'} between your accounts${saw.cards.length ? `, ${saw.cards.length} card${saw.cards.length === 1 ? '' : 's'}` : ''}` : null) : (m.sentHome || m.toSavings ? [m.sentHome ? `$${m.sentHome} sent home` : '', m.toSavings ? `$${m.toSavings} to savings` : ''].filter(Boolean).join(', ') : null),
+    bills: saw ? (saw.bills.length ? `${saw.bills.length} bill${saw.bills.length === 1 ? '' : 's'} and subscriptions${saw.bills.some((b) => b.confirm) ? ', some to confirm' : ''}` : null) : (bill ? `${bill.nickname || bill.payee} due in ${bill.daysUntil} day${bill.daysUntil === 1 ? '' : 's'}` : null),
   };
   void speak(COPY[g].reading);
   const started = Date.now();
@@ -208,7 +232,8 @@ function paintEnvelope() {
   const v = Number(range.value);
   envelopeValue.textContent = `$${v}`;
   const atHome = inHome(v, homeFor(settings));
-  envelopeSub.textContent = `A week of what you spend, plus room to breathe. Slide it if I am wrong.${atHome ? ` About ${atHome}.` : ''}`;
+  const m = flow.month;
+  envelopeSub.textContent = m?.live && m.reason ? `${m.reason} Slide it if I am wrong.${atHome ? ` About ${atHome}.` : ''}` : `A week of what you spend, plus room to breathe. Slide it if I am wrong.${atHome ? ` About ${atHome}.` : ''}`;
 }
 range.addEventListener('input', paintEnvelope);
 SHOW.saw = async () => {
@@ -219,8 +244,22 @@ SHOW.saw = async () => {
   face.src = `/faces/${g}/shocked.svg`;
   $('#true-line').textContent = tl.text;
   $('#envelope-prefix').textContent = m.firstName ? `Fun money this week, ${m.firstName}:` : 'Fun money this week:';
-  range.value = String(Math.max(25, Math.min(300, m.proposedEnvelope || 75)));
+  range.value = String(Math.max(25, Math.min(500, m.proposedEnvelope || 75)));
   paintEnvelope();
+  // A real bank: her reason for the number, and the bills she saw, early ones marked to confirm.
+  const bills = $('#saw-bills');
+  bills.replaceChildren(); bills.hidden = true;
+  if (m.live && m.saw) {
+    if (m.reason) envelopeSub.textContent = `${m.reason} Slide it if I am wrong.`;
+    for (const b of m.saw.bills.slice(0, 5)) {
+      const li = document.createElement('li'); li.className = 'row';
+      const name = document.createElement('span'); name.className = 'row-title'; name.textContent = `${b.merchant}, $${b.amount}${b.variable ? ' about' : ''} ${b.cadence}`;
+      if (b.confirm) { const c = document.createElement('span'); c.className = 'confirm'; c.textContent = 'confirm?'; name.append(c); }
+      const next = document.createElement('span'); next.className = 'row-sub'; next.textContent = b.next ? `next ${b.next}` : '';
+      li.append(name, next); bills.append(li);
+    }
+    bills.hidden = m.saw.bills.length === 0;
+  }
   const marker = $('#saw-speaking');
   const ok = await speak(tl.spoken, marker);
   // Shocked while the line plays, then Watching.
