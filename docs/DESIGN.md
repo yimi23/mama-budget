@@ -10,7 +10,7 @@ Built from how Grammarly, Monzo, Cash App, Copilot, Monarch, YNAB, Duolingo and 
 - The product mark (toolbar, Web Store, Devpost) is the ring and the meter on the cream tile (`apps/extension/public/icon/mark.svg`): her presence in the corner, not her face and not a letter. Decided Oct 4 after an M read as Gmail.
 
 ## Type
-- Brand font for brand moments only: Bricolage Grotesque 800. Headlines in the popup, the wordmark, the pitch.
+- Brand font for brand moments only: Plus Jakarta Sans 800. Headlines in the popup, the wordmark, the pitch.
 - System font for everything functional (the phone's own font in app, system ui in the extension).
 - Scale: 32 display, 20 title, 16 body (14 in the in page card, 13 floor), 12 caption. Line height 1.25 headlines, 1.45 body.
 - Tabular digits on every money number. Numbers inside sentences, never stat tiles.

@@ -85,7 +85,7 @@ Run over every string a user can read or hear: `apps/api/src/lines/*`, onboardin
 ## 8. Design, against docs/DESIGN.md
 
 - [ ] Popup 400 by 560. Badge 64 circle, gold ring, gele meter bar. Card 360 wide, 24px from the right, above the badge.
-- [ ] Cream ground, ink buttons, color only on her. One primary button per screen. Sentence case. System font for UI, Bricolage Grotesque 800 for headlines only.
+- [ ] Cream ground, ink buttons, color only on her. One primary button per screen. Sentence case. System font for UI, Plus Jakarta Sans 800 for headlines only.
 - [ ] Motion 150 to 300ms, decelerate in, accelerate out, no bounce, only on user action or mood change. Badge breathes while watching, blinks every 6 to 9s, nothing else moves.
 - [ ] She is never on the bank screen. Nana is static on the pick screen, never animated.
 - [ ] Toolbar icon is the ring and the meter on the cream tile (icon/mark.svg), the same two shapes as the in page badge.

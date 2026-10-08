@@ -1,6 +1,6 @@
-/* Bricolage Grotesque 800, bundled (extension pages cannot load Google Fonts). OFL licensed. */
-@font-face { font-family: 'Bricolage Grotesque'; font-weight: 800; font-style: normal; font-display: swap; src: url('/fonts/bricolage-800.woff2') format('woff2'); }
-/* docs/DESIGN.md: cream ground, ink buttons, sentence case, system font for function, Bricolage 800 for headlines,
+/* Plus Jakarta Sans 800, bundled and self hosted (carries the naira sign and Yoruba and Igbo marks). OFL licensed. */
+@font-face { font-family: 'Plus Jakarta Sans'; font-weight: 800; font-style: normal; font-display: swap; src: url('/fonts/jakarta-800.woff2') format('woff2'); }
+/* docs/DESIGN.md: cream ground, ink buttons, sentence case, system font for function, Jakarta 800 for headlines,
    color only on her. 400 by 560, min height not height. Lifted from design/screens 02 to 09. */
 :root {
   --cream: #FBF8F3; --ink: #22172A; --line: #EADFCB; --muted: #5E566B; --green: #0F7B5A; --gold: #E2A12A;
@@ -17,7 +17,7 @@ section { display: flex; flex-direction: column; gap: 0; flex: 1; animation: in 
 section[hidden] { display: none; }
 @keyframes in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 header { display: flex; flex-direction: column; gap: 10px; margin-top: 22px; }
-h1 { margin: 0; font-family: 'Bricolage Grotesque', -apple-system, system-ui, sans-serif; font-weight: 800; font-size: 30px; line-height: 1.05; letter-spacing: -0.01em; text-wrap: balance; }
+h1 { margin: 0; font-family: 'Plus Jakarta Sans', -apple-system, system-ui, sans-serif; font-weight: 800; font-size: 30px; line-height: 1.05; letter-spacing: -0.01em; text-wrap: balance; }
 p { margin: 0; }
 .lead { font-size: 15px; line-height: 1.45; color: var(--muted); }
 .body { font-size: 16px; line-height: 1.45; }
@@ -157,7 +157,7 @@ input[type="url"]:focus-visible { outline: 3px solid var(--green); outline-offse
 .scene.mama { background: var(--mint); } .scene.nana { background: var(--orange); } .scene.abuela { background: var(--rose); } .scene.wong { background: var(--jade); }
 .scene img { height: 100%; display: block; }
 .kept { display: flex; align-items: baseline; gap: 10px; margin-top: 4px; }
-.kept-num { font-family: 'Bricolage Grotesque', -apple-system, system-ui, sans-serif; font-weight: 800; font-size: 40px; line-height: 1; }
+.kept-num { font-family: 'Plus Jakarta Sans', -apple-system, system-ui, sans-serif; font-weight: 800; font-size: 40px; line-height: 1; }
 
 /* home */
 .seg { display: flex; gap: 6px; margin-top: 4px; }

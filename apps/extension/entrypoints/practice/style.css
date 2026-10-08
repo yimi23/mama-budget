@@ -1,3 +1,4 @@
+@font-face { font-family: 'Plus Jakarta Sans'; font-weight: 800; font-style: normal; font-display: swap; src: url('/fonts/jakarta-800.woff2') format('woff2'); }
 /* design/screens/01_practice_cart_finale: a plain store page in the house colours. The badge and card are hers, mounted
    by lib/session exactly as on a real store, so nothing about them is drawn here. */
 :root { --cream: #FBF8F3; --ink: #22172A; --line: #ECE8E1; --muted: #5E566B; --green: #0F7B5A; --gold: #E2A12A; --coral: #D4462C; --mint: #DDF1E8; --orange: #F2854A; --enter: cubic-bezier(0.05, 0.7, 0.1, 1); }
@@ -9,14 +10,14 @@ body { color: var(--ink); font: 16px/1.45 -apple-system, BlinkMacSystemFont, sys
 .avatar { width: 40px; height: 40px; border-radius: 20px; background: var(--mint); overflow: hidden; display: flex; align-items: flex-end; justify-content: center; }
 .avatar.nana { background: var(--orange); } .avatar.abuela { background: #F6D5CF; } .avatar.wong { background: #CFE8DD; }
 .avatar img { width: 100%; height: 100%; display: block; }
-.wordmark { font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-weight: 800; font-size: 20px; }
+.wordmark { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; font-weight: 800; font-size: 20px; }
 .store { display: flex; align-items: center; min-height: 44px; padding: 0 20px; border-radius: 12px; background: var(--ink); color: var(--cream); font-weight: 600; text-decoration: none; }
 .store:focus-visible { outline: 3px solid var(--green); outline-offset: 3px; }
 main { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 64px; padding: 48px; max-width: 1440px; margin: 0 auto; }
 @media (max-width: 900px) { main { grid-template-columns: 1fr; gap: 32px; padding: 24px 16px; } .top { padding: 0 16px; } }
 .copy { display: flex; flex-direction: column; gap: 28px; min-width: 0; }
 .eyebrow { margin: 0; font-size: 14px; font-weight: 600; color: var(--green); }
-h1 { margin: 0; font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-weight: 800; font-size: 44px; line-height: 1.05; text-wrap: balance; }
+h1 { margin: 0; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; font-weight: 800; font-size: 44px; line-height: 1.05; text-wrap: balance; }
 .lead { margin: 0; font-size: 18px; line-height: 1.45; color: var(--muted); max-width: 62ch; }
 .note { margin: 0; font-size: 15px; color: var(--coral); }
 .note a { color: var(--ink); }

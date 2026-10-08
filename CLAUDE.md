@@ -54,7 +54,7 @@ WXT (Manifest V3, TypeScript) for the extension. Plain Node 22 `http` for the AP
 - Six sounds, each under 1.2s: arrive, ask, surprised, proud, text received, kept ticked. Synthesised in the offscreen document. One toggle, and a Pause switch that takes her off every page. None in quiet hours when quiet hours are on. No music.
 
 ## Design rules (from docs/DESIGN.md, the short version)
-Popup 400 by 560. Card 360 wide, 20px from bottom and right. Badge 64 circle, gold ring, gele meter bar on the left. Cream ground, ink buttons, color only on her. System font for UI, Bricolage Grotesque 800 for headlines only. Radius 8 inputs, 12 lists, pill buttons. Tabular digits on money. Sentence case. One primary button per screen. Motion 150 to 300ms, decelerate in, accelerate out, no bounce, only on user action or mood change. She is never on the bank screen.
+Popup 400 by 560. Card 360 wide, 20px from bottom and right. Badge 64 circle, gold ring, gele meter bar on the left. Cream ground, ink buttons, color only on her. System font for UI, Plus Jakarta Sans 800 for headlines only. Radius 8 inputs, 12 lists, pill buttons. Tabular digits on money. Sentence case. One primary button per screen. Motion 150 to 300ms, decelerate in, accelerate out, no bounce, only on user action or mood change. She is never on the bank screen.
 
 ## Do not
 No `innerHTML` with page data. No `async` message listeners. No listeners inside async code. No cross origin fetch from content scripts. No `setTimeout` over 30 seconds in the worker (use alarms). Nothing runs on `<all_urls>` before `detect.ts` says yes. No secrets outside the api. No new dependencies without a reason in the commit. No editing fixtures to make tests pass. No emoji as icons. No gradients. No dashes in any copy.
