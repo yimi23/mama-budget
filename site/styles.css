@@ -118,6 +118,12 @@ section > * { max-width: var(--max); width: 100%; margin-left: auto; margin-righ
 @keyframes card-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 .try-foot { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; font-size: 14px; }
 
+/* house icons (design/house-icons): ink at rest, the gele green on the accent stroke when the control acts */
+.ico { width: 18px; height: 18px; display: inline-block; vertical-align: -3px; --ytech-accent: currentColor; }
+a:hover .ico, a:focus-visible .ico, button:hover .ico { --ytech-accent: var(--green); }
+.ico-voice { width: 40px; height: 40px; color: var(--ink); }
+.playing ~ .ico-voice { --ytech-accent: var(--green); }
+
 /* 3. tiles */
 .tiles { padding-top: 24px; padding-bottom: 88px; display: grid; gap: 16px; }
 .tile-card { background: var(--paper); border: 1px solid var(--line); border-radius: 20px; padding: 18px; display: grid; gap: 10px; align-content: start; }
