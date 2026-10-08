@@ -32,3 +32,6 @@ data/owner.json
 data/mama.sqlite*
 data/server.key
 data/photon-stopped.json
+
+# Local Netlify folder
+.netlify
