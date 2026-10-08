@@ -6,6 +6,7 @@
 import type { Message, Reply } from '@mama/shared/messages';
 import type { Cue, Month, Saw, Week } from '@mama/shared/types';
 import type { Grandma } from '../../lib/ui/badge';
+import { icon } from '../../lib/ui/icons';
 import { COPY, DOTS, HOMES, MOTHERS_LINE, TIERS, countUp, homeFor, dotIndex, formatPhone, inHome, next, skip, speechSeconds, toE164, words, type Home, type Loudness, type Progress, type Settings, type Step } from '../../lib/onboarding';
 
 const $ = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel)!;
@@ -58,12 +59,11 @@ const cue = (c: Cue) => void send({ type: 'CUE', cue: c });
 const frame = $('#frame');
 const dots = $('#dots');
 const mute = $<HTMLButtonElement>('#mute');
-const SPEAKER_ON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
-const SPEAKER_OFF = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="m22 9-6 6"/><path d="m16 9 6 6"/></svg>';
 
 function paintMute() {
   const on = settings.sounds !== false;
-  mute.innerHTML = on ? SPEAKER_ON : SPEAKER_OFF; // fixed markup, never page data
+  mute.replaceChildren(icon(on ? 'voice' : 'voiceOff', 18)); // the house voice glyph; the accent stroke goes green when sound is on
+  mute.classList.toggle('on', on);
   mute.setAttribute('aria-label', on ? 'Sound on. Tap to mute.' : 'Muted. Tap for sound.');
 }
 mute.addEventListener('click', () => { void saveSettings({ sounds: settings.sounds === false }).then(paintMute); });

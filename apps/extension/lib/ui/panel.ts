@@ -4,6 +4,7 @@
 
 import type { Week } from '@mama/shared/types';
 import { meterColor } from './badge.ts';
+import { icon } from './icons.ts';
 
 export interface PanelState {
   week: Week;
@@ -71,7 +72,7 @@ export function mountPanel(root: ShadowRoot): Panel {
   const barlabel = document.createElement('p'); barlabel.className = 'barlabel';
   const said = document.createElement('ul'); said.className = 'said'; said.setAttribute('aria-label', 'The last things she said');
   const close = document.createElement('button'); close.className = 'close'; close.type = 'button';
-  close.setAttribute('aria-label', 'Close'); close.textContent = '×';
+  close.setAttribute('aria-label', 'Close'); close.append(icon('close', 18));
   panel.append(close, kicker, hero, status, bar, barlabel, said);
   root.append(style, panel);
 

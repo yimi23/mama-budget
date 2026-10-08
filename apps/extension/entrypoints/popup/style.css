@@ -37,6 +37,9 @@ p { margin: 0; }
 .mute:hover { background: rgba(20, 16, 22, 0.06); }
 .mute:focus-visible { outline: 3px solid var(--green); outline-offset: 2px; }
 .mute[hidden] { display: none; }
+.mute svg { --ytech-accent: currentColor; }
+.mute.on svg { --ytech-accent: var(--green); }
+.mute:not(.on) { color: var(--muted); }
 
 /* buttons: ink on cream, one primary per screen, secondary is plain text */
 .actions { display: flex; flex-direction: column; gap: 6px; }

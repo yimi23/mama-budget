@@ -141,11 +141,6 @@ section > * { max-width: var(--max); width: 100%; margin-left: auto; margin-righ
 .play::after { content: ''; width: 0; height: 0; border-left: 12px solid var(--cream); border-top: 7px solid transparent; border-bottom: 7px solid transparent; margin-left: 3px; }
 .hear.playing .play { background: var(--green); }
 .hear.playing .play::after { border: 0; width: 12px; height: 14px; margin: 0; background: linear-gradient(90deg, var(--cream) 0 4px, transparent 4px 8px, var(--cream) 8px 12px); }
-.wave { display: inline-flex; align-items: center; gap: 3px; height: 28px; }
-.wave i { width: 3px; border-radius: 2px; background: var(--green); height: 10px; }
-.wave i:nth-child(odd) { height: 18px; } .wave i:nth-child(3n) { height: 26px; } .wave i:nth-child(5n) { height: 8px; }
-.playing ~ .wave i { animation: bars 900ms ease-in-out infinite; }
-.wave i:nth-child(2n) { animation-delay: 150ms; } .wave i:nth-child(3n) { animation-delay: 300ms; }
 @keyframes bars { 0%, 100% { transform: scaleY(0.6); } 50% { transform: scaleY(1.15); } }
 .report p { margin: 0; }
 .report p + p { border-top: 1px solid #EFEAE2; padding-top: 6px; }
