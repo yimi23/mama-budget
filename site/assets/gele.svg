@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="Mama Budget">
+  <g transform="translate(0 4)">
+    <path d="M84 52 C 98 30, 120 28, 126 42 C 114 42, 102 52, 94 68 Z" fill="#0F7B5A"/>
+    <path d="M88 44 C 92 24, 108 14, 120 20 C 110 26, 100 38, 96 56 Z" fill="#0F7B5A"/>
+    <path d="M20 96 C 12 54, 36 22, 64 22 C 94 22, 114 56, 104 96 Z" fill="#0F7B5A"/>
+    <path d="M28 80 C 44 62, 70 56, 100 68" fill="none" stroke="#073D2D" stroke-width="5.5" stroke-linecap="round"/>
+    <path d="M34 58 C 48 42, 68 38, 88 44" fill="none" stroke="#073D2D" stroke-width="5.5" stroke-linecap="round"/>
+    <rect x="16" y="92" width="92" height="16" rx="8" fill="#E2A12A"/>
+  </g>
+</svg>

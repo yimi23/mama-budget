@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Mama Budget · Your mother is in your cart</title>
-<meta name="description" content="A working Chrome extension: you set the fun money for the week and a grandmother in your cart holds you to it before you pay. Needs and money home are never touched, nothing is blocked, nobody is guilted: she asks once, and reacts only when you said it was a want and it blows the week. Four grandmas: Mama, Nana, Grandma Wong, Abuela. Agreed with our mothers 81% of the time against the bank's 69%." />
+<meta name="description" content="You set the fun money for the week. She holds you to it in your cart, before you pay. What you need, she never touches. A Chrome extension." />
 <link rel="canonical" href="https://mamabudget.com/" />
 <meta property="og:type" content="website" />
 <meta property="og:title" content="Mama Budget · Your mother is in your cart" />
@@ -12,269 +12,172 @@
 <meta property="og:url" content="https://mamabudget.com/" />
 <meta property="og:image" content="https://mamabudget.com/share.png" />
 <meta name="twitter:card" content="summary_large_image" />
-<link rel="icon" href="/favicon.png" type="image/png" sizes="128x128" />
+<link rel="icon" href="/assets/gele.svg" type="image/svg+xml" />
 <link rel="apple-touch-icon" href="/assets/icon-512.png" />
 <link rel="preload" href="/assets/fonts/bricolage-800.woff2" as="font" type="font/woff2" crossorigin />
 <link rel="stylesheet" href="/styles.css" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Mama Budget","applicationCategory":"BrowserApplication","operatingSystem":"Chrome","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"You set the fun money for the week. She holds you to it, in your cart, before you pay. What you need, she never touches.","url":"https://mamabudget.com/","author":[{"@type":"Person","name":"Praise Oyimi"},{"@type":"Person","name":"Ugonna Emeka-Inegbu"}]}
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Mama Budget","applicationCategory":"BrowserApplication","operatingSystem":"Chrome","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"url":"https://mamabudget.com/","description":"You set the fun money for the week. She holds you to it in your cart, before you pay."}
 </script>
 </head>
 <body>
 
 <header class="top">
-  <a class="brand" href="/"><span class="ring"><img src="/assets/faces/mama/calm.svg" alt="" /></span><span class="wordmark">Mama Budget</span></a>
+  <a class="brand" href="/"><img class="mark" src="/assets/gele.svg" alt="" width="36" height="36" /><span class="wordmark">Mama Budget</span></a>
   <nav class="links" aria-label="Sections">
-    <a href="#how">How she works</a>
+    <a href="#try">Try her</a>
+    <a href="#pick">Four grandmas</a>
     <a href="#right">Is she right</a>
-    <a href="#pick">Pick your grandma</a>
   </nav>
   <a class="btn ink top-cta" href="#install">Add to Chrome</a>
 </header>
 
 <main>
 
-<!-- 20 home -->
+<!-- 1. The statement. Two columns, like a title page. -->
 <section class="hero" id="home">
-  <div class="hero-copy">
-    <h1>Your mother is in your cart.</h1>
-    <p class="lead">One number for the week. She holds you to it, from inside your cart, before you pay. Rice, rent, school, money home: she never touches. The rest, she asks about first.</p>
-    <div class="actions">
-      <a class="btn ink" href="#install">Add to Chrome</a>
-      <a class="btn line" href="#install">Try her on a practice cart</a>
+  <h1>Your mother<br>is in your cart.</h1>
+  <div class="hero-side">
+    <p class="lead">You set the fun money for the week. She holds you to it, before you pay. What you need, she never touches.</p>
+    <div class="actions"><a class="btn ink" href="#install">Add to Chrome</a><a class="textlink" href="#try">Try her first</a></div>
+  </div>
+</section>
+
+<!-- 2. Try her. The practice cart, live, running the same rules the extension runs. -->
+<section class="try" id="try" aria-labelledby="try-h">
+  <div class="try-head">
+    <h2 id="try-h" class="sr">Try her</h2>
+    <p class="eyebrow">A practice cart. The same rules the extension runs, in your browser. Nothing here is real.</p>
+    <div class="who" role="radiogroup" aria-label="Who checks on you">
+      <button type="button" data-who="mama" aria-checked="true" role="radio"><span class="ring mint"><img src="/assets/faces/mama/calm.svg" alt="" /></span>Mama</button>
+      <button type="button" data-who="nana" aria-checked="false" role="radio"><span class="ring orange"><img src="/assets/faces/nana/calm.svg" alt="" /></span>Nana</button>
+      <button type="button" data-who="abuela" aria-checked="false" role="radio"><span class="ring rose"><img src="/assets/faces/abuela/calm.svg" alt="" /></span>Abuela</button>
+      <button type="button" data-who="wong" aria-checked="false" role="radio"><span class="ring jade"><img src="/assets/faces/wong/calm.svg" alt="" /></span>Grandma Wong</button>
     </div>
-    <p class="small muted">Amazon, Target, Walmart, any Shopify store. Everything else she reads on sight.</p>
-    <p class="small muted not">Not a blocker and not a guilt trip. She asks once, reacts only when you said it was a want and it blows the week, and Buy anyway is always there. A working Chrome extension, open source, 144 tests.</p>
   </div>
 
-  <figure class="browser" aria-label="A Target cart with rice, dish soap and AirPods. Mama asks what the AirPods are for.">
-    <div class="chrome"><span class="dots"><i></i><i></i><i></i></span><span class="url">target.com/cart</span></div>
+  <div class="frame" id="frame">
+    <div class="chrome"><span class="dots"><i></i><i></i><i></i></span><span class="url">practice cart</span></div>
     <div class="page">
-      <div class="store-bar"><span class="logo"></span><span class="search"></span><span class="store-cart">Cart</span></div>
       <div class="cart">
-        <div class="items">
-          <h2>Cart</h2>
-          <div class="row"><span class="thumb"></span><span class="name">Good &amp; Gather long grain rice, 20 lb<small>Qty 1</small></span><span class="price">$24</span></div>
-          <div class="row"><span class="thumb"></span><span class="name">Dish soap, 19 fl oz<small>Qty 1</small></span><span class="price">$4</span></div>
-          <div class="row marked"><span class="thumb"></span><span class="name">AirPods Pro, 2nd gen<small>Qty 1</small></span><span class="price">$179</span></div>
+        <ul class="items" id="items">
+          <li class="row" data-name="20 lb bag of rice" data-price="24"><span class="thumb"></span><span class="name">20 lb bag of rice</span><span class="price">$24</span></li>
+          <li class="row" data-name="Dish soap" data-price="4"><span class="thumb"></span><span class="name">Dish soap</span><span class="price">$4</span></li>
+        </ul>
+        <div class="add">
+          <span class="muted">Add something</span>
+          <button type="button" data-add="AirPods Pro" data-cost="179">AirPods Pro · $179</button>
+          <button type="button" data-add="Hoodie" data-cost="55">Hoodie · $55</button>
+          <button type="button" data-add="Textbook" data-cost="62">Textbook · $62</button>
+          <button type="button" data-add="Bubble tea" data-cost="8">Bubble tea · $8</button>
         </div>
-        <aside class="summary">
-          <div><span>Subtotal</span><span>$207</span></div>
-          <div><span>Shipping</span><span>Free</span></div>
-          <div class="total"><span>Total</span><span>$207</span></div>
-          <span class="checkout">Check out</span>
-        </aside>
       </div>
-      <div class="card ask">
-        <span class="face mint"><img src="/assets/faces/mama/watching.svg" alt="" /></span>
+      <aside class="summary">
+        <div><span>Subtotal</span><span id="subtotal">$28</span></div>
+        <div class="total"><span>Total</span><span id="total">$28</span></div>
+        <span class="checkout">Check out</span>
+        <p class="week"><span id="week-line">$50 of $75 fun money gone this week. $25 left.</span></p>
+      </aside>
+
+      <!-- Her, exactly as on a store: the bubble, the card, the badge with the gele meter. -->
+      <div class="bubble" id="bubble" hidden role="status" aria-live="polite"><p class="say" id="bubble-say"></p><p class="num" id="bubble-num"></p></div>
+      <section class="card" id="card" hidden role="dialog" aria-labelledby="card-line">
+        <span class="tile" id="card-tile"><img src="/assets/faces/mama/watching.svg" alt="" id="card-face" /></span>
         <div class="card-body">
-          <strong>AirPods? What for?</strong>
-          <span class="muted">I ask once and I remember.</span>
-          <div class="card-actions"><span class="pill green">It’s for something</span><span class="pill cream">I just want them</span></div>
+          <p class="line" id="card-line"></p>
+          <p class="sub" id="card-sub"></p>
+          <div class="card-actions"><button type="button" class="pill green" id="card-primary"></button><button type="button" class="pill cream" id="card-secondary"></button></div>
         </div>
-      </div>
-      <div class="badge"><span class="meter"><i></i></span><span class="ring big"><img src="/assets/faces/mama/calm.svg" alt="" /></span></div>
+      </section>
+      <div class="badge" id="badge"><span class="meter" aria-hidden="true"><i id="meter-fill"></i></span><span class="ring big" id="badge-ring"><img src="/assets/faces/mama/calm.svg" alt="" id="badge-face" /></span></div>
     </div>
-  </figure>
-</section>
-
-<div class="pickbar" aria-label="Pick who checks on you">
-  <span class="muted">Pick who checks on you</span>
-  <a href="#pick"><span class="ring sm mint"><img src="/assets/faces/mama/calm.svg" alt="" /></span>Mama</a>
-  <a href="#pick"><span class="ring sm orange"><img src="/assets/faces/nana/calm.svg" alt="" /></span>Nana</a>
-  <a href="#pick"><span class="ring sm jade"><img src="/assets/faces/wong/calm.svg" alt="" /></span>Grandma Wong</a>
-  <a href="#pick"><span class="ring sm rose"><img src="/assets/faces/abuela/calm.svg" alt="" /></span>Abuela</a>
-</div>
-
-<!-- 21 how -->
-<section class="how" id="how">
-  <article class="beat">
-    <div class="art">
-      <img class="her" src="/assets/faces/mama/watching.svg" alt="Mama, watching" />
-      <div class="mini-cart tilt">
-        <div class="row"><span class="thumb"></span><span class="name">20 lb bag of rice<small>Qty 1</small></span><span class="price">$24</span></div>
-        <div class="row"><span class="thumb"></span><span class="name">Dish soap<small>Qty 1</small></span><span class="price">$4</span></div>
-        <div class="row marked"><span class="thumb"></span><span class="name">AirPods Pro<small>Qty 1</small></span><span class="price">$179</span></div>
-        <div class="tags"><span class="need">need</span><span class="need">need</span><span class="q">a question</span></div>
-      </div>
-    </div>
-    <div class="words">
-      <h2>I read every item.</h2>
-      <p>The bank sees one Target charge. I see rice, soap and AirPods, and I treat each one differently. Rice is a need. AirPods are a question. What you need never moves the meter.</p>
-    </div>
-  </article>
-
-  <article class="beat flip">
-    <div class="art">
-      <img class="her" src="/assets/faces/mama/shocked.svg" alt="Mama, surprised" />
-      <div class="tag-card tilt-r"><span class="thumb"></span><strong>AirPods Pro</strong><span class="muted">$179</span></div>
-    </div>
-    <div class="words">
-      <h2>I ask first.</h2>
-      <p>A new thing above fifteen dollars gets one question: what for? Say it is for something and I never ask about it again. Say you just want it, and I have the right to speak.</p>
-    </div>
-  </article>
-
-  <article class="beat">
-    <div class="art stack">
-      <div class="card alarm tilt">
-        <span class="face mint"><img src="/assets/faces/mama/shocked.svg" alt="" /></span>
-        <div class="card-body">
-          <strong>One hundred and seventy nine dollars.</strong>
-          <span class="muted">Twenty five left this week, and the rent is Friday. You’re sure?</span>
-          <div class="card-actions"><span class="pill green">You’re right, Mama</span><span class="pill cream">Buy anyway</span></div>
-        </div>
-      </div>
-      <img class="her down" src="/assets/faces/mama/down.svg" alt="Mama, gele down" />
-      <div class="imsg tilt-r">
-        <div class="from"><span class="ring sm mint"><img src="/assets/faces/mama/calm.svg" alt="" /></span>Mama <span class="when">now</span></div>
-        <p>$179 on AirPods. The week is gone and Friday is rent. I said it.</p>
-      </div>
-    </div>
-    <div class="words">
-      <h2>I speak when it matters.</h2>
-      <p>A want that fits the week gets a nod. A want that blows the week gets my voice, and your phone buzzes. Nothing is ever blocked. Buy anyway is always there. I just want you to hear it first.</p>
-    </div>
-  </article>
-</section>
-
-<!-- 22 right: kept -->
-<section class="kept">
-  <div class="words">
-    <h2 class="ink-h">Kept, not spent.</h2>
-    <p>The first number she shows you is what stayed in your pocket because she said something. Put the AirPods back and it goes up. Move money to savings, send money home, it goes up. Sunday at seven she texts you the week in four lines, and you can text her back.</p>
-    <div class="chips"><span>how much do I have left</span><span>move 40 to savings</span><span>send 50 home</span></div>
   </div>
-  <div class="art">
-    <div class="thread tilt">
-      <div class="thread-head"><span class="ring sm mint"><img src="/assets/faces/mama/calm.svg" alt="" /></span><strong>Mama</strong><span class="muted">Sunday 7:00 PM</span></div>
-      <p class="in">This week: $50 of $75 fun money gone, $25 left, 2 days to go.</p>
-      <p class="in">You kept $40. ₦64,000 back home.</p>
-      <p class="in">Rent is due in 4 days.</p>
-      <p class="in">Good week. Same again.</p>
+  <p class="try-foot"><button type="button" class="textlink" id="try-reset">Start over</button><span class="muted">She remembers your answers in this browser, like the real one.</span></p>
+</section>
+
+<!-- 3. Where she is. Five tiles, each a real piece of the product. -->
+<section class="tiles" id="where" aria-label="Where she is">
+  <article class="tile-card">
+    <div class="mini card-mini">
+      <span class="tile sm"><img src="/assets/faces/mama/watching.svg" alt="" /></span>
+      <div><strong>AirPods Pro? Tell me the story first.</strong><span class="muted">$179 against $25 left this week.</span><div class="card-actions"><span class="pill green">It’s for something</span><span class="pill cream">I just want them</span></div></div>
+    </div>
+    <h3>Cart</h3><p>Amazon, Target, Walmart, any Shopify store. Everything else she reads on sight.</p>
+  </article>
+  <article class="tile-card">
+    <div class="mini thread">
+      <span class="from">Mama · Sunday 7:00 PM</span>
+      <p class="in">This week: $50 of $75 gone, $25 left, 2 days to go.</p>
+      <p class="in">You kept $40. Rent is due Thursday.</p>
       <p class="out">how much do I have left</p>
-      <p class="in">$25 this week. Rent Friday. Rice is at home.</p>
+      <p class="in">$25. 2 days. That is $12 a day.</p>
     </div>
-    <div class="kept-card tilt-r">
-      <span class="muted">Kept this week</span>
-      <strong class="num">$40</strong>
-      <span class="muted">₦64,000. Still yours.</span>
-      <span class="bar"><i></i></span>
-      <span class="small muted">$50 of $75 gone. $25 left, 2 days.</span>
+    <h3>Phone</h3><p>Sunday at seven, and when something big happens. Text her back.</p>
+  </article>
+  <article class="tile-card">
+    <div class="mini voice">
+      <button type="button" class="hear" data-audio="/audio/mama.mp3" aria-label="Hear Mama"><span class="play"></span></button>
+      <span class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+      <span class="muted">Mama, on a want that blows the week</span>
     </div>
-    <img class="her proud" src="/assets/faces/mama/proud.svg" alt="Mama, proud" />
-  </div>
+    <h3>Voice</h3><p>She speaks only when it matters. Text follows every word.</p>
+  </article>
+  <article class="tile-card">
+    <div class="mini report">
+      <span class="from">Sunday report</span>
+      <p><strong>$25 stayed in the week.</strong></p>
+      <p>Better than last week by $18.</p>
+      <p>Biggest: Hoodie, $55, Wednesday.</p>
+      <p>Three weeks kept in a row.</p>
+      <p>Jar: $140.</p>
+      <p class="muted">Monday is a new week. $75.</p>
+    </div>
+    <h3>Sunday</h3><p>Six lines close the week. Kept goes to the jar.</p>
+  </article>
+  <article class="tile-card">
+    <div class="mini gpt">
+      <p class="out">Should I buy the Sony XM5 for $348?</p>
+      <div class="gpt-card"><span class="from">Mama Budget</span><p><strong>$348 against $25 left.</strong> First time I am seeing it. What is it for?</p></div>
+    </div>
+    <h3>ChatGPT</h3><p>Ask her there too. Same rules, same week.</p>
+  </article>
 </section>
 
-<!-- 22 right: score -->
-<section class="right" id="right">
-  <div class="words">
-    <h2 class="ink-h">Is she right?</h2>
-    <p>We froze 50 real purchases before writing a single rule, then asked two mothers to label each one. Where they agreed, Mama agreed with them <strong>26 of 32 times</strong>. The bank’s own categories got <strong>22</strong>. She never scolded a need. On the 15 purchases where the mothers disagreed with each other, she did the only honest thing. She asked.</p>
-    <p class="small muted">Agreement with two participating mothers, not objective truth. The model only names what an item is. The rules decide. Protocol, cases and every label are in the repo.</p>
-    <a class="btn line" href="https://github.com/yimi23/mama-budget/blob/main/data/scoring_protocol.pdf">Read the protocol</a>
-  </div>
-  <div class="bars" role="img" aria-label="Mama 26 of 32, bank categories 22 of 32, needs scolded 0 of 16">
-    <div class="bar-row"><span>Mama</span><span class="track"><i class="green" style="--w:81%"></i></span><span class="val">26 of 32</span></div>
-    <div class="bar-row"><span>Bank categories</span><span class="track"><i class="grey" style="--w:69%"></i></span><span class="val">22 of 32</span></div>
-    <div class="bar-row"><span>Needs scolded</span><span class="track"><i style="--w:0%"></i></span><span class="val">0 of 16</span></div>
-    <p class="small muted">Clear cases only. 15 of 50 had no majority, and Mama asked on those.</p>
-  </div>
-</section>
-
-<!-- 23 pick -->
-<section class="pick" id="pick">
-  <div class="pick-head">
-    <h2>Pick your grandma.</h2>
-    <p>Same rules, a different mouth. She only ever talks about the amount and the item, never about you. Nobody is scolded on first sight.</p>
-  </div>
+<!-- 4. Four grandmas. A grid, a name, her voice. -->
+<section class="pick" id="pick" aria-labelledby="pick-h">
+  <h2 id="pick-h">Same rules. Four mouths.</h2>
   <div class="grandmas">
-    <article class="g">
-      <div class="tile mint"><img src="/assets/faces/mama/shocked.svg" alt="Mama" /></div>
-      <h3>Mama</h3>
-      <p>Nigerian. Warm first, loud second. Tells you what it costs back home.</p>
-      <p class="quote">“Ehn ehn. One hundred and seventy nine dollars for AirPods Pro, with twenty five dollars left this week. You are sure?”</p>
-      <button class="hear" type="button" data-audio="/audio/mama.mp3"><span class="play"></span>Hear her</button>
-    </article>
-    <article class="g">
-      <div class="tile orange"><img src="/assets/faces/nana/shocked.svg" alt="Nana" /></div>
-      <h3>Nana</h3>
-      <p>Midwestern. Sweet first, dry second. Says less than she means.</p>
-      <p class="quote">“Well. One hundred and seventy nine dollars for AirPods Pro, with twenty five dollars left this week. I’ll just leave that there.”</p>
-      <button class="hear" type="button" data-audio="/audio/nana.mp3"><span class="play"></span>Hear her</button>
-    </article>
-    <article class="g">
-      <div class="tile jade"><img src="/assets/faces/wong/shocked.svg" alt="Grandma Wong" /></div>
-      <h3>Grandma Wong</h3>
-      <p>Ran a shop for thirty years. Quiet, then one dry sentence.</p>
-      <p class="quote">“One hundred and seventy nine dollars for AirPods Pro. Twenty five dollars left. Did the free ones break?”</p>
-      <button class="hear" type="button" data-audio="/audio/wong.mp3"><span class="play"></span>Hear her</button>
-    </article>
-    <article class="g">
-      <div class="tile rose"><img src="/assets/faces/abuela/shocked.svg" alt="Abuela" /></div>
-      <h3>Abuela</h3>
-      <p>Feeds you first, questions you after. Never raises her voice twice.</p>
-      <p class="quote">“Híjole. One hundred and seventy nine dollars for AirPods Pro, mija, with twenty five dollars left. There is food in the house.”</p>
-      <button class="hear" type="button" data-audio="/audio/abuela.mp3"><span class="play"></span>Hear her</button>
-    </article>
-  </div>
-
-  <div class="loud">
-    <div class="words">
-      <h3 class="loud-h">Then pick how loud.</h3>
-      <p>Three tiers. The dial changes her mouth, never her math. Quiet is text only. Loud means her voice, and your phone.</p>
-    </div>
-    <div class="tiers">
-      <div><span>Gentle Auntie</span><span class="on">Mama</span><span>Full Nigerian Mother</span></div>
-      <div><span>Church Friend</span><span class="on">Nana</span><span>Nana Before Coffee</span></div>
-      <div><span>Auntie Next Door</span><span class="on">Grandma Wong</span><span>Grandma Wong Before Mahjong</span></div>
-      <div><span>Tía</span><span class="on">Abuela</span><span>Abuela on a Sunday</span></div>
-    </div>
+    <article class="g"><div class="gtile mint"><img src="/assets/faces/mama/shocked.svg" alt="" /></div><h3>Mama</h3><button class="hear" type="button" data-audio="/audio/mama.mp3"><span class="play"></span>Hear her</button></article>
+    <article class="g"><div class="gtile orange"><img src="/assets/faces/nana/shocked.svg" alt="" /></div><h3>Nana</h3><button class="hear" type="button" data-audio="/audio/nana.mp3"><span class="play"></span>Hear her</button></article>
+    <article class="g"><div class="gtile rose"><img src="/assets/faces/abuela/shocked.svg" alt="" /></div><h3>Abuela</h3><button class="hear" type="button" data-audio="/audio/abuela.mp3"><span class="play"></span>Hear her</button></article>
+    <article class="g"><div class="gtile jade"><img src="/assets/faces/wong/shocked.svg" alt="" /></div><h3>Grandma Wong</h3><button class="hear" type="button" data-audio="/audio/wong.mp3"><span class="play"></span>Hear her</button></article>
   </div>
 </section>
 
-<!-- close + install -->
+<!-- 5. Is she right. One paragraph of numbers. -->
+<section class="right" id="right" aria-labelledby="right-h">
+  <h2 id="right-h">Is she right?</h2>
+  <div class="right-side">
+    <p class="lead">Two mothers labelled 50 real purchases before a rule was written. Where they agreed, she agreed 26 of 32 times. The bank’s own categories got 22. She never scolded a need.</p>
+    <a class="textlink" href="https://github.com/yimi23/mama-budget/blob/main/data/scoring_protocol.pdf">Read the protocol</a>
+  </div>
+</section>
+
+<!-- 6. Install. -->
 <section class="close" id="install">
   <h2 class="reveal">Your mother is in your cart.</h2>
-  <p class="lead center">One number for the week. Held to, before you pay. What you need, she never touches.</p>
   <a class="btn ink" href="https://github.com/yimi23/mama-budget/releases/latest" id="install-link">Add to Chrome</a>
-  <p class="small muted center install-note">Chrome Web Store listing in review. Until it is live: download the latest build, unzip it, open <code>chrome://extensions</code>, turn on Developer mode, Load unpacked, pick the <code>chrome-mv3</code> folder. The companion API runs on your computer: <a href="https://github.com/yimi23/mama-budget#run-it">how to run it</a>. The practice cart opens from her first run.</p>
+  <p class="small muted">Chrome Web Store listing in review. Until then: download the build, unzip, <code>chrome://extensions</code>, Developer mode, Load unpacked.</p>
 </section>
 
 </main>
 
 <footer class="foot">
-  <span>Built at MHacks 2026 by Praise Oyimi and Ugonna Emeka-Inegbu. Bank link by SimpleFIN, read only; the demo bank is Capital One Nessie. Her voice is ElevenLabs. Texts by Photon. Reading and words by Claude.</span>
-  <span class="foot-links"><a href="https://github.com/yimi23/mama-budget">Source</a> · <a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a> · mamabudget.com</span>
+  <a class="brand" href="/"><img class="mark" src="/assets/gele.svg" alt="" width="28" height="28" /><span class="wordmark">Mama Budget</span></a>
+  <span>MHacks 2026. Praise Oyimi and Ugonna Emeka-Inegbu. Bank read only. Her voice is ElevenLabs, her texts Photon, her reading Claude.</span>
+  <span class="foot-links"><a href="https://github.com/yimi23/mama-budget">Source</a><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a></span>
 </footer>
 
-<script>
-  // Hear her: one clip at a time, the button shows what is playing.
-  (() => {
-    let current = null, currentBtn = null;
-    for (const b of document.querySelectorAll('.hear')) {
-      b.addEventListener('click', () => {
-        if (currentBtn === b && current && !current.paused) { current.pause(); b.classList.remove('playing'); return; }
-        if (current) { current.pause(); currentBtn && currentBtn.classList.remove('playing'); }
-        current = new Audio(b.dataset.audio); currentBtn = b; b.classList.add('playing');
-        current.addEventListener('ended', () => b.classList.remove('playing'));
-        current.play().catch(() => b.classList.remove('playing'));
-      });
-    }
-  })();
-  // The closing sentence lights up word by word as it scrolls in. Reduced motion shows it whole.
-  (() => {
-    const h = document.querySelector('.reveal');
-    if (!h || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    h.innerHTML = h.textContent.trim().split(' ').map((w) => `<span class="w">${w}</span>`).join(' ');
-    const words = [...h.querySelectorAll('.w')];
-    const io = new IntersectionObserver((es) => {
-      if (!es[0].isIntersecting) return;
-      words.forEach((w, i) => setTimeout(() => w.classList.add('lit'), 120 * i));
-      io.disconnect();
-    }, { threshold: 0.6 });
-    io.observe(h);
-  })();
-</script>
+<script src="/try.js" defer></script>
 </body>
 </html>
