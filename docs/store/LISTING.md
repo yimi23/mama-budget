@@ -1,7 +1,7 @@
 # Chrome Web Store listing, ready to paste
 
 Dashboard: https://chrome.google.com/webstore/devconsole (one time $5 developer fee on the Google account that owns it).
-Item zip: build with `npm run build:ext`, then zip the `chrome-mv3` folder (the rolling `latest` release holds the same file as `mama-budget-extension-latest.zip`).
+Item zip: `~/Desktop/mama-budget-store-v0.1.1.zip` (version 0.1.1, built Oct 15 2026 from `npm run build:ext`). It holds the contents of `apps/extension/build/chrome-mv3` with `manifest.json` at the top of the zip, which is what the dashboard expects; the old v0.1.0 zip had everything inside a `chrome-mv3/` folder and was out of date, so it was replaced. To remake it: `cd apps/extension/build/chrome-mv3 && zip -qrX ~/Desktop/mama-budget-store-v<version>.zip .`
 Visibility: **Unlisted** (anyone with the link installs, not searchable, still auto updates).
 
 ## Store listing tab
@@ -13,7 +13,7 @@ You set the fun money for the week. She holds you to it, in your cart, before yo
 
 **Rejection log**: Oct 6 2026, "Spam and Placement in the Store: excessive keywords in the description" (the sentence listing Amazon, Target, Walmart, Shopify, WooCommerce and BigCommerce). Fixed by removing every store and platform name; resubmit with the text below.
 
-**Description** (rewritten Oct 7 after the "excessive keywords" rejection; no store or platform lists, no third-party names beyond the people who built it):
+**Description** (rewritten Oct 7 after the "excessive keywords" rejection; no store or platform lists, no third party names beyond the people who built it):
 Every money app tells you after the money is gone. Mama Budget puts someone in your cart.
 
 Pick your grandma: Mama (Nigerian), Nana (US Midwest), Abuela (Mexican American) or Grandma Wong (Cantonese). Set the fun money for the week. From then on she sits in the corner of your cart on the stores you already shop at and speaks before you pay, not after.
@@ -48,18 +48,21 @@ Mama Budget watches the shopping cart on the page the user is on and, when a pur
 - `storage`: Keeps the user's settings (which grandma, how loud, the weekly amount) and what the user told her about items, so she asks about an item once and remembers the answer.
 - `offscreen`: Plays her spoken line through an offscreen document, which is the Manifest V3 way to play audio from an extension.
 - `tts`: Uses the browser's own text to speech as a fallback voice when no ElevenLabs voice is configured, so the spoken line still exists for users who rely on audio.
-- Host permission `http://localhost:8787/*`: The extension's companion API (open source, run by the user on their own computer by default). Cart items and the user's answers are sent there to be judged against the week. No other host is contacted by the extension.
+- Host permission `http://localhost:8787/*`: The extension's companion API (open source, run by the user on their own computer by default). Cart items and the user's answers are sent there to be judged against the week.
+- Host permission `https://api.mamabudget.com/*`: The same companion API, hosted by us, for people who choose it in the popup under "Where she runs" instead of running it on their own computer. It receives exactly what the local one would. These two addresses are the only hosts the extension contacts.
 
 **Remote code**: No. All code ships in the package. The API is a separate program the user runs.
 
 **Data usage** (tick these):
-- Website content: yes (item names, quantities and prices from the cart area of shopping pages).
+- Website content: yes (item names, quantities and prices from the cart area of shopping pages, and the order number on an order confirmation page so the week counts the purchase once).
 - User activity: yes (the user's answers on her cards and typed reasons).
-- Personally identifiable information: no. Financial and payment information: no (prices of items only; never card or account data). Authentication information: no. Personal communications: no. Location: no. Web history: no. Health: no.
+- Financial and payment information: yes, only if the user links a bank in the popup. The popup shows the week's spending and the transactions she read from the bank so the user can correct them. Card numbers are never seen; payment for a plan happens on Stripe's own page.
+- Authentication information: yes, only if the user links a bank. The SimpleFIN setup token the user pastes in the popup is sent once to the companion API, which trades it for a read only key and stores that key encrypted. The extension keeps a random device token so the API knows which week is whose. No passwords are ever asked for or stored.
+- Personally identifiable information: no. Personal communications: no. Location: no. Web history: no. Health: no.
 
 **Certifications** (tick all three): data is not sold to third parties; not used or transferred for purposes unrelated to the item's core functionality; not used or transferred to determine creditworthiness or for lending.
 
-**Privacy policy URL**: https://yimi23.github.io/mama-budget/privacy.html (GitHub Pages from `/docs`, needs the repository public; until then, the same file at https://github.com/yimi23/mama-budget/blob/main/docs/privacy.html)
+**Privacy policy URL**: https://mamabudget.com/privacy (live, served from `site/privacy.html`; checked Oct 15 2026). Fallback: https://yimi23.github.io/mama-budget/privacy.html (GitHub Pages from `/docs`, also live).
 
 ## Distribution tab
 
@@ -73,6 +76,6 @@ API runs open and this paragraph stays out of the listing.
 
 ## After submitting
 
-Review takes hours to a few days; the broad host permission usually draws the longer look. While it is pending, the install path stays the `latest` release zip. Once published, every later version is: bump `version` in `apps/extension/wxt.config.ts` (or package), build, zip, upload in the dashboard, submit; users update automatically within hours.
+Review takes hours to a few days; the broad host permission usually draws the longer look. While it is pending, the install path stays the `latest` release zip. Once published, every later version is: bump `version` in `apps/extension/package.json` (WXT reads it from there), build, zip the folder contents as above, upload in the dashboard, submit; users update automatically within hours.
 
 Known catch for strangers: a fresh install with no API running on their computer shows nothing (the badge hides when the API is down, by design). The description says so; the proper fix is a hosted API with its address as the default.
